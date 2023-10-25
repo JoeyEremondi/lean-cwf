@@ -1,4 +1,4 @@
-import «LeanCwf».Fam
+import LeanCwf.Fam
 import Mathlib.CategoryTheory.Category.Basic
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.Data.Opposite
