@@ -1,20 +1,22 @@
 import LeanCwf.Fam
 import Mathlib.CategoryTheory.Category.Basic
 import Mathlib.CategoryTheory.Functor.Basic
+import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.Data.Opposite
+import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 
 open CategoryTheory
 
 universe u v u2
 
 
-  -- Terms and Types in a CwF, without the comprehension structure
-  -- A CwF over C has a Fam-valued presheaf
-  -- We interpret objects of C as contexts
-  class TmTy (C : Type u) [Category.{v} C] : Type ((max v u+1)+1) where
-    F : Functor Cᵒᵖ Fam.{u}
+-- Terms and Types in a CwF, without the comprehension structure
+-- A CwF over C has a Fam-valued presheaf
+-- We interpret objects of C as contexts
+class TmTy (C : Type u) [Category.{v} C] : Type ((max v u+1)+1) where
+  F : Functor Cᵒᵖ Fam.{u}
 
-  section
+section
   variable {C : Type u} [Category.{v}  C] [TmTy.{u,v} C]
 
   -- The index set of the functor F gives types over a given context
@@ -69,10 +71,11 @@ universe u v u2
   -- -- Helpful lemma: equal types have equal sets of terms
   -- theorem tmEq {Γ : C} {S T : Ty Γ} (eq : S = T ) : Tm S = Tm T := by aesop
 
+end
 
 -- A CwF has a type-term structure,
--- plus context-extension, substitution externsn, and an initial object
-class CwF (C : Type u) [Category.{v} C] [TmTy C] : Type _ where
+-- plus context-extension, substitution extension, and a terminal object
+class CwF (C : Type u) [Category.{v} C] [TmTy C] [Limits.HasTerminal C] : Type _ where
   -- Context extension
   snoc : (Γ : C) → Ty Γ → C
   --The projection substitution
@@ -111,12 +114,17 @@ class CwF (C : Type u) [Category.{v} C] [TmTy C] : Type _ where
 
 notation Γ "⬝" T => CwF.snoc Γ T
 notation "⟪" θ "," t "⟫" => CwF.ext θ t
+attribute [simp] CwF.ext_p CwF.ext_v CwF.ext_id CwF.ext_nat
 
 
-theorem ext_unique {Γ Δ : C} [inst : CwF C] {T : Ty Γ}
-  (f : Δ ⟶ Γ) (t : Tm (T⦃f⦄)) (g : Δ ⟶ Γ ⬝ T)
-  (pfComp : f = (g ≫ CwF.p)) (pfv : t (cast (tmEq pfComp) CwF.v⦃g⦄ₜ) )
-  : g = ⟪f,t⟫ := by
+section
+  variable {C : Type u} [Category.{v}  C] [TmTy.{u,v} C] [Limits.HasTerminal C] [CwF C]
+
+
+  theorem ext_unique {Γ Δ : C}  {T : Ty Γ}
+    (f : Δ ⟶ Γ) (t : Tm (T⦃f⦄)) (g : Δ ⟶ Γ ⬝ T)
+    (pfComp : f = (g ≫ CwF.p)) (pfv : HEq t (CwF.v⦃g⦄ₜ) )
+    : g = ⟪f,t⟫ := by
 --   cases (pfComp) with
 --   | refl =>
 --     aesop
