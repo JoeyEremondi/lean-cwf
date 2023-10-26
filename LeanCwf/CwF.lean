@@ -44,31 +44,60 @@ section
   -- Notation for substitution on terms
   notation t "⦃" θ "⦄ₜ"  => tmSub t θ
 
+  --Helpful functions to cast based on subst and type equalities
+  abbrev castTm {Γ : C} {S T : Ty Γ} (t : Tm T) (eq : S = T) : Tm S :=
+    cast (by aesop) t
+
+  abbrev castTmSub {Γ Δ : C} {f g : Δ ⟶ Γ} {T : Ty Γ} (t: Tm (T⦃f⦄)) (eq : f = g)
+    : Tm (T⦃g⦄) :=
+    cast (by aesop) t
+
+
+  notation s "=ₜ" t => Eq s (castTm t (by aesop))
+  notation "↑ₜ" t => castTm t (by aesop)
+
+  theorem castSymm {Γ : C} {S T : Ty Γ} {s : Tm S} {t : Tm T} {eq : S = T} (eq2 : s = castTm t eq) :
+    t =ₜ s := by
+    aesop
+
+  @[simp]
+  theorem castSub {Γ Δ : C} {S T : Ty Γ} {t : Tm T} {eq : S = T} {f : Δ ⟶ Γ}  :
+    (castTm t eq) ⦃ f ⦄ₜ = castTm (t⦃f⦄ₜ) (by aesop) := by aesop
+
+  @[simp]
+  theorem castCast  {Γ : C} {S T U: Ty Γ} {s : Tm S} {t : Tm U} {eq : S = T} {eq2 : T = U} :
+    (castTm (castTm t eq2) eq) = castTm t (Eq.trans eq eq2) := by aesop
+
+  @[simp]
+  theorem castEq  {Γ : C} {S T : Ty Γ} {s : Tm S} {s t : Tm T} {eq : S = T}  :
+    castTm s eq = castTm t eq ↔ s = t := by aesop
+
   -- Subsitution by the identity has no effect
   @[simp]
-  theorem tySubId {Γ : C} (T : Ty Γ) : T⦃𝟙 Γ⦄ = T  := by
+  theorem tySubId {Γ : C} {T : Ty Γ} : T⦃𝟙 Γ⦄ = T  := by
     simp [tySub]
 
   -- Substitution a composite is the same as composing substitutions
   @[simp]
-  theorem tySubComp {Γ Δ Ξ : C} {T : Ty Γ} {f : Δ ⟶ Γ} {g : Ξ ⟶ Δ} : T⦃g ≫ f⦄ = (T⦃f⦄)⦃g⦄   := by
+  theorem tySubComp {Γ Δ Ξ : C} {T : Ty Γ} {f : Δ ⟶ Γ} {g : Ξ ⟶ Δ} :  (T⦃f⦄)⦃g⦄ = T⦃g ≫ f⦄   := by
     simp [tySub]
-
 
   -- Same laws but for substitution on terms instead of types
   @[simp]
-  theorem tmSubId {Γ : C} {T : Ty Γ} (t : Tm T) : HEq (t⦃𝟙 Γ⦄ₜ) t  := by
+  theorem tmSubId {Γ : C} {T : Ty Γ} (t : Tm T) : (t⦃𝟙 Γ⦄ₜ) =ₜ t := by
     simp [tySub, tmSub]
-    rw [TmTy.F.map_id]
-    simp_all only [mapIxId, mapFamId, heq_eq_eq]
+    have eq := mapCast t (symm (TmTy.F.map_id (Opposite.op Γ)))
+    aesop_cat
 
   @[simp]
-  theorem tmSubComp {Γ Δ Ξ : C} {T : Ty Γ} {f : Δ ⟶ Γ} {g : Ξ ⟶ Δ} {t : Tm T} : HEq (t⦃g ≫ f⦄ₜ ) ((t⦃f⦄ₜ)⦃g⦄ₜ)   := by
+  theorem tmSubComp {Γ Δ Ξ : C} {T : Ty Γ} {f : Δ ⟶ Γ} {g : Ξ ⟶ Δ} {t : Tm T}
+  : ((t⦃f⦄ₜ)⦃g⦄ₜ) =ₜ (t⦃g ≫ f⦄ₜ )  := by
     simp [tySub, tmSub]
-    rw [TmTy.F.map_comp]
-    apply mapFamComp
+    have eq := mapCast t ((TmTy.F.map_comp f.op g.op))
+    aesop_cat
 
-  -- -- Helpful lemma: equal types have equal sets of terms
+
+  -- Helpful lemma: equal types have equal sets of terms
   -- theorem tmEq {Γ : C} {S T : Ty Γ} (eq : S = T ) : Tm S = Tm T := by aesop
 
 end
@@ -91,40 +120,74 @@ class CwF (C : Type u) [Category.{v} C] [TmTy C] [Limits.HasTerminal C] : Type _
   -- Extending and composing with p cancels: if you introduce an unused variable then replace it with t,
   -- you get the original substitution
   ext_p : {Γ Δ : C} → {T : Ty Γ}
-    → (f : Δ ⟶ Γ) → (t : Tm (tySub T f))
+    → {f : Δ ⟶ Γ} → {t : Tm (tySub T f)}
     → (ext f t) ≫ p = f
+
+  -- Can be derived from existing equalities, but if we postulate it
+  -- it's easier to express the type of later things
+  ext_pHelper : {Γ Δ : C} → {T : Ty Γ}
+    → {f : Δ ⟶ Γ} → {t : Tm (tySub T f)} → {T : Ty _}
+    → (T⦃p⦄⦃ext f t⦄)  = T⦃f⦄
 
   --An extended substitution, applied to the newly generated variable, produces
   --the term by which the subsitution was extended
-  ext_v : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ) → (t : Tm (tySub T f)) → HEq (v⦃ext f t⦄ₜ) t
+  ext_v : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ) → (t : Tm (tySub T f))
+    → v⦃ext f t⦄ₜ = castTm t (ext_pHelper)
   -- The extension is unique
-  -- ext_unique : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ) → (t : Tm (tySub T f)) → (g : _) → g ≫ p = f → HEq (v⦃g⦄ₜ) t → g = ext f t
+
+  ext_unique : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ)
+    → (t : Tm (tySub T f)) → (g : _) → g ≫ p = f
+    → (tyEq : _)
+    → (v⦃g⦄ₜ = castTm t tyEq)
+    → g = ext f t
 
   -- If you compose with an extension, this is the same as extending by the composition,
   -- except that you also end up substituting in the term you're extending by.
   -- Unfortunate ugliness due to the fact that Tm⦃g ≫ f⦄ is not definitionally equal to tm⦃f⦄⦃g⦄
-  ext_nat : {Γ Δ Ξ : C} → {T : Ty Γ}
-    → (f : Δ ⟶ Γ)
-    → (g : Ξ ⟶ Δ)
-    → (t : Tm (T⦃f⦄))
-    → (g ≫ ext f t) = (ext (g ≫ f) (cast (symm (congrArg Tm tySubComp)) (t⦃g⦄ₜ)))
+  -- ext_nat : {Γ Δ Ξ : C} → {T : Ty Γ}
+  --   → (f : Δ ⟶ Γ)
+  --   → (g : Ξ ⟶ Δ)
+  --   → (t : Tm (T⦃f⦄))
+  --   → (g ≫ ext f t) = (ext (g ≫ f) (cast (symm (congrArg Tm tySubComp)) (t⦃g⦄ₜ)))
   -- If you take a weaning and extend it with the newly introduced variable, you get the identity,
   -- because it just replaces each v with v
-  ext_id : {Γ : C} → {T : Ty Γ} → ext p v = 𝟙 (snoc Γ T)
+  -- ext_id : {Γ : C} → {T : Ty Γ} → ext p v = 𝟙 (snoc Γ T)
 
 notation Γ "⬝" T => CwF.snoc Γ T
 notation "⟪" θ "," t "⟫" => CwF.ext θ t
-attribute [simp] CwF.ext_p CwF.ext_v CwF.ext_id CwF.ext_nat
+attribute [simp] CwF.ext_p CwF.ext_v
 
 
 section
   variable {C : Type u} [Category.{v}  C] [TmTy.{u,v} C] [Limits.HasTerminal C] [CwF C]
 
 
-  theorem ext_unique {Γ Δ : C}  {T : Ty Γ}
-    (f : Δ ⟶ Γ) (t : Tm (T⦃f⦄)) (g : Δ ⟶ Γ ⬝ T)
-    (pfComp : f = (g ≫ CwF.p)) (pfv : HEq t (CwF.v⦃g⦄ₜ) )
-    : g = ⟪f,t⟫ := by
+  -- If you compose with an extension, this is the same as extending by the composition,
+  -- except that you also end up substituting in the term you're extending by.
+  -- Unfortunate ugliness due to the fact that Tm⦃g ≫ f⦄ is not definitionally equal to tm⦃f⦄⦃g⦄
+  @[simp]
+  theorem ext_nat {Γ Δ Ξ : C} {T : Ty Γ}
+    (f : Δ ⟶ Γ)
+    (g : Ξ ⟶ Δ)
+    (t : Tm (T⦃f⦄))
+    : (g ≫ ⟪f , t⟫) = ⟪g ≫ f , (↑ₜ t⦃g⦄ₜ) ⟫ := by
+      fapply CwF.ext_unique <;> simp_all
+      have eq2 := castSymm (tmSubComp (f := ⟪f , t⟫) (g := g) (t := CwF.v))
+      rw [eq2]
+      simp_all
+
+
+  @[simp]
+  theorem ext_id {Γ : C} {T : Ty Γ} : ⟪CwF.p , CwF.v⟫ = 𝟙 (Γ ⬝ T) := by
+    symm
+    fapply CwF.ext_unique <;> simp_all
+
+
+
+  -- theorem ext_unique {Γ Δ : C}  {T : Ty Γ}
+  --   (f : Δ ⟶ Γ) (t : Tm (T⦃f⦄)) (g : Δ ⟶ Γ ⬝ T)
+  --   (pfComp : f = (g ≫ CwF.p)) (pfv : HEq t (CwF.v⦃g⦄ₜ) )
+  --   : g = ⟪f,t⟫ := by
 --   cases (pfComp) with
 --   | refl =>
 --     aesop

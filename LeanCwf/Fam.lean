@@ -122,6 +122,16 @@ def mapFam {AB₁ AB₂ : Fam}  (f : AB₁ ⟶ AB₂) {a : ixSet AB₁} (b : fam
       apply (congrFun f.w ab)
   ⟩
 
+-- Useful for dealing with dependent equalities
+def castFam {AB : Fam} {a a' : ixSet AB} (b : famFor AB a) (eq : a = a') : famFor AB a' :=
+  cast (by aesop) b
+
+@[aesop safe]
+def mapCast {AB₁ AB₂ : Fam} {a : ixSet AB₁} {f g : AB₁ ⟶ AB₂} (b : famFor AB₁ a)  (eq : g = f)
+  : mapFam f b = castFam (mapFam g b) (congrArg₂ mapIx eq (refl a)) := by
+    subst eq
+    rfl
+
 -- Mapping the idenitity over an element of a family is the identity
 @[simp]
 def mapFamId {AB : Fam}  {a : ixSet AB} (b : famFor AB a ) : mapFam (𝟙 AB) b = b := by
@@ -135,9 +145,9 @@ def mapFamId {AB : Fam}  {a : ixSet AB} (b : famFor AB a ) : mapFam (𝟙 AB) b 
 -- is the composition of the mappings
 @[simp]
 theorem mapFamComp {AB₁ AB₂ AB₃ : Fam}  (f : AB₁ ⟶ AB₂) (g : AB₂ ⟶ AB₃) {a : ixSet AB₁} (b : famFor AB₁ a)
-  : HEq (mapFam (f ≫ g) b) (mapFam g (mapFam f b)) := by
-    simp [mapFam, <- b.property]
-
+  : (mapFam (f ≫ g) b) = castFam (mapFam g (mapFam f b)) (by aesop) := by
+    simp [mapIxComp, Function.comp_apply]
+    rfl
 
 
   -- Every family for a given index type is equivalent to the slice over that type
