@@ -141,17 +141,6 @@ class CwF (C : Type u) [Category.{v} C] [TmTy C] [Limits.HasTerminal C] : Type _
     → (v⦃g⦄ₜ = castTm t tyEq)
     → g = ext f t
 
-  -- If you compose with an extension, this is the same as extending by the composition,
-  -- except that you also end up substituting in the term you're extending by.
-  -- Unfortunate ugliness due to the fact that Tm⦃g ≫ f⦄ is not definitionally equal to tm⦃f⦄⦃g⦄
-  -- ext_nat : {Γ Δ Ξ : C} → {T : Ty Γ}
-  --   → (f : Δ ⟶ Γ)
-  --   → (g : Ξ ⟶ Δ)
-  --   → (t : Tm (T⦃f⦄))
-  --   → (g ≫ ext f t) = (ext (g ≫ f) (cast (symm (congrArg Tm tySubComp)) (t⦃g⦄ₜ)))
-  -- If you take a weaning and extend it with the newly introduced variable, you get the identity,
-  -- because it just replaces each v with v
-  -- ext_id : {Γ : C} → {T : Ty Γ} → ext p v = 𝟙 (snoc Γ T)
 
 notation Γ "⬝" T => CwF.snoc Γ T
 notation "⟪" θ "," t "⟫" => CwF.ext θ t
@@ -177,24 +166,62 @@ section
       simp_all
 
 
+  -- If you take a weaning and extend it with the newly introduced variable, you get the identity,
+  -- because it just replaces each v with v
   @[simp]
   theorem ext_id {Γ : C} {T : Ty Γ} : ⟪CwF.p , CwF.v⟫ = 𝟙 (Γ ⬝ T) := by
     symm
     fapply CwF.ext_unique <;> simp_all
 
+---- Terms and Sections
+-- There is an equivalence between terms of Tm T
+-- and sections p_T
+
+  -- Turn a term into the substitution that replaces v with that term
+  abbrev toSub {Γ : C} {T : Ty Γ} (t : Tm T) : Γ ⟶ (Γ ⬝ T) :=
+    ⟪ 𝟙 _ , ↑ₜ t ⟫
+
+  -- That subsitution is a section of p
+  def toSection {Γ : C} {T : Ty Γ} (t : Tm T) : SplitEpi (CwF.p (T := T)) :=
+    ⟨ toSub t , by simp_all ⟩
+
+  -- Get a term out of any section of p
+  def toTerm {Γ : C} {T : Ty Γ} (epi : SplitEpi (CwF.p (T := T))) : Tm T :=
+    ↑ₜ ((CwF.v ) ⦃ epi.section_ ⦄ₜ)
+
+  theorem congrDep₂  {A : Type } {B : A → Type} {R :  Type} (f : (a : A) → (b : B a) → R)
+    {a₁ a₂ : A} (eqa : a₁ = a₂) {b₁ : B a₁} {b₂ : B a₂} (eqb : b₁ = cast (by aesop) b₂)
+    : f a₁ b₁ = (f a₂ b₂) := by
+    cases eqa with
+    | refl =>
+      simp at eqb
+      cases eqb with
+        | refl => simp
 
 
-  -- theorem ext_unique {Γ Δ : C}  {T : Ty Γ}
-  --   (f : Δ ⟶ Γ) (t : Tm (T⦃f⦄)) (g : Δ ⟶ Γ ⬝ T)
-  --   (pfComp : f = (g ≫ CwF.p)) (pfv : HEq t (CwF.v⦃g⦄ₜ) )
-  --   : g = ⟪f,t⟫ := by
---   cases (pfComp) with
---   | refl =>
---     aesop
-  -- rw [pfComp]
-  -- rw [pfComp] at *
-  -- simp [pfv] at *
---     have pfTyComp : T⦃g ≫ CwF.p⦄ = T⦃CwF.p⦄⦃g⦄ := tySubComp
---     rw [pfTyComp] at t
---     have pfv2 : t = CwF.v⦃g⦄ₜ := by simp [pfv]
--- end
+  theorem extEq {Γ Δ : C} {T : Ty Γ } {f g : Δ ⟶ Γ } {t : Tm (T⦃f⦄)}
+    (eq : f = g) : ⟪f , t ⟫ = ⟪ g , castTmSub t eq⟫ := by aesop
+
+
+  theorem toSectionTerm {Γ : C} {T : Ty Γ} (epi : SplitEpi (CwF.p (T := T))) : toSection (toTerm epi) = epi := by
+    simp [toTerm, toSection, toSub]
+    cases (epi) with
+    | mk f eq =>
+      congr
+      simp_all
+      rw [extEq (symm eq)]
+      simp
+      rw [<- ext_nat]
+      simp
+
+  theorem toTermSection {Γ : C} {T : Ty Γ} (t : Tm T) : toTerm (toSection t) = t := by
+    simp [toTerm, toSection, toSub]
+
+
+  -- Terms and sections are equivalent
+  theorem termSecEquiv {Γ : C} {T : Ty Γ} : Function.Bijective (toSection (T := T))  := by
+    constructor
+    . apply Function.LeftInverse.injective (g := toTerm)
+      apply toTermSection
+    . apply Function.RightInverse.surjective (g := toTerm)
+      apply toSectionTerm
