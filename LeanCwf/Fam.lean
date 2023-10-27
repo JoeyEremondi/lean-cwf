@@ -9,7 +9,8 @@ open CategoryTheory
 universe  u
 
 -- Fam can be defined fibrationally the arrow category of Set
-abbrev Fam : Type (u + 1) := Arrow (Type u)
+abbrev Fam : Type (u + 1)
+  := Arrow (Type u)
 
 
 -- We can make a family from any type and something indexed by this type
@@ -27,7 +28,8 @@ def famFor (arr : Fam) (a : ixSet arr) : Type u :=
   {ab : arr.left // arr.hom ab = a}
 
 --The index projection cancels with the constructor
-theorem famForIxInv (A : Type u) (B : A → Type u) : ixSet (mkFam A B) = A := rfl
+theorem famForIxInv (A : Type u) (B : A → Type u) : ixSet (mkFam A B) = A
+  := rfl
 
 -- For any index, the family projection cancels with the constructor,
 -- up to isomorphism

@@ -53,8 +53,8 @@ section
     cast (by aesop) t
 
 
-  notation s "=ₜ" t => Eq s (castTm t (by aesop))
   notation "↑ₜ" t => castTm t (by aesop)
+  notation s "=ₜ" t => s = (↑ₜ t)
 
   theorem castSymm {Γ : C} {S T : Ty Γ} {s : Tm S} {t : Tm T} {eq : S = T} (eq2 : s = castTm t eq) :
     t =ₜ s := by
@@ -79,7 +79,7 @@ section
 
   -- Substitution a composite is the same as composing substitutions
   @[simp]
-  theorem tySubComp {Γ Δ Ξ : C} {T : Ty Γ} {f : Δ ⟶ Γ} {g : Ξ ⟶ Δ} :  (T⦃f⦄)⦃g⦄ = T⦃g ≫ f⦄   := by
+  theorem tySubComp {Γ Δ Ξ : C} {T : Ty Γ} {g : Δ ⟶ Γ} {f : Ξ ⟶ Δ} :  (T⦃g⦄)⦃f⦄ = T⦃f ≫ g⦄   := by
     simp [tySub]
 
   -- Same laws but for substitution on terms instead of types
@@ -142,7 +142,7 @@ class CwF (C : Type u) [Category.{v} C] [TmTy C] [Limits.HasTerminal C] : Type _
     → g = ext f t
 
 
-notation Γ "⬝" T => CwF.snoc Γ T
+notation Γ "▸" T => CwF.snoc Γ T
 notation "⟪" θ "," t "⟫" => CwF.ext θ t
 attribute [simp] CwF.ext_p CwF.ext_v
 
@@ -169,16 +169,18 @@ section
   -- If you take a weaning and extend it with the newly introduced variable, you get the identity,
   -- because it just replaces each v with v
   @[simp]
-  theorem ext_id {Γ : C} {T : Ty Γ} : ⟪CwF.p , CwF.v⟫ = 𝟙 (Γ ⬝ T) := by
+  theorem ext_id {Γ : C} {T : Ty Γ} : ⟪CwF.p , CwF.v⟫ = 𝟙 (Γ ▸ T) := by
     symm
     fapply CwF.ext_unique <;> simp_all
+
+
 
 ---- Terms and Sections
 -- There is an equivalence between terms of Tm T
 -- and sections p_T
 
   -- Turn a term into the substitution that replaces v with that term
-  abbrev toSub {Γ : C} {T : Ty Γ} (t : Tm T) : Γ ⟶ (Γ ⬝ T) :=
+  abbrev toSub {Γ : C} {T : Ty Γ} (t : Tm T) : Γ ⟶ (Γ ▸ T) :=
     ⟪ 𝟙 _ , ↑ₜ t ⟫
 
   -- That subsitution is a section of p
@@ -225,3 +227,8 @@ section
       apply toTermSection
     . apply Function.RightInverse.surjective (g := toTerm)
       apply toSectionTerm
+
+  -- Weakening
+  -- Lifts any substitution to work on an extended context
+  abbrev wk {Γ Δ : C} {f : Δ ⟶ Γ} {T : Ty Γ} : (Δ ▸ T⦃f⦄) ⟶ (Γ ▸ T) :=
+    ⟪CwF.p (T := T⦃f⦄) ≫ f , ↑ₜ CwF.v ⟫
