@@ -8,5 +8,5 @@ require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git"
 
 @[default_target]
-lean_lib LeanCwf where
+lean_lib CwF where
   -- add any library configuration options here

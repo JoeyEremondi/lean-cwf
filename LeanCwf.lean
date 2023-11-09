@@ -1,4 +1,4 @@
--- This module serves as the root of the `LeanCwf` library.
+-- This module serves as the root of the `CwF` library.
 -- Import modules here that should be built as part of the library.
-import LeanCwf.Fam
-import LeanCwf.CwF
+import CwF.Fam
+import CwF.CwF
