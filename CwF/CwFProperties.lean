@@ -202,6 +202,26 @@ section
 
   variable {C : Type u} [Category.{v}  C] [TmTy.{u,v} C]  [cwf: CwF C]
 
+
+  -- These lemmas encode a generalization of the "terms as sections of display maps"
+  -- idea, where germs in an indexed type correspond to arrows in the slice category
+  -- between the specific index values and a display map.
+  -- When you plug in id for the arrow, you get terms as sections
+
+  abbrev tyToSlice {Γ : C} (T : Ty Γ) : Over Γ :=
+    Over.mk (CwF.p (T := T))
+
+  def secToSliceArrow {Γ : C} {T : Ty Γ} (sec : SplitEpi (CwF.p (T := T)))
+    : (Over.mk (𝟙 Γ) ⟶ tyToSlice T) :=
+      Over.homMk (SplitEpi.section_ sec)
+
+  def sliceArrowToSection {Γ : C} {T : Ty Γ} (sliceArr : Over.mk (𝟙 Γ) ⟶ tyToSlice T)
+    : SplitEpi (CwF.p (T := T)) := SplitEpi.mk (sliceArr.left)
+      (by have pf := Over.w sliceArr
+          simp_all [tyToSlice]
+          )
+
+
   def extHead {Γ Δ : C} {T : Ty Γ} (f : Δ ⟶ Γ ▹ T) : Tm (T⦃f ≫ CwF.p⦄) :=
     ↑ₜ CwF.v⦃f⦄
 
@@ -238,5 +258,8 @@ section
     . symm
       apply Over.w sliceArr
     . simp_all
-    -- have (g : Γ ⟶ Δ▹T) (eq : f = g ≫ CwF.p) : ⟪f , ↑ₜ (extHead g) ⟫ = g := by
-    --   rw [eq]
+
+  theorem termFromToSlice {Γ Δ : C} {T : Ty Δ}
+    (f : Γ ⟶ Δ) (t : Tm (T⦃f⦄))
+    : termFromSlice f (termToSlice f t) = t := by
+      simp [termFromSlice, termToSlice, extHead]
