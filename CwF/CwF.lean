@@ -53,6 +53,11 @@ section
     : Tm (T⦃g⦄) :=
     cast (by aesop) t
 
+  abbrev eqModCast {Γ : C} {S T : Ty Γ} (s : Tm S) (t : Tm T) (eq : S = T)
+    : Prop :=
+    s = castTm t (by aesop)
+
+
 
   notation:500 "↑ₜ" t => castTm t (by aesop)
   notation:50 s "=ₜ" t => s = (↑ₜ t)

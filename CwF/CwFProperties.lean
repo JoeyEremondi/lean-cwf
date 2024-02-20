@@ -3,8 +3,8 @@ import CwF.CwF
 import Mathlib.CategoryTheory.Category.Basic
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.Functor.Basic
-import Mathlib.CategoryTheory.Over
-import Mathlib.CategoryTheory.Comma
+import Mathlib.CategoryTheory.Comma.Over
+import Mathlib.CategoryTheory.Comma.Basic
 import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 import Mathlib.Logic.Unique
@@ -244,7 +244,10 @@ section
     fapply Over.homMk
     . simp_all
       exact ⟪f , t⟫
-    . simp_all
+      --TODO simplify this
+    . simp_all -- Looks to be a lean4 bug, see https://github.com/leanprover/lean4/issues/3257
+      reduce
+      simp
 
   theorem termToFromSlice {Γ Δ : C} {T : Ty Δ}
     (f : Γ ⟶ Δ)

@@ -1,9 +1,13 @@
-import Mathlib.CategoryTheory.Arrow
+import Mathlib.CategoryTheory.Comma.Arrow
 import Mathlib.CategoryTheory.Types
-import Mathlib.CategoryTheory.Over
+import Mathlib.CategoryTheory.Comma.Over
+import Mathlib.CategoryTheory.Category.Basic
+import Mathlib.CategoryTheory.Functor.Basic
+import Mathlib.Data.Opposite
 
 
 open CategoryTheory
+open Opposite
 
 
 universe  u
@@ -116,13 +120,41 @@ theorem mapIxComp  {AB₁ AB₂ AB₃ : Fam}  (f : AB₁ ⟶ AB₂) (g : AB₂ �
 
 -- For an index a, a Fam arrow gives a function from the domain family over index a
 -- to the codomain family, whose index is the arrow mapped over a
-def mapFam {AB₁ AB₂ : Fam}  (f : AB₁ ⟶ AB₂) {a : ixSet AB₁} (b : famFor AB₁ a ) : famFor AB₂ (mapIx f a) :=
+def mapFam {AB₁ AB₂ : Fam}
+  (f : AB₁ ⟶ AB₂)
+  {a : ixSet AB₁}
+  (b : famFor AB₁ a )
+  : famFor AB₂ (mapIx f a) :=
   ⟨f.left b.val, by
     cases b with
     | mk ab abEq =>
       simp [<- abEq, mapIx]
       apply (congrFun f.w ab)
   ⟩
+
+def unmapFam {AB₁ AB₂ : Fam}
+  (ixMap : ixSet AB₁ → ixSet AB₂)
+  (famMap : {a : ixSet AB₁} -> famFor AB₁ a -> famFor AB₂ (ixMap a))
+  : (AB₁ ⟶ AB₂) where
+  left x := (famMap ⟨x , Eq.refl _⟩).val
+  right := ixMap
+  w := by
+    funext x
+    let prop := (famMap ⟨x , Eq.refl _⟩).property
+    simp_all
+
+-- def test {C : Type u} [CCat : Category.{v}  C]
+--   (F : C -> Type u)
+--   (opMap : {Γ Δ : C} ->  F Γ -> (θ : Δ ⟶ Γ) -> F Δ)
+--   (Γ Δ : Cᵒᵖ)
+--   (θ : Γ ⟶ Δ)
+--   : F (unop Γ) ⟶ F (unop Δ) := by
+--     intros a
+--     fapply opMap a
+--     aesop_cat --fails
+
+
+
 
 -- Useful for dealing with dependent equalities
 def castFam {AB : Fam} {a a' : ixSet AB} (b : famFor AB a) (eq : a = a') : famFor AB a' :=
@@ -165,3 +197,51 @@ theorem mapFamComp {AB₁ AB₂ AB₃ : Fam}  (f : AB₁ ⟶ AB₂) (g : AB₂ �
   theorem toFromSlice  {A : Type} (arr : Over (ixSet arr)) : (toSlice (fromSlice arr)) = arr := by
     cases arr with
     | mk left right hom => rfl
+
+
+
+-- Make a Fam-valued Presheaf from the associated types and morphism-actions
+def mkPsh {C : Type u} [CCat : Category.{v}  C]
+  (Ty : C -> Type u)
+  (Tm : {Γ : C} -> (T : Ty Γ) -> Type u)
+  (tySub : {Γ Δ : C} -> (T : Ty Γ) -> (θ : Δ ⟶ Γ) -> Ty Δ)
+  (tmSub : {Γ Δ : C} -> {T : Ty Γ} -> (t : Tm T)  -> (θ : Δ ⟶ Γ) -> Tm (tySub T θ))
+  (tyId : {Γ : C} -> {T : Ty Γ} -> tySub T (𝟙 Γ) = T)
+  (tmId : {Γ : C} -> {T : Ty Γ} -> {t : Tm T} -> tmSub t (𝟙 Γ) = cast (by aesop) t)
+  (tyComp : {Γ Δ Ξ : C} -> {T : Ty Γ} -> {ρ : Ξ ⟶ Δ} -> {θ : Δ ⟶ Γ} ->
+     tySub (tySub T θ) ρ = tySub T (ρ ≫ θ))
+
+  (tmComp : {Γ Δ Ξ : C} -> {T : Ty Γ} -> {t : Tm T} -> {ρ : Ξ ⟶ Δ} -> {θ : Δ ⟶ Γ} ->
+     tmSub (tmSub t θ) ρ = cast (by aesop) (tmSub t (ρ ≫ θ)))
+  :  Cᵒᵖ ⥤ Fam where
+  obj Γ := mkFam (Ty (unop Γ)) Tm
+
+  map θ := by
+    simp_all
+    fapply unmapFam
+    . intros T
+      fapply tySub T
+      exact θ.unop
+    . intros T t
+      apply (Iso.inv (famForInv _ _ _))
+      simp [ixSet, mkFam] at T
+      apply tmSub
+      . apply (Iso.hom (famForInv _ _ _)) at t
+        exact t
+
+  map_id X := by
+    intros
+    simp_all
+    simp [ mkFam ]
+    apply CommaMorphism.ext <;> try aesop_cat
+    . funext t
+      simp at t
+      cases t with
+      | mk T t =>
+        apply Sigma.ext
+        . simp
+        . simp
+
+
+
+  map_comp := _

@@ -1,5 +1,6 @@
 
 import CwF.Fam
+import CwF.CwFProperties
 import Mathlib.CategoryTheory.Category.Basic
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.Functor.Basic
@@ -32,9 +33,8 @@ class HasPi : Type _ where
   LamS {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {t : Tm T} {θ : Δ ⟶ Γ}
     : (lam t)⦃θ⦄ =ₜ (lam (t⦃wk θ⦄))
   AppS {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {θ : Δ ⟶ Γ} {f : Tm (Pi S T)} {s : Tm S}
-    : (app f s)⦃θ⦄ =ₜ
-      castTm
-        (app
-          (S := S⦃θ⦄)
-          (T := T⦃wk θ⦄) (by admit) (tmSub s θ))
-        (by simpl)
+    : eqModCast ((app f s)⦃θ⦄) (app (↑ₜ (f⦃θ⦄)) (s⦃θ⦄)) (by
+    rw [tySubComp]
+    rw [tySubComp]
+    rw [wkTm]
+    )
