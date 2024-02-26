@@ -15,7 +15,7 @@ universe u v u2
 -- A CwF over C has a Fam-valued presheaf
 -- We interpret objects of C as contexts
 class TmTy (C : Type u) [Category.{v} C] : Type ((max v u+1)+1) where
-  F : Functor Cᵒᵖ Fam.{u}
+  F : Functor Cᵒᵖ ArrFam
 
 section
   variable {C : Type u} [Category.{v}  C] [TmTy.{u,v} C]
