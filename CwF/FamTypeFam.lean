@@ -10,8 +10,8 @@ import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Equivalence
 
 
+import CwF.TypeFam
 import CwF.Fam
-import CwF.ArrFam
 
 open CategoryTheory
 open Opposite
@@ -23,7 +23,7 @@ universe  u
 -- set_option maxHeartbeats 400000
 
 
-def famToArrFam : Fam ⥤ ArrFam where
+def famToFam : TypeFam ⥤ Fam where
     obj AB :=  mkFam AB.fst AB.snd
     map f :=  {
       left := fun ab =>
@@ -31,25 +31,25 @@ def famToArrFam : Fam ⥤ ArrFam where
       right := f.fst
       }
 
-def arrFamToFam : ArrFam ⥤ Fam where
+def arrTypeFamToTypeFam : Fam ⥤ TypeFam where
     obj AB :=  ⟨ixSet AB, famFor AB⟩
 
     map θ := ⟨mapIx θ , mapFam θ⟩
 
 
-instance famToArrEssSurj : CategoryTheory.EssSurj famToArrFam where
+instance famToArrEssSurj : CategoryTheory.EssSurj famToFam where
   mem_essImage Y := by
     fconstructor
-    . exact arrFamToFam.obj Y
-    . simp [arrFamToFam, famToArrFam]
+    . exact arrTypeFamToTypeFam.obj Y
+    . simp [arrTypeFamToTypeFam, famToFam]
       constructor
       aesop_cat
 
 
-instance famToArrFull : CategoryTheory.Full famToArrFam where
+instance famToArrFull : CategoryTheory.Full famToFam where
   preimage := @fun X Y θ =>
   by
-    simp [famToArrFam, mkFam] at θ
+    simp [famToFam, mkFam] at θ
     fconstructor
     . exact θ.right
     . intros a b
@@ -60,8 +60,8 @@ instance famToArrFull : CategoryTheory.Full famToArrFam where
       exact ab.snd
   witness := by
     intros X Y f
-    simp [famToArrFam, mkFam] at f
-    simp [famToArrFam, mkFam]
+    simp [famToFam, mkFam] at f
+    simp [famToFam, mkFam]
     fapply CommaMorphism.ext <;> try simp
     . funext ab
       fapply Sigma.ext <;> try simp
@@ -70,10 +70,10 @@ instance famToArrFull : CategoryTheory.Full famToArrFam where
         simp [fw]
 
 
-instance famToArrFaithful : CategoryTheory.Faithful famToArrFam where
+instance famToArrFaithful : CategoryTheory.Faithful famToFam where
   map_injective := @fun
   | X, Y, ⟨fa1,fb1⟩, ⟨fa2,fb2⟩, feq => by
-    simp [famToArrFam] at feq
+    simp [famToFam] at feq
     rw [CommaMorphism.ext_iff] at feq
     let eqL := And.left feq
     let eqR := And.right feq
@@ -86,8 +86,8 @@ instance famToArrFaithful : CategoryTheory.Faithful famToArrFam where
       assumption
 
 -- I think this is evil e.g. classical?
-noncomputable instance famToArrFamEquiv : IsEquivalence famToArrFam := Equivalence.ofFullyFaithfullyEssSurj _
+noncomputable instance famToFamEquiv : IsEquivalence famToFam := Equivalence.ofFullyFaithfullyEssSurj _
 
 
--- Fam is equivalent to the Arrow Category of Type
-theorem famEquivArrFam : CategoryTheory.Equivalence Fam.{u} ArrFam.{u} := Functor.asEquivalence.{u} famToArrFam
+-- TypeFam is equivalent to the Arrow Category of Type
+theorem famEquivFam : CategoryTheory.Equivalence TypeFam.{u} Fam.{u} := Functor.asEquivalence.{u} famToFam
