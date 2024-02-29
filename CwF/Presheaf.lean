@@ -78,9 +78,25 @@ instance pshTmTy: TmTy (Cᵒᵖ ⥤ Type u₂)  where
 
 
 def pshTyMap {Γ : Cᵒᵖ ⥤ Type u₂} (T : Ty Γ) {k1 k2 : Cᵒᵖ}
-  (θ : k1 ⟶ k2) (γ : Γ.obj k1) : T.obj ⟨k1 , γ⟩ -> T.obj ⟨k2, Γ.map θ γ⟩ := fun τ =>
-  T.map (X := ⟨k1, γ⟩) (Y := ⟨k2 , Γ.map θ γ⟩) ⟨θ , rfl⟩ τ
+  (θ : k1 ⟶ k2) (γ : Γ.obj k1) : T.obj ⟨k1 , γ⟩ -> T.obj ⟨k2, Γ.map θ γ⟩ :=
+  T.map (X := ⟨k1, γ⟩) (Y := ⟨k2 , Γ.map θ γ⟩) ⟨θ , rfl⟩
 
+theorem pshTyMapId {Γ : Cᵒᵖ ⥤ Type u₂} (T : Ty Γ) {k : Cᵒᵖ} {γ : Γ.obj k}
+  : HEq (pshTyMap T (𝟙 k) γ) (id : T.obj ⟨k, γ⟩ -> T.obj ⟨k,γ⟩)  := by
+    let Tlem := T.map_id ⟨k, γ⟩
+    fapply heq_of_heq_of_eq _ Tlem
+    rw [pshTyMap]
+    congr <;> try aesop_cat
+
+
+theorem pshTyMapComp {Γ : Cᵒᵖ ⥤ Type u₂} (T : Ty Γ) {k1 k2 k3 : Cᵒᵖ} {γ : Γ.obj k1}
+  (f : k1 ⟶ k2 ) (g : k2 ⟶ k3)
+  : HEq (pshTyMap T (f ≫ g) γ) ((pshTyMap T g _) ∘ (pshTyMap T f γ)) := by
+    let Tlem :=
+      T.map_comp (X := ⟨k1 , γ⟩) (Y := ⟨k2 , Γ.map f γ⟩) (Z := ⟨k3, Γ.map g (Γ.map f γ)⟩) ⟨f , rfl⟩ ⟨g , rfl⟩
+    fapply heq_of_heq_of_eq _ Tlem
+    rw [pshTyMap]
+    congr <;> try aesop_cat
 
 def pshTyMapEq {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k1 k2 : Cᵒᵖ}
   (f g : k1 ⟶ k2) (γ : Γ.obj k1)
@@ -94,10 +110,10 @@ abbrev pshSnocObj (Γ : Cᵒᵖ ⥤ Type u₂) (T : Ty Γ) (k : Cᵒᵖ) :  Type
 
 
 -- Helps with stupid HEq stuff
-abbrev pshSnocMapSnd  {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k1 k2 : Cᵒᵖ}
-  (θ : k1 ⟶ k2) (γτ : pshSnocObj Γ T k1) (f : Γ.obj k1 -> Γ.obj k2)
-  (eq : Γ.map θ γτ.fst = f γτ.fst) :
-  T.obj ⟨k2 , f γτ.fst⟩ := cast (by aesop) (pshTyMap T θ γτ.fst γτ.snd)
+-- abbrev pshSnocMapSnd  {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k1 k2 : Cᵒᵖ}
+--   (θ : k1 ⟶ k2) (γτ : pshSnocObj Γ T k1) (f : Γ.obj k1 -> Γ.obj k2)
+--   (eq : Γ.map θ γτ.fst = f γτ.fst) :
+--   T.obj ⟨k2 , f γτ.fst⟩ := cast (by aesop) (pshTyMap T θ γτ.fst γτ.snd)
 
 -- theorem pshSnocMapSndId {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k : Cᵒᵖ}
 --   (γτ : pshSnocObj Γ T k) {f : Γ.obj k -> Γ.obj k} {eq : Γ.map (𝟙 k) γτ.fst = f γτ.fst}
@@ -114,8 +130,21 @@ abbrev pshSnocMapSnd  {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k1 k2 : Cᵒᵖ}
 abbrev pshSnocMap {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k1 k2 : Cᵒᵖ}
   (θ : k1 ⟶ k2) (γτ : pshSnocObj Γ T k1) : pshSnocObj Γ T k2 :=
       ⟨ Γ.map θ γτ.fst
-      , pshSnocMapSnd θ γτ (Γ.map θ) rfl
+      , pshTyMap T θ γτ.fst γτ.snd
       ⟩
+
+-- theorem pshSnocMapExt {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k1 k2 : Cᵒᵖ}
+--   (f g : pshSnocObj Γ T k1 -> pshSnocObj Γ T k2)
+--   (eq1 : (fun x => (f x).1) = (fun x => (g x).1))
+--   (eq2 : HEq (fun x => (f x).2) (fun x => (g x).2))
+--   : f = g :=  by
+--     funext x
+--     simp [pshSnocObj] at x
+--     match x with
+--     | Sigma.mk γ τ =>
+--       fapply Sigma.ext
+--       . apply (congrFun eq1 ⟨γ , τ⟩)
+--       . let x :=  hCong
 
 -- theorem pshSnocMapId {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k : Cᵒᵖ}
 --   (γτ : pshSnocObj Γ T k)
@@ -140,29 +169,20 @@ def pshCwF : CwF (Cᵒᵖ ⥤ Type u₂) where
       simp at γτ
       cases γτ with
       | mk γ τ =>
-        let τeq : τ = T.map (𝟙 ⟨k, γ⟩) τ := by
-          symm
-          fapply congrFun _ τ <;> simp
-        symm
-        simp
-        fapply heq_of_eq_of_heq τeq
-        simp [pshSnocMapSnd]
-        fapply  hCong (f := T.map (𝟙 ⟨k,γ⟩)) (g := T.map _) (x := τ) (y := τ)
-      -- . simp
-      -- . dsimp only [pshSnocMap]
-      --   let helper : _ := pshSnocMapSndId γτ
-      --   fapply helper
-    --   funext γτ
-    --   cases γτ with
-    --   | mk γ τ =>
-    --     fapply Sigma.ext
-    --     . aesop_cat
-    --     . let Teq := (T.map_id ⟨k, γ⟩)
-    --       simp only at Teq
-    --       simp
-    --       fapply hCong (x := τ) (y := τ) (g := id)
-    map_comp := by admit
+        fapply Sigma.ext <;> try simp
+        apply hCongFun (f := pshTyMap T (𝟙 k) γ) (g := fun x => x) τ
+        . aesop_cat
+        . fapply HEq.trans (pshTyMapId T) <;> aesop
 
+    map_comp := @fun k1 k2 k3 f g => by
+      funext γτ
+      simp at γτ
+      cases γτ with
+      | mk γ τ =>
+        fapply Sigma.ext <;> try simp
+        apply hCongFun τ
+        . aesop_cat
+        . fapply HEq.trans (pshTyMapComp T f g) <;> aesop
   }
 
   -- p :=

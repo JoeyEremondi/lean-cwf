@@ -6,6 +6,19 @@ theorem hCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
       HEq (f x) (g y) := by aesop
 
 
+theorem hCongFun {A : Type u} {B C : A → Type v} {f : (a : A) → B a} {g : (a : A) → C a}
+    (x : A)
+    (eq : B = C)
+    (funEq : HEq f g)  :
+      HEq (f x) (g x) := by aesop
+
+theorem hCongFunSimp {A : Type u} {B C :  Type v} {f : (a : A) → B } {g : (a : A) → C }
+    (x : A)
+    (eq : B = C)
+    (funEq : HEq f g)  :
+      HEq (f x) (g x) := by aesop
+
+
 theorem hFunExt {A B C : Type u}
   {f : A -> B} {g : A -> C}
   (eq : B = C)
