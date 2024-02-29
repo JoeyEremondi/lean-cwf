@@ -23,7 +23,7 @@ universe  u
 -- set_option maxHeartbeats 400000
 
 
-def famToFam : TypeFam ⥤ Fam where
+def typeFamToFam : TypeFam ⥤ Fam where
     obj AB :=  mkFam AB.fst AB.snd
     map f :=  {
       left := fun ab =>
@@ -37,19 +37,19 @@ def arrTypeFamToTypeFam : Fam ⥤ TypeFam where
     map θ := ⟨mapIx θ , mapFam θ⟩
 
 
-instance famToArrEssSurj : CategoryTheory.EssSurj famToFam where
+instance famToArrEssSurj : CategoryTheory.EssSurj typeFamToFam where
   mem_essImage Y := by
     fconstructor
     . exact arrTypeFamToTypeFam.obj Y
-    . simp [arrTypeFamToTypeFam, famToFam]
+    . simp [arrTypeFamToTypeFam, typeFamToFam]
       constructor
       aesop_cat
 
 
-instance famToArrFull : CategoryTheory.Full famToFam where
+instance famToArrFull : CategoryTheory.Full typeFamToFam where
   preimage := @fun X Y θ =>
   by
-    simp [famToFam, mkFam] at θ
+    simp [typeFamToFam, mkFam] at θ
     fconstructor
     . exact θ.right
     . intros a b
@@ -60,8 +60,8 @@ instance famToArrFull : CategoryTheory.Full famToFam where
       exact ab.snd
   witness := by
     intros X Y f
-    simp [famToFam, mkFam] at f
-    simp [famToFam, mkFam]
+    simp [typeFamToFam, mkFam] at f
+    simp [typeFamToFam, mkFam]
     fapply CommaMorphism.ext <;> try simp
     . funext ab
       fapply Sigma.ext <;> try simp
@@ -70,10 +70,10 @@ instance famToArrFull : CategoryTheory.Full famToFam where
         simp [fw]
 
 
-instance famToArrFaithful : CategoryTheory.Faithful famToFam where
+instance famToArrFaithful : CategoryTheory.Faithful typeFamToFam where
   map_injective := @fun
   | X, Y, ⟨fa1,fb1⟩, ⟨fa2,fb2⟩, feq => by
-    simp [famToFam] at feq
+    simp [typeFamToFam] at feq
     rw [CommaMorphism.ext_iff] at feq
     let eqL := And.left feq
     let eqR := And.right feq
@@ -86,8 +86,8 @@ instance famToArrFaithful : CategoryTheory.Faithful famToFam where
       assumption
 
 -- I think this is evil e.g. classical?
-noncomputable instance famToFamEquiv : IsEquivalence famToFam := Equivalence.ofFullyFaithfullyEssSurj _
+noncomputable instance typeFamToFamEquiv : IsEquivalence typeFamToFam := Equivalence.ofFullyFaithfullyEssSurj _
 
 
 -- TypeFam is equivalent to the Arrow Category of Type
-theorem famEquivFam : CategoryTheory.Equivalence TypeFam.{u} Fam.{u} := Functor.asEquivalence.{u} famToFam
+theorem famEquivFam : CategoryTheory.Equivalence TypeFam.{u} Fam.{u} := Functor.asEquivalence.{u} typeFamToFam

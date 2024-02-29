@@ -171,92 +171,47 @@ def unmapFam {AB₁ AB₂ : Fam}
 
 
 
--- -- Useful for dealing with dependent equalities
--- def castFam {AB : Fam} {a a' : ixSet AB} (b : famFor AB a) (eq : a = a') : famFor AB a' :=
---   cast (by aesop) b
+-- Useful for dealing with dependent equalities
+def castFam {AB : Fam} {a a' : ixSet AB} (b : famFor AB a) (eq : a = a') : famFor AB a' :=
+  cast (by aesop) b
 
--- @[aesop safe]
--- def mapCast {AB₁ AB₂ : Fam} {a : ixSet AB₁} {f g : AB₁ ⟶ AB₂} (b : famFor AB₁ a)  (eq : g = f)
---   : mapFam f b = castFam (mapFam g b) (congrArg₂ mapIx eq (refl a)) := by
---     subst eq
---     rfl
+@[aesop safe]
+def mapCast {AB₁ AB₂ : Fam} {a : ixSet AB₁} {f g : AB₁ ⟶ AB₂} (b : famFor AB₁ a)  (eq : g = f)
+  : mapFam f b = castFam (mapFam g b) (congrArg₂ mapIx eq (refl a)) := by
+    subst eq
+    rfl
 
--- -- Mapping the idenitity over an element of a family is the identity
--- @[simp]
--- def mapFamId {AB : Fam}  {a : ixSet AB} (b : famFor AB a ) : mapFam (𝟙 AB) b = b := by
---   cases b with
---   | mk ab abEq =>
---     aesop_subst [abEq]
---     simp only [mapIxId, Functor.id_obj]
---     rfl
+-- Mapping the idenitity over an element of a family is the identity
+@[simp]
+def mapFamId {AB : Fam}  {a : ixSet AB} (b : famFor AB a ) : mapFam (𝟙 AB) b = b := by
+  cases b with
+  | mk ab abEq =>
+    aesop_subst [abEq]
+    simp only [mapIxId, Functor.id_obj]
+    rfl
 
--- -- Mapping a composite arrow over an element of a family
--- -- is the composition of the mappings
--- @[simp]
--- theorem mapFamComp {AB₁ AB₂ AB₃ : Fam}  (f : AB₁ ⟶ AB₂) (g : AB₂ ⟶ AB₃) {a : ixSet AB₁} (b : famFor AB₁ a)
---   : (mapFam (f ≫ g) b) = castFam (mapFam g (mapFam f b)) (by aesop) := by
---     simp [mapIxComp, Function.comp_apply]
---     rfl
-
-
---   -- Every family for a given index type is equivalent to the slice over that type
---   def toSlice (arr : Fam) : Over (ixSet arr) := Over.mk (arr.hom)
-
---   def fromSlice {A : Type} (arr : Over A) : Fam := Arrow.mk arr.hom
-
---   @[simp]
---   theorem fromToSlice  {arr : Fam} : fromSlice (toSlice arr) = arr := rfl
+-- Mapping a composite arrow over an element of a family
+-- is the composition of the mappings
+@[simp]
+theorem mapFamComp {AB₁ AB₂ AB₃ : Fam}  (f : AB₁ ⟶ AB₂) (g : AB₂ ⟶ AB₃) {a : ixSet AB₁} (b : famFor AB₁ a)
+  : (mapFam (f ≫ g) b) = castFam (mapFam g (mapFam f b)) (by aesop) := by
+    simp [mapIxComp, Function.comp_apply]
+    rfl
 
 
---   @[simp]
---   theorem toFromSlice  {A : Type} (arr : Over (ixSet arr)) : (toSlice (fromSlice arr)) = arr := by
---     cases arr with
---     | mk left right hom => rfl
+  -- Every family for a given index type is equivalent to the slice over that type
+  def toSlice (arr : Fam) : Over (ixSet arr) := Over.mk (arr.hom)
+
+  def fromSlice {A : Type} (arr : Over A) : Fam := Arrow.mk arr.hom
+
+  @[simp]
+  theorem fromToSlice  {arr : Fam} : fromSlice (toSlice arr) = arr := rfl
 
 
-
--- -- Make a Fam-valued Presheaf from the associated types and morphism-actions
--- def mkPsh {C : Type u} [CCat : Category.{v}  C]
---   (Ty : C -> Type u)
---   (Tm : {Γ : C} -> (T : Ty Γ) -> Type u)
---   (tySub : {Γ Δ : C} -> (T : Ty Γ) -> (θ : Δ ⟶ Γ) -> Ty Δ)
---   (tmSub : {Γ Δ : C} -> {T : Ty Γ} -> (t : Tm T)  -> (θ : Δ ⟶ Γ) -> Tm (tySub T θ))
---   (tyId : {Γ : C} -> {T : Ty Γ} -> tySub T (𝟙 Γ) = T)
---   (tmId : {Γ : C} -> {T : Ty Γ} -> {t : Tm T} -> tmSub t (𝟙 Γ) = cast (by aesop) t)
---   (tyComp : {Γ Δ Ξ : C} -> {T : Ty Γ} -> {ρ : Ξ ⟶ Δ} -> {θ : Δ ⟶ Γ} ->
---      tySub (tySub T θ) ρ = tySub T (ρ ≫ θ))
-
---   (tmComp : {Γ Δ Ξ : C} -> {T : Ty Γ} -> {t : Tm T} -> {ρ : Ξ ⟶ Δ} -> {θ : Δ ⟶ Γ} ->
---      tmSub (tmSub t θ) ρ = cast (by aesop) (tmSub t (ρ ≫ θ)))
---   :  Cᵒᵖ ⥤ Fam where
---   obj Γ := mkFam (Ty (unop Γ)) Tm
-
---   map θ := by
---     simp_all
---     fapply unmapFam
---     . intros T
---       fapply tySub T
---       exact θ.unop
---     . intros T t
---       apply (Iso.inv (famForInv _ _ _))
---       simp [ixSet, mkFam] at T
---       apply tmSub
---       . apply (Iso.hom (famForInv _ _ _)) at t
---         exact t
-
---   map_id X := by
---     intros
---     simp_all
---     simp [ mkFam ]
---     apply CommaMorphism.ext <;> try aesop_cat
---     . funext t
---       simp at t
---       cases t with
---       | mk T t =>
---         apply Sigma.ext
---         . simp
---         . simp
+  @[simp]
+  theorem toFromSlice  {A : Type} (arr : Over (ixSet arr)) : (toSlice (fromSlice arr)) = arr := by
+    cases arr with
+    | mk left right hom => rfl
 
 
 
---   map_comp := _

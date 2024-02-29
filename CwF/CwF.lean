@@ -14,8 +14,8 @@ universe u v u2
 -- Terms and Types in a CwF, without the comprehension structure
 -- A CwF over C has a Fam-valued presheaf
 -- We interpret objects of C as contexts
-class TmTy (C : Type u) [Category.{v} C] : Type ((max v u+1)+1) where
-  F : Functor Cᵒᵖ ArrFam
+class TmTy (C : Type u) [Category.{v} C] : Type (max u v (u2+1)) where
+  F : CategoryTheory.Functor Cᵒᵖ Fam.{u2}
 
 section
   variable {C : Type u} [Category.{v}  C] [TmTy.{u,v} C]
@@ -112,9 +112,19 @@ section
 
 end
 
+
+-- Easier constructor for tmTy in terms of TypeFam instead of Arrows
+-- class SimpleTmTy {C : Type} [Category.{v} C]
+--   (Ty : C -> Type u2)
+--   (Tm : {Γ : C} -> Ty Γ -> Type u2)
+--   (subTy : {Γ Δ : C} -> (Δ ⟶ Γ) -> Ty Γ -> Ty Δ)
+--   (subTm : {Γ Δ : C} -> {T : Ty Γ} -> (θ : Δ ⟶ Γ) -> Tm T -> Tm (subTy θ T))
+--   (subTyId : )
+--   : TmTy C := by admit
+
 -- A CwF has a type-term structure,
 -- plus context-extension, substitution extension, and a terminal object
-class CwF (C : Type u) [Category.{v} C] [TmTy C] : Type _ where
+class CwF (C : Type u) [Category.{v} C]  [TmTy C] : Type _ where
   -- Empty context
   empty : C
   -- Empty context is terminal
@@ -135,25 +145,26 @@ class CwF (C : Type u) [Category.{v} C] [TmTy C] : Type _ where
   -- you get the original substitution
   ext_p : {Γ Δ : C} → {T : Ty Γ}
     → {f : Δ ⟶ Γ} → {t : Tm (tySub T f)}
-    → (ext f t) ≫ p = f
+    → (ext f t) ≫ p = f := by aesop_cat
 
   -- Can be derived from existing equalities, but if we postulate it
   -- it's easier to express the type of later things
   ext_pHelper : {Γ Δ : C} → {T : Ty Γ}
     → {f : Δ ⟶ Γ} → {t : Tm (tySub T f)} → {T : Ty _}
-    → (T⦃p⦄⦃ext f t⦄)  = T⦃f⦄
+    → (T⦃p⦄⦃ext f t⦄)  = T⦃f⦄ := by aesop_cat
 
   --An extended substitution, applied to the newly generated variable, produces
   --the term by which the subsitution was extended
   ext_v : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ) → (t : Tm (tySub T f))
-    → v⦃ext f t⦄ = castTm t (ext_pHelper)
+    → v⦃ext f t⦄ = castTm t (ext_pHelper) := by aesop_cat
   -- The extension is unique
 
   ext_unique : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ)
     → (t : Tm (tySub T f)) → (g : _) → g ≫ p = f
     → (tyEq : _)
     → (v⦃g⦄ = castTm t tyEq)
-    → g = ext f t
+    → g = ext f t := by aesop_cat
+
 
 
 -- Any CwF is a terminal category
@@ -164,4 +175,3 @@ notation:5  "‼"  => CwF.empty
 notation:100 Γ "▹" T => CwF.snoc Γ T
 notation:100 "⟪" θ "," t "⟫" => CwF.ext θ t
 attribute [simp] CwF.ext_p CwF.ext_v
-
