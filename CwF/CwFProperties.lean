@@ -42,9 +42,6 @@ section
   -- Helper function for dependent cong
   -- Should really be in the stdlib
   -- TODO PR?
-  theorem hCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
-    (funEq : f = g) (argEq : x = y) :
-      HEq (f x) (g y) := by aesop
 
   theorem castCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
     (funEq : f = g) (argEq : x = y) :

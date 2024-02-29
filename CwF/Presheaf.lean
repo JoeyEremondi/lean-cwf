@@ -1,5 +1,6 @@
 
 import CwF.Fam
+import CwF.Util
 import CwF.Sigma
 import CwF.CwFProperties
 import Mathlib.CategoryTheory.Category.Basic
@@ -47,7 +48,6 @@ def pshTmSub {Γ Δ : Cᵒᵖ ⥤ Type u₂} (θ : Δ ⟶ Γ) (T : pshTy Γ) (t 
     t i (θ.app i δ))
 
 
-
 abbrev pshTmTyFunctor : (Cᵒᵖ ⥤ Type u₂)ᵒᵖ ⥤ Fam where
   obj
   | ⟨ Γ ⟩ => mkFam
@@ -71,8 +71,23 @@ abbrev pshTmTyFunctor : (Cᵒᵖ ⥤ Type u₂)ᵒᵖ ⥤ Fam where
         . exact retz
         )
 
+
+
 instance pshTmTy: TmTy (Cᵒᵖ ⥤ Type u₂)  where
   F := pshTmTyFunctor
+
+
+def pshTyMap {Γ : Cᵒᵖ ⥤ Type u₂} (T : Ty Γ) {k1 k2 : Cᵒᵖ}
+  (θ : k1 ⟶ k2) (γ : Γ.obj k1) : T.obj ⟨k1 , γ⟩ -> T.obj ⟨k2, Γ.map θ γ⟩ := fun τ =>
+  T.map (X := ⟨k1, γ⟩) (Y := ⟨k2 , Γ.map θ γ⟩) ⟨θ , rfl⟩ τ
+
+
+def pshTyMapEq {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k1 k2 : Cᵒᵖ}
+  (f g : k1 ⟶ k2) (γ : Γ.obj k1)
+  (eq1 : f = g) (eq2 : γ1 = γ2)
+  : HEq (pshTyMap (T := T) f γ) (pshTyMap (T := T) g γ) := by
+    fapply hFunExt <;> try aesop_cat
+
 
 abbrev pshSnocObj (Γ : Cᵒᵖ ⥤ Type u₂) (T : Ty Γ) (k : Cᵒᵖ) :  Type u₂ :=
   (γ : Γ.obj k) × (T.obj ⟨k,γ⟩)
@@ -82,18 +97,19 @@ abbrev pshSnocObj (Γ : Cᵒᵖ ⥤ Type u₂) (T : Ty Γ) (k : Cᵒᵖ) :  Type
 abbrev pshSnocMapSnd  {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k1 k2 : Cᵒᵖ}
   (θ : k1 ⟶ k2) (γτ : pshSnocObj Γ T k1) (f : Γ.obj k1 -> Γ.obj k2)
   (eq : Γ.map θ γτ.fst = f γτ.fst) :
-  T.obj ⟨k2 , f γτ.fst⟩ := T.map (X := ⟨k1 , _⟩) (Y := ⟨k2, _⟩) ⟨θ , eq⟩ γτ.snd
+  T.obj ⟨k2 , f γτ.fst⟩ := cast (by aesop) (pshTyMap T θ γτ.fst γτ.snd)
 
-theorem pshSnocMapSndId {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k : Cᵒᵖ}
-  (γτ : pshSnocObj Γ T k) {eq : _}
-  : pshSnocMapSnd (𝟙 k) γτ id eq = γτ.snd := by
-    simp only [pshSnocMapSnd]
-    let helper : T.map (X := ⟨k , _⟩) (Y := ⟨k, _⟩) ⟨𝟙 k , eq⟩  = T.map (𝟙 ⟨k,γτ.fst⟩) := by
-      fapply congrArg T.map
-      fapply Subtype.eq
-      rfl
-    fapply Eq.trans (congrFun helper γτ.snd)
-    fapply congrFun (T.map_id _) _
+-- theorem pshSnocMapSndId {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k : Cᵒᵖ}
+--   (γτ : pshSnocObj Γ T k) {f : Γ.obj k -> Γ.obj k} {eq : Γ.map (𝟙 k) γτ.fst = f γτ.fst}
+--   : HEq (pshSnocMapSnd (𝟙 k) γτ f eq)  γτ.snd := by
+--     simp only [pshSnocMapSnd]
+--     let helper : HEq (pshSnocMapSnd (𝟙 k) γτ f eq)  (T.map (𝟙 ⟨k,γτ.fst⟩)) := by
+--       fapply congrArg T.map
+--       fapply Subtype.eq
+--       rfl
+--     fapply heq_of_eq_of_heq -- (congrFun helper γτ.snd)
+--     . simp
+--     fapply congrFun (T.map_id _) _
 
 abbrev pshSnocMap {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k1 k2 : Cᵒᵖ}
   (θ : k1 ⟶ k2) (γτ : pshSnocObj Γ T k1) : pshSnocObj Γ T k2 :=
@@ -101,43 +117,54 @@ abbrev pshSnocMap {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k1 k2 : Cᵒᵖ}
       , pshSnocMapSnd θ γτ (Γ.map θ) rfl
       ⟩
 
+-- theorem pshSnocMapId {Γ : Cᵒᵖ ⥤ Type u₂} {T : Ty Γ} {k : Cᵒᵖ}
+--   (γτ : pshSnocObj Γ T k)
+--   : pshSnocMap (𝟙 k) γτ = γτ := by
+--   fapply Sigma.ext <;> try aesop_cat
+--   dsimp only [ pshSnocMap ]
+--   simp_rw [Γ.map_id k]
+--   fapply heq_of_eq_of_heq (pshSnocMapSndId )
+--   aesop_cat
 
 
--- def pshCwF : CwF (Cᵒᵖ ⥤ Type u₂) where
---   empty := Limits.terminal _
+def pshCwF : CwF (Cᵒᵖ ⥤ Type u₂) where
+  empty := Limits.terminal _
 
---   emptyUnique := Limits.uniqueToTerminal
+  emptyUnique := Limits.uniqueToTerminal
 
---   snoc Γ T := {
---     obj := pshSnocObj Γ T
---     map := pshSnocMap
---     map_id := fun k => by
---       funext γτ
---       simp at γτ
---       simp only
---       let helper : pshSnocMap (𝟙 k) γτ  = ⟨γτ.fst , (T.map (X := ⟨k , _⟩) (Y := ⟨k , _⟩)  (⟨𝟙 k , by aesop⟩) γτ.snd) ⟩
---         := by
---           dsimp only [pshSnocMap]
---           fapply Eq.refl
---       let eq := congrFun (Γ.map_id k) _
---       simp [Γ.map_id k]
---       dsimp
---       reduce
---     -- by
---     --   funext γτ
---     --   cases γτ with
---     --   | mk γ τ =>
---     --     fapply Sigma.ext
---     --     . aesop_cat
---     --     . let Teq := (T.map_id ⟨k, γ⟩)
---     --       simp only at Teq
---     --       simp
---     --       fapply hCong (x := τ) (y := τ) (g := id)
+  snoc Γ T := {
+    obj := pshSnocObj Γ T
+    map := pshSnocMap
+    map_id := fun k => by
+      funext γτ
+      simp at γτ
+      cases γτ with
+      | mk γ τ =>
+        let τeq : τ = T.map (𝟙 ⟨k, γ⟩) τ := by
+          symm
+          fapply congrFun _ τ <;> simp
+        symm
+        simp
+        fapply heq_of_eq_of_heq τeq
+        simp [pshSnocMapSnd]
+        fapply  hCong (f := T.map (𝟙 ⟨k,γ⟩)) (g := T.map _) (x := τ) (y := τ)
+      -- . simp
+      -- . dsimp only [pshSnocMap]
+      --   let helper : _ := pshSnocMapSndId γτ
+      --   fapply helper
+    --   funext γτ
+    --   cases γτ with
+    --   | mk γ τ =>
+    --     fapply Sigma.ext
+    --     . aesop_cat
+    --     . let Teq := (T.map_id ⟨k, γ⟩)
+    --       simp only at Teq
+    --       simp
+    --       fapply hCong (x := τ) (y := τ) (g := id)
+    map_comp := by admit
 
+  }
 
-
---   }
-
---   -- p :=
---   --   ⟨ fun k => by  reduce
---   --   , fun k => by simp    ⟩
+  -- p :=
+  --   ⟨ fun k => by  reduce
+  --   , fun k => by simp    ⟩
