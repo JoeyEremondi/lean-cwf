@@ -33,7 +33,6 @@ variable {C : Type u} [CCat : Category.{v}  C]
 
 
 
--- set_option pp.explicit true
 
 def pshCwF : CwF (Cᵒᵖ ⥤ Type u₂) where
   -- Lean's terminal stuff is all non-computable, so we
