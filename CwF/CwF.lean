@@ -107,10 +107,24 @@ section
   theorem tmSubCast {Γ Δ : C} {T : Ty Γ} {f g : Δ ⟶ Γ} {t : Tm T} (eq : f = g) : t⦃f⦄ = ↑ₜ t⦃g⦄ := by aesop
 
 
+
+  -- Convenient conversions if we construct F using mkFam
+
+
   -- Helpful lemma: equal types have equal sets of terms
   -- theorem tmEq {Γ : C} {S T : Ty Γ} (eq : S = T ) : Tm S = Tm T := by aesop
 
 end
+
+-- instance famInvCoe {C : Type u} [Category.{v} C] {FTy : Cᵒᵖ -> Type u}
+--   {FTm :  {c : Cᵒᵖ} -> FTy c -> Type u}
+--   {Γ : C} {T : FTy (Opposite.op Γ)}
+--   : Coe (FTm T) (famFor (mkFam (FTy (Opposite.op Γ)) FTm) T)  where
+--     coe := fun t => {
+--       val := .mk T t
+--       property := rfl
+--     }
+
 
 
 -- Easier constructor for tmTy in terms of TypeFam instead of Arrows

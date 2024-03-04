@@ -60,3 +60,4 @@ theorem pshExt_unique {Γ Δ : Cᵒᵖ ⥤ Type u₂} {T : pshTy Γ} (f : Δ ⟶
     (peq :  g ≫ pshP = f)
     (veq : pshTmSub pshV g = (cast (by aesop) t) )
     : g = pshExt f t := by aesop_cat
+

@@ -47,6 +47,15 @@ structure pshTm  {Γ : Cᵒᵖ ⥤ Type u₂} (T : pshTy Γ) : Type (max u v (u�
    tmNat : (i j : Cᵒᵖ) -> (θ : i ⟶ j) -> (γ : Γ.obj i)
           -> pshTyMap T θ γ (tmFun i γ)  = tmFun j (Γ.map θ γ) := by aesop_cat
 
+def pshTmExt {Γ : Cᵒᵖ ⥤ Type u₂} {T : pshTy Γ} {x y : pshTm T}
+  (extEq : {k : Cᵒᵖ} -> (γ : Γ.obj k) -> x.tmFun k γ = y.tmFun k γ)
+  : x = y := by
+    let pf : x.tmFun = y.tmFun := by aesop
+    cases x with
+    | mk x1 x2 => cases y with
+    | mk y1 y2 =>
+      simp
+      assumption
 
 def pshTySub {Γ Δ : Cᵒᵖ ⥤ Type u₂} (T : pshTy Γ) (θ : Δ ⟶ Γ) : pshTy Δ :=
   (CategoryOfElements.map θ) ⋙ T
@@ -122,7 +131,7 @@ def pshTmSub {Γ Δ : Cᵒᵖ ⥤ Type u₂} {T : pshTy Γ} (t : pshTm T) (θ : 
     ⟩
 
 
-abbrev pshTmTyFunctor : (Cᵒᵖ ⥤ Type u₂)ᵒᵖ ⥤ Fam where
+def pshTmTyFunctor : (Cᵒᵖ ⥤ Type u₂)ᵒᵖ ⥤ Fam where
   obj Γ := mkFam
     (pshTy (Opposite.unop Γ))
     (pshTm (Γ := Opposite.unop Γ))
@@ -145,5 +154,5 @@ abbrev pshTmTyFunctor : (Cᵒᵖ ⥤ Type u₂)ᵒᵖ ⥤ Fam where
 
 
 
-instance pshTmTy: TmTy (Cᵒᵖ ⥤ Type u₂)  where
+instance pshTmTy : TmTy (Cᵒᵖ ⥤ Type u₂)  where
   F := pshTmTyFunctor

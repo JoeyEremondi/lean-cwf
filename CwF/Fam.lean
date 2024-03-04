@@ -41,30 +41,43 @@ def famFor (arr : Fam) (a : ixSet arr) : Type u :=
 theorem famForIxInv (A : Type u) (B : A → Type u) : ixSet (mkFam A B) = A
   := rfl
 
+def toFam {A : Type u} {B : A → Type u} {a : A}
+ : (b : famFor (mkFam A B) a) → B a := fun
+    | .mk ab eq => by
+      rw [<- eq]
+      exact ab.snd
+
+def fromFam {A : Type u} {B : A → Type u} {a : A}
+  (b : B a) : famFor (mkFam A B) a where
+    val := .mk a b
+    property := rfl
+
+instance toFamLeftInv {A : Type u} {B : A → Type u} {a : A}
+  : Function.LeftInverse fromFam (toFam (A := A) (B := B) (a := a))  := by
+  intros b
+  cases b
+  aesop_cat
+
+
+instance toFamRightInv {A : Type u} {B : A → Type u} {a : A}
+  : Function.RightInverse (fromFam (A := A) (B := B) (a := a)) toFam := by aesop_cat
+
+instance toFamIsIso {A : Type u} {B : A → Type u} {a : A}
+  : CategoryTheory.IsIso (X := famFor (mkFam A B) a) (Y := B a) (toFam (B := B) (a := a)) := by
+  simp [isIso_iff_bijective]
+  constructor
+  . apply Function.LeftInverse.injective
+    apply toFamLeftInv
+  . apply Function.RightInverse.surjective
+    apply toFamRightInv
+
+
 -- For any index, the family projection cancels with the constructor,
 -- up to isomorphism
 @[aesop safe]
 theorem famForInv {A : Type u} {B : A → Type u} {a : A}
-  : famFor (mkFam A B) a ≅ B a where
-  hom := fun
-    | .mk ab eq => by
-      rw [<- eq]
-      exact ab.snd
-  inv := fun b => {
-    val := .mk a b
-    property := rfl
-  }
-  hom_inv_id := by
-    funext abPf
-    cases abPf with
-    | mk ab aa' => cases ab with
-    | mk a' b =>
-      cases aa'
-      rfl
-  inv_hom_id := by
-    funext b
-    reduce
-    rfl
+  : famFor (mkFam A B) a ≅ B a := by
+  apply @asIso _ _ _ _ _ toFamIsIso
 
 
 
@@ -154,7 +167,26 @@ def unmapFam {AB₁ AB₂ : Fam}
     simp_all
 
 
+@[simp]
+theorem unmapMap {AB₁ AB₂ : Fam}
+  (f : AB₁ ⟶ AB₂)
+  : unmapFam (mapIx f) (mapFam f) = f := by aesop
 
+
+-- set_option pp.explicit true
+@[simp]
+def mapUnmap {AB₁ AB₂ : Fam}
+  (ixMap : ixSet AB₁ → ixSet AB₂)
+  (famMap : {a : ixSet AB₁} -> famFor AB₁ a -> famFor AB₂ (ixMap a))
+  (a : ixSet AB₁)
+  : mapFam (unmapFam ixMap famMap) (a := a)  = famMap (a := a)  := by
+    funext b
+    cases b with
+    | mk x pf =>
+      simp [mapFam, unmapFam]
+      apply Subtype.ext
+      simp
+      aesop_cat
 
 
 

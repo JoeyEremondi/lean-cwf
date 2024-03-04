@@ -16,10 +16,13 @@ import Mathlib.CategoryTheory.Types
 
 import CwF.PresheafTmTy
 import CwF.PresheafSnoc
+import CwF.PresheafExt
 
 import CwF.CwF
 
+
 open CategoryTheory
+
 
 
 universe u v u₂
@@ -30,6 +33,7 @@ variable {C : Type u} [CCat : Category.{v}  C]
 
 
 
+-- set_option pp.explicit true
 
 def pshCwF : CwF (Cᵒᵖ ⥤ Type u₂) where
   empty := Limits.terminal _
@@ -38,38 +42,31 @@ def pshCwF : CwF (Cᵒᵖ ⥤ Type u₂) where
 
   snoc := pshSnoc
 
+  p := pshP
 
-  p :=
-    ⟨ fun k γτ =>  γτ.fst
-    , @fun k1 k2 f => by
-      aesop_cat
-    ⟩
+  v := famForInv.inv pshV
 
-  v := @fun Γ T =>
-  by
-    simp only [pshTmTyFunctor, Tm, TmTy.F]
-    apply famForInv.inv
-    fconstructor
-    . intros k γ
-      simp [tySub, pshTySub, mapIx]
-      simp at γ
-      exact γ.snd
-    . aesop_cat
+  ext θ t := pshExt θ (famForInv.hom t)
 
-  ext := @fun Γ Δ T θ t => {
-    app := fun k δ => ⟨θ.app k δ, (famForInv.hom t).tmFun k δ⟩
-    naturality := @fun k1 k2 f => by
-      funext δ
-      simp
-      fconstructor
-      . apply congrFun (θ.naturality f) δ
-      . let teq := symm ((famForInv.hom t).tmNat _ _ f δ)
-        simp at teq
-        fapply heq_of_eq_of_heq teq
-        fapply pshTyMapSubArg
-  }
+  ext_p := pshExtP
+  ext_pHelper := pshExt_pHelper
+  ext_v :=@fun Γ Δ T θ t => by
+    simp
+    simp [famForInv]
+    apply CategoryTheory.injective_of_mono (famForInv.hom)
+    simp [famForInv, toFam]
+    apply pshTmExt
+    intros k γ
+    simp at γ
+    simp [pshV , tmSub, pshTmSub, pshExt, TmTy.F, pshTmTyFunctor]
 
-  ext_p := by aesop_cat
-  ext_pHelper := by aesop_cat
-  ext_v := by simp
+
+
+    -- famForInv (@pshTy C CCat Δ) (@pshTm C CCat Δ) (@pshTySub C CCat Γ Δ T θ)) t)
+    -- simp
+    -- let cancel := fun x => congrFun ffi.hom_inv_id x
+    -- simp only [CategoryStruct.comp, Function.comp, CategoryStruct.id, id] at cancel
+    -- apply Eq.trans (cancel _)
+
+
   ext_unique := by simp

@@ -179,8 +179,7 @@ lemma cwfUnique {C : Type u} [Category.{v}  C] [TmTy.{u,v} C] [Limits.HasTermina
     trans
     . apply castSymm
       apply tmSubComp
-    . simp_rw [inst1.ext_v]
-      simp only [castSub, inst2.ext_v, cast_cast]
+    . simp [inst1.ext_v]
   inv_hom_id := by
     rw [<- ext_id (cwf := inst2) (T := T)]
     fapply inst2.ext_unique <;> try simp [ext_nat (cwf := inst1), inst1.ext_p]
