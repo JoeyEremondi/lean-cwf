@@ -44,7 +44,7 @@ theorem famForIxInv (A : Type u) (B : A → Type u) : ixSet (mkFam A B) = A
 -- For any index, the family projection cancels with the constructor,
 -- up to isomorphism
 @[aesop safe]
-theorem famForInv (A : Type u) (B : A → Type u) (a : A)
+theorem famForInv {A : Type u} {B : A → Type u} {a : A}
   : famFor (mkFam A B) a ≅ B a where
   hom := fun
     | .mk ab eq => by
