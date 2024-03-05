@@ -10,8 +10,8 @@ import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Equivalence
 
 
-import CwF.TypeFam
 import CwF.Fam
+import CwF.Fam.Types
 
 open CategoryTheory
 open Opposite

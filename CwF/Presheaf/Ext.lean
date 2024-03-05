@@ -1,7 +1,6 @@
 import CwF.Fam
 import CwF.Util
 import CwF.Sigma
-import CwF.CwFProperties
 import Mathlib.CategoryTheory.Category.Basic
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.NatTrans
