@@ -113,7 +113,7 @@ section
 end
 
 
-class CwFExt (C : Type u) [Category.{v} C]  [TmTy C] : Type _ where
+class CwFExt (C : Type u) [Category.{v} C]  [TmTy C] : Type _  where
   -- Empty context
   empty : C
   -- Empty context is terminal
@@ -129,6 +129,7 @@ class CwFExt (C : Type u) [Category.{v} C]  [TmTy C] : Type _ where
   -- Every morphism can be extended to extended contexts
   -- This basically says "do whatever f does, and replace the newly introduced variable with t"
   ext : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ) → (t : Tm (T⦃f⦄)) → Δ ⟶ snoc Γ T
+
 
 open CwFExt
 notation:5  "‼"  => empty
@@ -174,7 +175,6 @@ class CwF (C : Type u) [Category.{v} C]  : Type _ where
 attribute [instance] CwF.tmTy
 attribute [instance] CwF.cwfExt
 attribute [instance] CwF.cwfProp
-
 
 
 -- Any CwF is a terminal category
