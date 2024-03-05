@@ -14,9 +14,9 @@ import Mathlib.CategoryTheory.Elements
 import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Types
 
-import CwF.PresheafTmTy
-import CwF.PresheafSnoc
-import CwF.PresheafExt
+import CwF.Presheaf.TmTy
+import CwF.Presheaf.Snoc
+import CwF.Presheaf.Ext
 
 import CwF.CwF
 
@@ -38,8 +38,8 @@ def pshCwF : CwF (Cᵒᵖ ⥤ Type u₂) where
   -- Lean's terminal stuff is all non-computable, so we
   -- construct it manually
   empty  := {
-    obj := fun x => PUnit
-    map := fun x y => y
+    obj := fun _ => PUnit
+    map := fun _ y => y
   }
 
   emptyUnique := fun Γ => by

@@ -12,7 +12,7 @@ import Mathlib.CategoryTheory.Elements
 import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Types
 
-import CwF.PresheafTmTy
+import CwF.Presheaf.TmTy
 
 import CwF.CwF
 

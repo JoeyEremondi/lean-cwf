@@ -12,8 +12,8 @@ import Mathlib.CategoryTheory.Elements
 import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Types
 
-import CwF.PresheafTmTy
-import CwF.PresheafSnoc
+import CwF.Presheaf.TmTy
+import CwF.Presheaf.Snoc
 
 import CwF.CwF
 
