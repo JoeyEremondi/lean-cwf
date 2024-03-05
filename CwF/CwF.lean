@@ -133,7 +133,7 @@ class CwFExt (C : Type u) [Category.{v} C]  [TmTy C] : Type _  where
 
 open CwFExt
 notation:5  "‼"  => empty
-notation:100 Γ "▹" T => snoc Γ T
+notation:max Γ:1000 "▹" T:max => snoc Γ T
 notation:100 "⟪" θ "," t "⟫" => ext θ t
 
 class CwFProp (C : Type u) [catInst : Category.{v} C] [TmTy C] [cwf : CwFExt C] : Prop where
