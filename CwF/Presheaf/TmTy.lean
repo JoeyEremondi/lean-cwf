@@ -49,7 +49,7 @@ structure pshTm  {Γ : Cᵒᵖ ⥤ Type u₂} (T : pshTy Γ) : Type (max u v (u�
 def pshTmExt {Γ : Cᵒᵖ ⥤ Type u₂} {T : pshTy Γ} {x y : pshTm T}
   (extEq : {k : Cᵒᵖ} -> (γ : Γ.obj k) -> x.tmFun k γ = y.tmFun k γ)
   : x = y := by
-    let pf : x.tmFun = y.tmFun := by aesop
+    have : x.tmFun = y.tmFun := by aesop
     cases x with
     | mk x1 x2 => cases y with
     | mk y1 y2 =>

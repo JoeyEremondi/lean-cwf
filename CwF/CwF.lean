@@ -15,23 +15,25 @@ universe u v u2
 -- A CwF over C has a Fam-valued presheaf
 -- We interpret objects of C as contexts
 class TmTy (C : Type u) [Category.{v} C] : Type (max u v (u2+1)) where
-  F : CategoryTheory.Functor Cᵒᵖ Fam.{u2}
+  tmTyF : CategoryTheory.Functor Cᵒᵖ Fam.{u2}
+
+open TmTy
 
 section
   variable {C : Type u} [Category.{v}  C] [TmTy.{u,v} C]
 
   -- The index set of the functor F gives types over a given context
-  def Ty (Γ : C) : Type u :=  ixSet (TmTy.F.obj (Opposite.op Γ))
+  def Ty (Γ : C) : Type u :=  ixSet (tmTyF.obj (Opposite.op Γ))
 
   -- The family for a given context and type gives the set of
   -- terms of that type
-  def Tm {Γ : C} (T : Ty Γ) : Type u := famFor (TmTy.F.obj (Opposite.op Γ)) T
+  def Tm {Γ : C} (T : Ty Γ) : Type u := famFor (tmTyF.obj (Opposite.op Γ)) T
 
   -- Definition of substitution for types
   -- Any C-arrow can be lifted to a substitution function on types
   -- by the functoral structure of F.
   def tySub {Δ Γ: C} (T : Ty Δ) (θ : Γ ⟶ Δ) : Ty Γ :=
-    mapIx (TmTy.F.map θ.op) T
+    mapIx (tmTyF.map θ.op) T
 
   -- Notation for substitution on types
   notation:60 T "⦃" θ "⦄"  => tySub T θ
@@ -40,7 +42,7 @@ section
   -- Like for types, but the resulting term also has the substitution applied
   -- in its type
   def tmSub  {Γ Δ : C} {T : Ty Δ} ( t : Tm T )  (θ : Γ ⟶ Δ) : Tm (T⦃θ⦄) :=
-    mapFam (TmTy.F.map θ.op) t
+    mapFam (tmTyF.map θ.op) t
 
   -- Notation for substitution on terms
   notation:60 t "⦃" θ "⦄"  => tmSub t θ
@@ -92,14 +94,14 @@ section
   @[simp]
   theorem tmSubId {Γ : C} {T : Ty Γ} (t : Tm T) : (t⦃𝟙 Γ⦄) =ₜ t := by
     simp [tySub, tmSub]
-    have eq := mapCast t (symm (TmTy.F.map_id (Opposite.op Γ)))
+    have eq := mapCast t (symm (tmTyF.map_id (Opposite.op Γ)))
     aesop_cat
 
   @[simp]
   theorem tmSubComp {Γ Δ Ξ : C} {T : Ty Γ} {f : Δ ⟶ Γ} {g : Ξ ⟶ Δ} {t : Tm T}
   : ((t⦃f⦄)⦃g⦄) =ₜ (t⦃g ≫ f⦄ )  := by
     simp [tySub, tmSub]
-    have eq := mapCast t ((TmTy.F.map_comp f.op g.op))
+    have eq := mapCast t ((tmTyF.map_comp f.op g.op))
     aesop_cat
 
 
@@ -108,41 +110,14 @@ section
 
 
 
-  -- Convenient conversions if we construct F using mkFam
-
-
-  -- Helpful lemma: equal types have equal sets of terms
-  -- theorem tmEq {Γ : C} {S T : Ty Γ} (eq : S = T ) : Tm S = Tm T := by aesop
-
 end
 
--- instance famInvCoe {C : Type u} [Category.{v} C] {FTy : Cᵒᵖ -> Type u}
---   {FTm :  {c : Cᵒᵖ} -> FTy c -> Type u}
---   {Γ : C} {T : FTy (Opposite.op Γ)}
---   : Coe (FTm T) (famFor (mkFam (FTy (Opposite.op Γ)) FTm) T)  where
---     coe := fun t => {
---       val := .mk T t
---       property := rfl
---     }
 
-
-
--- Easier constructor for tmTy in terms of TypeFam instead of Arrows
--- class SimpleTmTy {C : Type} [Category.{v} C]
---   (Ty : C -> Type u2)
---   (Tm : {Γ : C} -> Ty Γ -> Type u2)
---   (subTy : {Γ Δ : C} -> (Δ ⟶ Γ) -> Ty Γ -> Ty Δ)
---   (subTm : {Γ Δ : C} -> {T : Ty Γ} -> (θ : Δ ⟶ Γ) -> Tm T -> Tm (subTy θ T))
---   (subTyId : )
---   : TmTy C := by admit
-
--- A CwF has a type-term structure,
--- plus context-extension, substitution extension, and a terminal object
-class CwF (C : Type u) [Category.{v} C]  [TmTy C] : Type _ where
+class CwFExt (C : Type u) [Category.{v} C]  [TmTy C] : Type _ where
   -- Empty context
   empty : C
   -- Empty context is terminal
-  emptyUnique : (Γ : C) → Unique (Γ ⟶ empty)
+  emptyTerminal : @Limits.IsTerminal C catInst empty
   -- Context extension
   snoc : (Γ : C) → Ty Γ → C
   --The projection substitution
@@ -154,38 +129,56 @@ class CwF (C : Type u) [Category.{v} C]  [TmTy C] : Type _ where
   -- Every morphism can be extended to extended contexts
   -- This basically says "do whatever f does, and replace the newly introduced variable with t"
   ext : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ) → (t : Tm (T⦃f⦄)) → Δ ⟶ snoc Γ T
-  -- Such an extension is the unique morphism satisfying certain laws
+
+open CwFExt
+notation:5  "‼"  => empty
+notation:100 Γ "▹" T => snoc Γ T
+notation:100 "⟪" θ "," t "⟫" => ext θ t
+
+class CwFProp (C : Type u) [catInst : Category.{v} C] [TmTy C] [cwf : CwFExt C] : Prop where
+  -- The extension is the unique morphism satisfying certain laws
   -- Extending and composing with p cancels: if you introduce an unused variable then replace it with t,
   -- you get the original substitution
   ext_p : {Γ Δ : C} → {T : Ty Γ}
-    → {f : Δ ⟶ Γ} → {t : Tm (tySub T f)}
-    → (ext f t) ≫ p = f := by aesop_cat
+    → {f : Δ ⟶ Γ} → {t : Tm (T⦃f⦄)}
+    → ⟪f , t⟫ ≫ p = f := by aesop_cat
 
   -- Can be derived from existing equalities, but if we postulate it
   -- it's easier to express the type of later things
   ext_pHelper : {Γ Δ : C} → {T : Ty Γ}
-    → {f : Δ ⟶ Γ} → {t : Tm (tySub T f)} → {T : Ty _}
+    → {f : Δ ⟶ Γ} → {t : Tm (T⦃f⦄)} → {T : Ty _}
     → (T⦃p⦄⦃ext f t⦄)  = T⦃f⦄ := by aesop_cat
 
   --An extended substitution, applied to the newly generated variable, produces
   --the term by which the subsitution was extended
-  ext_v : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ) → (t : Tm (tySub T f))
-    → v⦃ext f t⦄ = castTm t (ext_pHelper) := by aesop_cat
+  ext_v : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ) → (t : Tm (T⦃f⦄))
+    → v⦃⟪f,t⟫⦄ = castTm t (ext_pHelper) := by aesop_cat
   -- The extension is unique
 
   ext_unique : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ)
-    → (t : Tm (tySub T f)) → (g : _) → g ≫ p = f
+    → (t : Tm (tySub T f)) → (g : _)
+    → g ≫ p = f
     → (tyEq : _)
     → (v⦃g⦄ = castTm t tyEq)
-    → g = ext f t := by aesop_cat
+    → g = ⟪f,t⟫ := by aesop_cat
+
+open CwFProp
+
+-- A CwF has a type-term structure,
+-- plus context-extension, substitution extension, and a terminal object
+class CwF (C : Type u) [Category.{v} C]  : Type _ where
+  [tmTy : TmTy C]
+  [cwfExt : CwFExt C]
+  [cwfProp : CwFProp C]
+
+attribute [instance] CwF.tmTy
+attribute [instance] CwF.cwfExt
+attribute [instance] CwF.cwfProp
 
 
 
 -- Any CwF is a terminal category
-instance (C : Type u) [Category.{v} C] [TmTy C] [CwF C] : Limits.HasTerminal C :=
-  Limits.IsTerminal.hasTerminal (Limits.IsTerminal.ofUnique (h := CwF.emptyUnique))
+instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
+  Limits.IsTerminal.hasTerminal emptyTerminal
 
-notation:5  "‼"  => CwF.empty
-notation:100 Γ "▹" T => CwF.snoc Γ T
-notation:100 "⟪" θ "," t "⟫" => CwF.ext θ t
-attribute [simp] CwF.ext_p CwF.ext_v
+attribute [simp] ext_p ext_v

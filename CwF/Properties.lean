@@ -1,5 +1,3 @@
-import CwF.Fam
-import CwF.CwF
 import Mathlib.CategoryTheory.Category.Basic
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.Functor.Basic
@@ -9,11 +7,17 @@ import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 import Mathlib.Logic.Unique
 
+
+import CwF.Fam
+import CwF.CwF
+
 open CategoryTheory
+open CwFProp
+open CwFExt
 
 universe u v u2
 section
-  variable {C : Type u} [Category.{v}  C] [TmTy.{u,v} C] [cwf: CwF C]
+  variable {C : Type u} [Category.{v}  C] [cwf: CwF C]
 
 
 
@@ -26,8 +30,8 @@ section
     (g : Ξ ⟶ Δ)
     (t : Tm (T⦃f⦄))
     : (g ≫ ⟪f , t⟫) = ⟪g ≫ f , (↑ₜ t⦃g⦄) ⟫ := by
-      fapply CwF.ext_unique <;> simp_all
-      have eq2 := castSymm (tmSubComp (f := ⟪f , t⟫) (g := g) (t := CwF.v))
+      fapply ext_unique <;> simp_all
+      have eq2 := castSymm (tmSubComp (f := ⟪f , t⟫) (g := g) (t := v))
       rw [eq2]
       simp_all
 
@@ -35,9 +39,9 @@ section
   -- If you take a weaning and extend it with the newly introduced variable, you get the identity,
   -- because it just replaces each v with v
   @[simp]
-  theorem ext_id {Γ : C} {T : Ty Γ} : ⟪CwF.p , CwF.v⟫ = 𝟙 (Γ ▹ T) := by
+  theorem ext_id {Γ : C} {T : Ty Γ} : ⟪p , v⟫ = 𝟙 (Γ ▹ T) := by
     symm
-    fapply CwF.ext_unique <;> simp_all
+    fapply ext_unique <;> simp_all
 
   -- Helper function for dependent cong
   -- Should really be in the stdlib
@@ -53,8 +57,8 @@ section
     :
     (⟪θ₁,t₁⟫ = ⟪θ₂,t₂⟫) ↔ (∃ x : (θ₁ = θ₂), t₁ =ₜ t₂) := by
       constructor <;> intro eq <;> try aesop_cat
-      have peq := congrArg (λ x => x ≫ CwF.p) eq
-      have veq := castCong (refl (λ x => CwF.v ⦃x⦄)) eq
+      have peq := congrArg (λ x => x ≫ p) eq
+      have veq := castCong (refl (λ x => v ⦃x⦄)) eq
       simp at peq
       aesop
 
@@ -70,12 +74,12 @@ section
     ⟪ 𝟙 _ , ↑ₜ t ⟫
 
   -- That subsitution is a section of p
-  abbrev toSection {Γ : C} {T : Ty Γ} (t : Tm T) : SplitEpi (CwF.p (T := T)) :=
+  abbrev toSection {Γ : C} {T : Ty Γ} (t : Tm T) : SplitEpi (p (T := T)) :=
     ⟨ toSub t , by simp_all ⟩
 
   -- Get a term out of any section of p
-  abbrev toTerm {Γ : C} {T : Ty Γ} (epi : SplitEpi (CwF.p (T := T))) : Tm T :=
-    ↑ₜ ((CwF.v ) ⦃ epi.section_ ⦄)
+  abbrev toTerm {Γ : C} {T : Ty Γ} (epi : SplitEpi (p (T := T))) : Tm T :=
+    ↑ₜ ((v ) ⦃ epi.section_ ⦄)
 
   theorem congrDep₂  {A : Type } {B : A → Type} {R :  Type} (f : (a : A) → (b : B a) → R)
     {a₁ a₂ : A} (eqa : a₁ = a₂) {b₁ : B a₁} {b₂ : B a₂} (eqb : b₁ = cast (by aesop) b₂)
@@ -91,7 +95,7 @@ section
     (eq : f = g) : ⟪f , t ⟫ = ⟪ g , castTmSub t eq⟫ := by aesop
 
 
-  theorem toSectionTerm {Γ : C} {T : Ty Γ} (epi : SplitEpi (CwF.p (T := T))) : toSection (toTerm epi) = epi := by
+  theorem toSectionTerm {Γ : C} {T : Ty Γ} (epi : SplitEpi (p (T := T))) : toSection (toTerm epi) = epi := by
     simp [toTerm, toSection, toSub]
     cases (epi) with
     | mk f eq =>
@@ -126,7 +130,7 @@ section
   -- Weakening
   -- Lifts any substitution to work on an extended context
   abbrev wk {Γ Δ : C} (f : Δ ⟶ Γ) {T : Ty Γ} : (Δ ▹ T⦃f⦄) ⟶ (Γ ▹ T) :=
-    ⟪CwF.p (T := T⦃f⦄) ≫ f , ↑ₜ CwF.v ⟫
+    ⟪p (T := T⦃f⦄) ≫ f , ↑ₜ v ⟫
 
   -- Weakening morphisms are the CwF version of a substitution Γ(x:T)Δ ⟶ Γ Δ
   -- i.e. as a substitution, we can introduce an unused variable anywhere in the context
@@ -134,7 +138,7 @@ section
     weaken : Δ ⟶ Γ
 
   instance wkBase {Γ : C} {T : Ty Γ} : Weakening (Γ ▹ T) Γ where
-    weaken := CwF.p
+    weaken := p
 
   instance wkStep {Δ Γ : C} [inst : Weakening Δ Γ] {T : Ty Γ}  : Weakening (Δ ▹ T⦃inst.weaken⦄) (Γ ▹ T) where
     weaken := wk (inst.weaken) (T := T)
@@ -152,7 +156,7 @@ section
 
 
   @[simp]
-  theorem vCast {Γ  : C} {T : Ty Γ} {f : _} (eq : f = 𝟙 (Γ ▹ T)) : (tmSub (CwF.v (T := T)) f)  =ₜ CwF.v := by
+  theorem vCast {Γ  : C} {T : Ty Γ} {f : _} (eq : f = 𝟙 (Γ ▹ T)) : (tmSub (v (T := T)) f)  =ₜ v := by
     aesop
 
   @[simp]
@@ -167,28 +171,32 @@ end
 
 --Given the functoral definition of substitution on terms and types for a category of contexts,
 --context extension is unique up to isomorphism
-lemma cwfUnique {C : Type u} [Category.{v}  C] [TmTy.{u,v} C] [Limits.HasTerminal C]
-  (inst1 : CwF C) (inst2 : CwF C) {Γ : C} {T : Ty Γ} :  (inst1.snoc Γ T)  ≅  (inst2.snoc Γ T) where
+lemma cwfUnique {C : Type u} [Category.{v}  C] [Limits.HasTerminal C] [TmTy C]
+  (inst1 inst2 : CwFExt C)
+  [prop1 : @CwFProp C _ _ inst1] [prop2 : @CwFProp C _ _ inst2]
+  {Γ : C} {T : Ty Γ}
+    :  (inst1.snoc Γ T)  ≅  (inst2.snoc Γ T) where
   -- Bascially a dependent version of the uniqueness of products
-  hom := inst2.ext (inst1.p (T := T)) inst1.v
-  inv := inst1.ext (inst2.p (T := T)) inst2.v
+  hom := (inst2.ext (inst1.p (T := T)) inst1.v)
+  inv :=  (inst1.ext (inst2.p (T := T)) inst2.v)
   hom_inv_id := by
-    rw [<- ext_id (cwf := inst1) (T := T)]
-    fapply inst1.ext_unique
-      <;> try simp [ext_nat (cwf := inst1), inst1.ext_p ]
+    let cwf1 : CwF C := {cwfExt := inst1}
+    rw [<- ext_id (cwf := cwf1) (T := T)]
+    fapply prop1.ext_unique
+      <;> try simp [ext_nat (cwf := cwf1), prop1.ext_p ]
     trans
     . apply castSymm
       apply tmSubComp
-    . simp [inst1.ext_v]
+    . simp [prop1.ext_v]
   inv_hom_id := by
-    rw [<- ext_id (cwf := inst2) (T := T)]
-    fapply inst2.ext_unique <;> try simp [ext_nat (cwf := inst1), inst1.ext_p]
+    let cwf2 : CwF C := {cwfExt := inst2}
+    rw [<- ext_id (cwf := cwf2) (T := T)]
+    fapply prop2.ext_unique
+      <;> try simp [ext_nat (cwf := cwf2), prop2.ext_p ]
     trans
     . apply castSymm
       apply tmSubComp
-    simp_rw [inst2.ext_v]
-    simp only [castSub, inst1.ext_v, cast_cast]
-
+    . simp [prop2.ext_v]
 
 
 ----------------------------------------------------------
@@ -196,7 +204,7 @@ lemma cwfUnique {C : Type u} [Category.{v}  C] [TmTy.{u,v} C] [Limits.HasTermina
 
 section
 
-  variable {C : Type u} [Category.{v}  C] [TmTy.{u,v} C]  [cwf: CwF C]
+  variable {C : Type u} [Category.{v}  C]  [cwf: CwF C]
 
 
   -- These lemmas encode a generalization of the "terms as sections of display maps"
@@ -205,30 +213,30 @@ section
   -- When you plug in id for the arrow, you get terms as sections
 
   abbrev tyToSlice {Γ : C} (T : Ty Γ) : Over Γ :=
-    Over.mk (CwF.p (T := T))
+    Over.mk (p (T := T))
 
-  def secToSliceArrow {Γ : C} {T : Ty Γ} (sec : SplitEpi (CwF.p (T := T)))
+  def secToSliceArrow {Γ : C} {T : Ty Γ} (sec : SplitEpi (p (T := T)))
     : (Over.mk (𝟙 Γ) ⟶ tyToSlice T) :=
       Over.homMk (SplitEpi.section_ sec)
 
   def sliceArrowToSection {Γ : C} {T : Ty Γ} (sliceArr : Over.mk (𝟙 Γ) ⟶ tyToSlice T)
-    : SplitEpi (CwF.p (T := T)) := SplitEpi.mk (sliceArr.left)
+    : SplitEpi (p (T := T)) := SplitEpi.mk (sliceArr.left)
       (by have pf := Over.w sliceArr
           simp_all [tyToSlice]
           )
 
 
-  def extHead {Γ Δ : C} {T : Ty Γ} (f : Δ ⟶ Γ ▹ T) : Tm (T⦃f ≫ CwF.p⦄) :=
-    ↑ₜ CwF.v⦃f⦄
+  def extHead {Γ Δ : C} {T : Ty Γ} (f : Δ ⟶ Γ ▹ T) : Tm (T⦃f ≫ p⦄) :=
+    ↑ₜ v⦃f⦄
 
-  theorem headTmEq {Γ Δ : C} {T : Ty Γ} (f : Δ ⟶ Γ ▹ T) : f = ⟪f ≫ CwF.p, extHead f⟫ := by
-    have p : _ := ext_nat CwF.p f CwF.v
+  theorem headTmEq {Γ Δ : C} {T : Ty Γ} (f : Δ ⟶ Γ ▹ T) : f = ⟪f ≫ p, extHead f⟫ := by
+    have p : _ := ext_nat p f v
     rw [ext_id] at p
     aesop
 
   def termFromSlice {Γ Δ : C} {T : Ty Δ}
     (f : Γ ⟶ Δ)
-    (sliceArr : (CategoryTheory.Over.mk f) ⟶ (CategoryTheory.Over.mk (CwF.p (T := T))))
+    (sliceArr : (CategoryTheory.Over.mk f) ⟶ (CategoryTheory.Over.mk (p (T := T))))
     : Tm (T⦃f⦄) :=
       castTm (extHead sliceArr.left) (by
     have pf := Over.w sliceArr
@@ -236,7 +244,7 @@ section
 
   def termToSlice {Γ Δ : C} {T : Ty Δ}
     (f : Γ ⟶ Δ) (t : Tm (T⦃f⦄))
-    : ( (CategoryTheory.Over.mk f) ⟶ (CategoryTheory.Over.mk (CwF.p (T := T)))) := by
+    : ( (CategoryTheory.Over.mk f) ⟶ (CategoryTheory.Over.mk (p (T := T)))) := by
     fapply Over.homMk
     . simp_all
       exact ⟪f , t⟫
@@ -247,7 +255,7 @@ section
 
   theorem termToFromSlice {Γ Δ : C} {T : Ty Δ}
     (f : Γ ⟶ Δ)
-    (sliceArr : (CategoryTheory.Over.mk f) ⟶ (CategoryTheory.Over.mk (CwF.p (T := T))))
+    (sliceArr : (CategoryTheory.Over.mk f) ⟶ (CategoryTheory.Over.mk (p (T := T))))
     : termToSlice f (termFromSlice f sliceArr) = sliceArr := by
     apply Over.OverMorphism.ext
     simp [termToSlice, termFromSlice]
