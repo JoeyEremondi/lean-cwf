@@ -12,6 +12,7 @@ import Mathlib.CategoryTheory.Category.Basic
 
 import CwF.Fam
 import CwF.CwF
+import CwF.Util
 
 
 open CategoryTheory
@@ -61,6 +62,74 @@ def MapTm {C D : CwFCat} (F : TmTyMorphism C D)
   (t : Tm T)
   : Tm (MapTy F T) := mapFam (F.natTrans.app (Opposite.op Γ )) t
 
+-- section
+--   variable {C : CwFCat} { D : CwFCat} (F : TmTyMorphism C D)
+--   -- attribute [-instance] CwF.cwfExt
+--   -- attribute [-instance] CwF.tmTy
+--   -- attribute [-instance] CwFCat.exCwF
+
+--   local instance (priority := default + 2) MapTmTy
+--     : TmTy (C.Ctx) where
+--     tmTyF := CategoryTheory.Functor.comp (Functor.op F.CtxF) D.exCwF.tmTy.tmTyF
+
+--   def ExpCwFExt (C : Type u) (cat : Category C) (tt : @TmTy C cat) : Type _ :=
+--     @CwFExt C cat tt
+
+
+--   def mkExpCwFExt (C : Type u) (cat : Category C) (tt : @TmTy C cat)
+--     (empty : C)
+--     (snoc : (Γ : C) → Ty Γ → C)
+--     (p : {Γ : C} → {T : Ty Γ} → snoc Γ T ⟶ Γ)
+--     (v : {Γ : C} → {T : Ty Γ} → Tm (T⦃p⦄ : Ty (snoc Γ T)))
+--     (ext : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ) → (t : Tm (T⦃f⦄)) → Δ ⟶ snoc Γ T)
+--   : (ExpCwFExt C cat tt) := ⟨empty, snoc, p, v, ext ⟩
+
+--   def MapExt : ExpCwFExt (C.Ctx) _ (MapTmTy F) := by
+--     fapply mkExpCwFExt C _ (MapTmTy F)
+--     . exact C.exCwF.cwfExt.empty
+--     . intros Γ T
+--       reduce at T
+--       fapply D.exCwF.cwfExt.snoc
+--   end
+
+
+@[aesop safe]
+def MapTyCommut {C D : CwFCat} (F : TmTyMorphism C D)
+  {Δ Γ : C.Ctx}
+  {T : Ty Γ}
+  {θ : Δ ⟶ Γ}
+  : MapTy F (T⦃θ⦄) = (MapTy F T)⦃MapSub F θ⦄ :=
+    congrFun (congrArg mapIx (F.natTrans.naturality (Opposite.op θ))) T
+
+@[aesop safe]
+def MapTmCommut {C D : CwFCat} (F : TmTyMorphism C D)
+  {Δ Γ : C.Ctx}
+  {T : Ty Γ}
+  {t : Tm T}
+  {θ : Δ ⟶ Γ}
+  : (MapTm F (t⦃θ⦄)) = castTm  ((MapTm F t)⦃MapSub F θ⦄) (by rw [MapTyCommut]) := by
+    -- let tyEq := MapTyCommut F (T := T) (θ := θ)
+    -- let ceq
+    --   := castSub (t := MapTm F t) (eq := by aesop) (f := MapSub F θ)
+    let nat := F.natTrans.naturality (Opposite.op θ)
+    let mapnat :=  (HEq.symm (hCong (refl mapFam) nat))
+    let mapnat_T := hCongFunImplicit T (by simp) mapnat
+    let mapnat_Tt := hCongFun t (by simp) mapnat_T
+    let mapnat_eq := Eq.symm (eq_cast_of_heq mapnat_Tt)
+    eapply Eq.trans mapnat_eq
+    simp [MapTm, mapFam, castSub]
+    apply Subtype.ext
+    aesop_cat
+    -- simp
+    -- trans
+    -- . skip
+    -- . exact (
+    -- apply Eq.trans _
+    -- cases tyEq
+    -- fapply congrArg mapFam
+
+-- set_option pp.explicit true
+
 structure CwFMorphism (C D : CwFCat) extends TmTyMorphism C D where
   snocPreserve :
     {Γ : C.Ctx}
@@ -70,8 +139,25 @@ structure CwFMorphism (C D : CwFCat) extends TmTyMorphism C D where
     {Γ : C.Ctx}
     → {T : Ty Γ}
     → MapSub F (CwFExt.p (T := T) )
-      = cast (by simp_rw [<- snocPreserve (T := T)]) (D.exCwF.cwfExt.p (T := MapTy F T))
+      = cast (by rw [snocPreserve (T := T)]) (D.exCwF.cwfExt.p (T := MapTy F T))
+  pPreserveTm :
+    {Γ : C.Ctx}
+    → {T : Ty Γ}
+    → Tm (tySub (MapTy F T) (p (T := MapTy F T))) = Tm (MapTy F T⦃p (T := T)⦄)
+  vPreserve' :
+    {Γ : C.Ctx}
+    → {T : Ty Γ}
+    → (tyEq : _)
+    → MapTm F (CwFExt.v (T := T)) = cast tyEq (v (T := MapTy F T))
 
--- instance cwfCat :  Category CwFCat where
---   Hom C D := C.tmTyInst.F ⟶ D.tmTy.F
---   id C := 𝟙 C.Ctx
+
+theorem vPreserve {C D : CwFCat} (F : CwFMorphism C D)
+    {Γ : C.Ctx}
+    {T : Ty Γ}
+    : MapTm F.toTmTyMorphism (CwFExt.v (T := T)) = cast (by simp) (v (T := MapTy F.toTmTyMorphism T))
+
+
+
+-- -- instance cwfCat :  Category CwFCat where
+-- --   Hom C D := C.tmTyInst.F ⟶ D.tmTy.F
+-- --   id C := 𝟙 C.Ctx

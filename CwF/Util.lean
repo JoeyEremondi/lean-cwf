@@ -1,5 +1,14 @@
 import Mathlib.CategoryTheory.Category.Basic
 
+theorem heq_type_eq {a a_1 : Sort u_1} {x : a} {y : a_1}
+  (eq : HEq x y) : a = a_1 := by
+  cases eq
+  rfl
+
+theorem eq_cast_of_heq  {a a_1 : Sort u_1} {a_2 : a} {a' : a_1}
+  (heq : HEq a_2 a') : cast (heq_type_eq heq) a_2 = a' := by
+  cases heq
+  rfl
 
 theorem hCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
     (funEq : f = g) (argEq : x = y) :
@@ -11,6 +20,14 @@ theorem hCongFun {A : Type u} {B C : A → Type v} {f : (a : A) → B a} {g : (a
     (eq : B = C)
     (funEq : HEq f g)  :
       HEq (f x) (g x) := by aesop
+
+
+theorem hCongFunImplicit {A : Type u} {B C : A → Type v} {f : {a : A} → B a} {g : {a : A} → C a}
+    (x : A)
+    (eq : B = C)
+    (funEq : HEq @f @g)  :
+      HEq (f (a := x)) (g (a := x)) := by aesop
+
 
 theorem hCongFunSimp {A : Type u} {B C :  Type v} {f : (a : A) → B } {g : (a : A) → C }
     (x : A)

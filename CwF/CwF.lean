@@ -20,7 +20,7 @@ class TmTy (C : Type u) [Category.{v} C] : Type (max u v (u2+1)) where
 open TmTy
 
 section
-  variable {C : Type u} [Category.{v}  C] [TmTy.{u,v} C]
+  variable {C : Type u} [Category.{v}  C] [tmTy : TmTy.{u,v} C]
 
   -- The index set of the functor F gives types over a given context
   def Ty (Γ : C) : Type u :=  ixSet (tmTyF.obj (Opposite.op Γ))
@@ -36,7 +36,7 @@ section
     mapIx (tmTyF.map θ.op) T
 
   -- Notation for substitution on types
-  notation:60 T "⦃" θ "⦄"  => tySub T θ
+  notation:max T "⦃" θ "⦄"  => tySub T θ
 
   -- Definition fo substitution on terms
   -- Like for types, but the resulting term also has the substitution applied
@@ -45,7 +45,7 @@ section
     mapFam (tmTyF.map θ.op) t
 
   -- Notation for substitution on terms
-  notation:60 t "⦃" θ "⦄"  => tmSub t θ
+  notation:max t "⦃" θ "⦄"  => tmSub t θ
 
   --Helpful functions to cast based on subst and type equalities
   abbrev castTm {Γ : C} {S T : Ty Γ} (t : Tm T) (eq : S = T) : Tm S :=
@@ -70,7 +70,7 @@ section
 
   @[simp]
   theorem castSub {Γ Δ : C} {S T : Ty Γ} {t : Tm T} {eq : S = T} {f : Δ ⟶ Γ}  :
-    castTm t eq ⦃ f ⦄ = castTm (t⦃f⦄) (by aesop) := by aesop
+    (castTm t eq )⦃ f ⦄ = castTm (t⦃f⦄) (by aesop) := by aesop
 
   @[simp]
   theorem castCast  {Γ : C} {S T U: Ty Γ} {s : Tm S} {t : Tm U} {eq : S = T} {eq2 : T = U} :
@@ -113,11 +113,11 @@ section
 end
 
 
-class CwFExt (C : Type u) [Category.{v} C]  [TmTy C] : Type _  where
+class CwFExt (C : Type u) [Category.{v} C]  [tmTy : TmTy C] : Type _  where
   -- Empty context
   empty : C
   -- Empty context is terminal
-  emptyTerminal : @Limits.IsTerminal C catInst empty
+  -- emptyTerminal : Limits.IsTerminal empty
   -- Context extension
   snoc : (Γ : C) → Ty Γ → C
   --The projection substitution
@@ -170,6 +170,7 @@ open CwFProp
 class CwF (C : Type u) [Category.{v} C]  : Type _ where
   [tmTy : TmTy C]
   [cwfExt : CwFExt C]
+  [emptyTerminal : Limits.IsTerminal cwfExt.empty ]
   [cwfProp : CwFProp C]
 
 attribute [instance] CwF.tmTy
@@ -179,6 +180,6 @@ attribute [instance] CwF.cwfProp
 
 -- Any CwF is a terminal category
 instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
-  Limits.IsTerminal.hasTerminal emptyTerminal
+  Limits.IsTerminal.hasTerminal CwF.emptyTerminal
 
 attribute [simp] ext_p ext_v
