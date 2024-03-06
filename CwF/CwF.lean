@@ -117,7 +117,7 @@ class CwFExt (C : Type u) [Category.{v} C]  [tmTy : TmTy C] : Type _  where
   -- Empty context
   empty : C
   -- Empty context is terminal
-  -- emptyTerminal : Limits.IsTerminal empty
+  emptyTerminal : Limits.IsTerminal empty
   -- Context extension
   snoc : (Γ : C) → Ty Γ → C
   --The projection substitution
@@ -136,7 +136,7 @@ notation:5  "‼"  => empty
 notation:max Γ:1000 "▹" T:max => snoc Γ T
 notation:100 "⟪" θ "," t "⟫" => ext θ t
 
-class CwFProp (C : Type u) [catInst : Category.{v} C] [TmTy C] [cwf : CwFExt C] : Prop where
+class CwFProp (C : Type u) [catInst : Category.{v} C] [tmTy : TmTy C] [cwf : CwFExt C] : Prop where
   -- The extension is the unique morphism satisfying certain laws
   -- Extending and composing with p cancels: if you introduce an unused variable then replace it with t,
   -- you get the original substitution
@@ -146,9 +146,11 @@ class CwFProp (C : Type u) [catInst : Category.{v} C] [TmTy C] [cwf : CwFExt C] 
 
   -- Can be derived from existing equalities, but if we postulate it
   -- it's easier to express the type of later things
-  ext_pHelper : {Γ Δ : C} → {T : Ty Γ}
-    → {f : Δ ⟶ Γ} → {t : Tm (T⦃f⦄)} → {T : Ty _}
-    → (T⦃p⦄⦃ext f t⦄)  = T⦃f⦄ := by aesop_cat
+  ext_pHelper : {Γ Δ : C} → {S : Ty Γ}
+    → {f : Δ ⟶ Γ} → {t : Tm (S⦃f⦄)} → {T : Ty _}
+    → (T⦃p⦄⦃ext f t⦄)  = T⦃f⦄ :=
+    fun {Γ Δ} {S} {f} {t} {T} =>
+      of_eq_true ((congrArg (fun x => x = T⦃f⦄) (tySubComp.trans (congrArg (tySub T) ext_p))).trans (eq_self T⦃f⦄))
 
   --An extended substitution, applied to the newly generated variable, produces
   --the term by which the subsitution was extended
@@ -163,6 +165,7 @@ class CwFProp (C : Type u) [catInst : Category.{v} C] [TmTy C] [cwf : CwFExt C] 
     → (v⦃g⦄ = castTm t tyEq)
     → g = ⟪f,t⟫ := by aesop_cat
 
+
 open CwFProp
 
 -- A CwF has a type-term structure,
@@ -170,7 +173,6 @@ open CwFProp
 class CwF (C : Type u) [Category.{v} C]  : Type _ where
   [tmTy : TmTy C]
   [cwfExt : CwFExt C]
-  [emptyTerminal : Limits.IsTerminal cwfExt.empty ]
   [cwfProp : CwFProp C]
 
 attribute [instance] CwF.tmTy
@@ -180,6 +182,6 @@ attribute [instance] CwF.cwfProp
 
 -- Any CwF is a terminal category
 instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
-  Limits.IsTerminal.hasTerminal CwF.emptyTerminal
+  Limits.IsTerminal.hasTerminal emptyTerminal
 
 attribute [simp] ext_p ext_v

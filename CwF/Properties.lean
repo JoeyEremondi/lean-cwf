@@ -20,7 +20,6 @@ section
   variable {C : Type u} [Category.{v}  C] [cwf: CwF C]
 
 
-
   -- If you compose with an extension, this is the same as extending by the composition,
   -- except that you also end up substituting in the term you're extending by.
   -- Unfortunate ugliness due to the fact that Tm⦃g ≫ f⦄ is not definitionally equal to tm⦃f⦄⦃g⦄
@@ -169,35 +168,38 @@ section
 
 end
 
---Given the functoral definition of substitution on terms and types for a category of contexts,
---context extension is unique up to isomorphism
-lemma cwfUnique {C : Type u} [Category.{v}  C] [Limits.HasTerminal C] [TmTy C]
-  (inst1 inst2 : CwFExt C)
-  [prop1 : @CwFProp C _ _ inst1] [prop2 : @CwFProp C _ _ inst2]
-  {Γ : C} {T : Ty Γ}
-    :  (inst1.snoc Γ T)  ≅  (inst2.snoc Γ T) where
-  -- Bascially a dependent version of the uniqueness of products
-  hom := (inst2.ext (inst1.p (T := T)) inst1.v)
-  inv :=  (inst1.ext (inst2.p (T := T)) inst2.v)
-  hom_inv_id := by
-    let cwf1 : CwF C := {cwfExt := inst1}
-    rw [<- ext_id (cwf := cwf1) (T := T)]
-    fapply prop1.ext_unique
-      <;> try simp [ext_nat (cwf := cwf1), prop1.ext_p ]
-    trans
-    . apply castSymm
-      apply tmSubComp
-    . simp [prop1.ext_v]
-  inv_hom_id := by
-    let cwf2 : CwF C := {cwfExt := inst2}
-    rw [<- ext_id (cwf := cwf2) (T := T)]
-    fapply prop2.ext_unique
-      <;> try simp [ext_nat (cwf := cwf2), prop2.ext_p ]
-    trans
-    . apply castSymm
-      apply tmSubComp
-    . simp [prop2.ext_v]
 
+section
+
+  lemma cwfUniqueHomInv {C : Type u} [cat : Category.{v}  C] [Limits.HasTerminal C] [TmTy C]
+    (inst1 inst2 : CwFExt C)
+    [prop1 : @CwFProp C _ _ inst1] [prop2 : @CwFProp C _ _ inst2]
+    {Γ : C} {T : Ty Γ}
+    : (inst2.ext (inst1.p (T := T)) inst1.v) ≫ (inst1.ext (inst2.p (T := T)) inst2.v)
+        = 𝟙 (inst1.snoc Γ T) := by
+      let cwf1 : CwF C := {cwfExt := inst1}
+      rw [<- ext_id (cwf := cwf1) (T := T)]
+      fapply prop1.ext_unique (cwf := inst1)
+        <;> try simp [ext_nat (cwf := cwf1), prop1.ext_p (cwf := inst1) ]
+      trans
+      . apply castSymm
+        apply tmSubComp
+      . simp [prop1.ext_v (cwf := inst1)]
+
+  --Given the functoral definition of substitution on terms and types for a category of contexts,
+  --context extension is unique up to isomorphism
+  lemma cwfUnique {C : Type u} [cat : Category.{v}  C] [Limits.HasTerminal C] [tmTy : TmTy C]
+    (inst1 inst2 : CwFExt C)
+    [prop1 : @CwFProp C _ _ inst1] [prop2 : @CwFProp C _ _ inst2]
+    {Γ : C} {T : Ty Γ}
+      :  (inst1.snoc Γ T)  ≅  (inst2.snoc Γ T) where
+    -- Bascially a dependent version of the uniqueness of products
+    hom := (inst2.ext (inst1.p (T := T)) inst1.v)
+    inv :=  (inst1.ext (inst2.p (T := T)) inst2.v)
+    hom_inv_id := cwfUniqueHomInv inst1 inst2
+    inv_hom_id := cwfUniqueHomInv inst2 inst1
+
+end
 
 ----------------------------------------------------------
 -- Some useful tools for going between morphisms and terms
