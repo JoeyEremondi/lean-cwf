@@ -165,9 +165,8 @@ class CwFProp (C : Type u) [catInst : Category.{v} C] [tmTy : TmTy C] [cwf : CwF
 
   ext_unique : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ)
     → (t : Tm (tySub T f)) → (g : _)
-    → g ≫ p = f
-    → (tyEq : _)
-    → (v⦃g⦄ = castTm t tyEq)
+    → (peq : g ≫ p = f)
+    → (v⦃g⦄ = castTm t (by simp [peq]))
     → g = ⟪f,t⟫ := by aesop_cat
 
 

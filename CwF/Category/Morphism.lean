@@ -189,22 +189,140 @@ theorem pPreserveCast {C D : CwFCat} {F : TmTyMorphism C D} [PreservesCwF F]
        apply HEq.trans pPreserveH
        apply heq_of_cast_eq <;> aesop_cat
 
+theorem vPreserveCastR {C D : CwFCat} {F : TmTyMorphism C D} [PreservesCwF F]
+    {Γ : C.Ctx}
+    {T : Ty Γ}
+    :   (MapTm F (CwFExt.v (T := T))) = cast (by simp [vPreserveTm]) (v (T := MapTy F T)) := by
+    symm
+    apply eq_cast_of_heq
+    symm
+    apply vPreserveH (F := F) (T := T)
+
+theorem vPreserveCastL {C D : CwFCat} {F : TmTyMorphism C D} [PreservesCwF F]
+    {Γ : C.Ctx}
+    {T : Ty Γ}
+    :  cast (by simp [vPreserveTm]) (MapTm F (CwFExt.v (T := T))) =  (v (T := MapTy F T)) := by
+    apply eq_cast_of_heq
+    apply vPreserveH (F := F) (T := T)
 
 
-def extPreserve (C D : CwFCat) {F : TmTyMorphism C D} [PreservesCwF F]
+theorem cast_comp {C : Type u} [Category.{v} C] {Γ Δ₁ Δ₂ Ξ : C}
+  (f : Ξ ⟶ Δ₁) (g : Δ₂ ⟶ Γ ) (eq : Δ₁ = Δ₂)
+  : f ≫ cast (by aesop) g = cast (by aesop) f ≫ g := by aesop
+
+
+theorem castInTySub {C : Type u} [Category C] [CwF C]
+  {Γ Δ Ξ : C} {T : Ty Γ}  {θ : Δ ⟶ Ξ} {eq : Ξ = Γ}
+  : T⦃cast (by rw [eq]) θ⦄ = T⦃eqToHom (by aesop)⦄⦃θ⦄  := by aesop
+
+theorem comp_to_homR {C : Type u} [Category C]
+  {Γ Δ Ξ : C}
+  {θ : Δ ⟶ Γ } {eq : Γ = Ξ }
+  : cast (by rw [eq]) θ = θ ≫ eqToHom eq := by aesop
+
+theorem comp_to_homL {C : Type u} [Category C]
+  {Γ Δ Ξ : C}
+  {θ : Δ ⟶ Γ } {eq : Ξ = Δ}
+  : cast (by rw [eq]) θ = eqToHom eq ≫ θ := by aesop
+
+
+theorem castInTmSubHelper {C : Type u} [Category C] [CwF C]
+  {Γ Δ Ξ : C} {T : Ty Γ} {t : Tm T}  {θ : Δ ⟶ Ξ} {eq : Ξ = Γ}
+  : t⦃cast (by rw [eq]) θ⦄ =ₜ (t⦃eqToHom eq⦄)⦃θ⦄  := by aesop
+
+theorem undoEqToHom {C : Type u} [Category C] [CwF C]
+  {Γ Ξ : C} {T : Ty Γ}  {t : Tm T}  {eq : Ξ = Γ}
+  : t⦃eqToHom eq⦄ = cast (by aesop) t := by aesop
+
+
+theorem castInTmSub {C : Type u} [Category C] [CwF C]
+  {Γ Δ Ξ : C} {T : Ty Γ} {t : Tm T}  {θ : Δ ⟶ Ξ} {eq : Ξ = Γ}
+  :    t⦃cast (by rw [eq]) θ⦄
+    = castTm (S := T⦃cast (by rw [eq]) θ⦄) (T := T⦃eqToHom eq⦄⦃θ⦄)
+       (tmSub
+         (cast (α := Tm T) (β := Tm T⦃eqToHom eq⦄) (by aesop ) t)
+         θ )
+        (by aesop)
+ := by
+    let TX : Ty Ξ := T⦃eqToHom eq⦄
+    let tX : Tm TX := t⦃eqToHom eq⦄
+    simp
+    let eq := castInTmSubHelper (Γ := Γ) (T := T) (t := t) (θ := θ) (eq := eq)
+    rw [undoEqToHom] at eq
+    assumption
+
+-- theorem castInTmSubOut {C : Type u} [Category C] [CwF C]
+--   {Γ Δ Ξ : C} {T : Ty Γ} {t : Tm T}  {θ : Δ ⟶ Ξ} {eq : Ξ = Γ}
+--   : t⦃cast (by rw [eq]) θ⦄ = (cast (by aesop) t)⦃θ⦄  := by aesop
+
+-- theorem vCastMap {C D : CwFCat} {F : TmTyMorphism C D}
+--   {Γ Δ : C.Ctx} {T : Ty Γ} {θ : Δ ⟶ Γ ▹ T}
+--   : tmSub (v (T := MapTy F T)) (cast (by admit) (MapSub F θ)) = cast (by admit) (tmSub (MapTm F v) (MapSub F θ)) := by admit
+theorem MapTmCast {C D : CwFCat} (F : TmTyMorphism C D)
+ {Γ Δ : C.Ctx}
+  {T : Ty Γ}
+  {eq : Γ = Δ}
+  {eq2 : Tm T = Tm (cast (congrArg Ty eq) T)}
+  {t : Tm T}
+  : MapTm F (cast (eq2) t) = cast (by aesop) (MapTm F t)  := by aesop
+
+
+theorem MapSubCast {C D : CwFCat} (F : TmTyMorphism C D)
+ {Γ Δ Ξ: C.Ctx}
+  {θ : Δ ⟶ Γ}
+  {eq : Γ = Ξ}
+  : cast (by rw [eq]) (MapSub F θ)  = MapSub F (cast (β := Δ ⟶ Ξ) (by rw [eq]) θ)  := by aesop
+
+
+def extPreserveCast (C D : CwFCat) {F : TmTyMorphism C D} [PreservesCwF F]
   {Γ Δ : C.Ctx} {T : Ty Γ} {f : Δ ⟶ Γ} {t : Tm (T⦃f⦄)}
-  : HEq (MapSub F (ext f t)) (ext (MapSub F f) (↑ₜ (MapTm F t))) := by
-    let eqP := C.exCwF.cwfProp.ext_p (T := T) (f := f) (t := t)
-    let eqPD := congrArg (MapSub F) eqP
-    let eqV := C.exCwF.cwfProp.ext_v (T := T) (f := f) (t := t)
-    let eqVD := congrArg (MapTm F) eqV
-    simp only [MapSubComp] at eqPD
-    simp only [pPreserveCast] at eqPD
-    let eqInD := D.exCwF.cwfProp.ext_unique (MapSub F f) _ _ eqPD (by aesop) (eqD)
-    apply heq_of_heq_of_eq
-    . skip
-    . apply eqInD
-      . simp
-      . aesop_cat
-      . simp
-    . simp
+  : (cast (by aesop) (MapSub F (ext f t))) = (ext (MapSub F f) (↑ₜ (MapTm F t))) := by
+    let peq : cast (_ : (MapCtx F Δ ⟶ MapCtx F Γ▹T) = (MapCtx F Δ ⟶ (MapCtx F Γ)▹(MapTy F T))) (MapSub F (⟪f,t⟫)) ≫ p = MapSub F f := by
+      rw [<- cast_comp] <;> try aesop_cat
+      simp only [<- pPreserveCast, <- MapSubComp]
+      apply congrArg (MapSub F)
+      apply C.exCwF.cwfProp.ext_p <;> aesop_cat
+    fapply D.exCwF.cwfProp.ext_unique _ _ _ peq
+    . let lem := cast (by admit) (MapSub F (ext f t)) = MapSub F (cast  (by admit) (ext f t))  := by aesop
+
+rw [<- (MapSubCast F (θ := ⟪f,t⟫))]
+    -- . simp [castInTmSub]
+    --   simp [<- vPreserveCastL]
+    --   apply deleteBothCasts
+    --   let eqV := C.exCwF.cwfProp.ext_v (T := T) (f := f) (t := t)
+    --   let eqV2 := castSymmR eqV
+    --   let eqV3 := congrArg (MapTm F) eqV2
+    --   apply heq_of_heq_of_eq _ eqV3
+    --   symm
+    --   apply heq_of_eq_of_heq (MapTmCast F)
+    --   rw [MapTmCast F (t := v⦃ext f t⦄)]
+
+    --   rw [castInTmSub]
+    --   rw [ undoEqToHom ]
+    --   rw [<- vPreserveCast]
+    --   simp
+    --   simp [castTm]
+
+    -- simp
+    -- . let eqV := C.exCwF.cwfProp.ext_v (T := T) (f := f) (t := t)
+    --   let eqVD := congrArg (MapTm F) eqV
+    --   symm
+    -- . simp
+
+    --   .
+    --     let eqP := C.exCwF.cwfProp.ext_p (T := T) (f := f) (t := t)
+    --     let eqPD := congrArg (MapSub F) eqP
+    --     simp only [MapSubComp, pPreserveCast] at eqPD
+    --     rw [<- eqPD]
+    --     rfl
+    --     -- apply Eq.trans (symm (cast_comp _ _ (by aesop))) eqPD
+    -- let eqV := C.exCwF.cwfProp.ext_v (T := T) (f := f) (t := t)
+    -- let eqVD := congrArg (MapTm F) eqV
+    -- let eqPD2 := Eq.trans (symm (cast_comp _ _ (by aesop))) eqPD
+    -- let eqInD := D.exCwF.cwfProp.ext_unique (MapSub F f) () _ eqPD2
+    -- . skip
+    -- . apply eqInD
+    --   . simp
+    --   . aesop_cat
+    --   . simp
+    -- . simp

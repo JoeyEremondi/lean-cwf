@@ -14,7 +14,14 @@ theorem hCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
     (funEq : f = g) (argEq : x = y) :
       HEq (f x) (g y) := by aesop
 
+theorem castSymmL {A B : Type u} {eq : A = B} {x : A} {y : B}
+  (pf : cast eq x = y)
+  : x = cast (symm eq) y := by aesop
 
+
+theorem castSymmR {A B : Type u} {eq : B = A} {x : A} {y : B}
+  (pf : x = cast eq y)
+  : cast (symm eq) x =  y := by aesop
 
 theorem hCongFun {A : Type u} {B C : A → Type v} {f : (a : A) → B a} {g : (a : A) → C a}
     (x : A)
@@ -51,6 +58,16 @@ theorem hFunExt {A B C : Type u}
     fapply extEq
 
 
+theorem insertBothCasts {A B C : Type u}
+  {x : A} {y : B} {eq1 : A = C} {eq2 : B = C}
+  (eq : cast eq1 x = cast eq2 y)
+  : HEq x y := by aesop
+
+
+theorem deleteBothCasts {A B C : Type u}
+  {x : A} {y : B} {eq1 : A = C} {eq2 : B = C}
+  (eq : HEq x y)
+  : cast eq1 x = cast eq2 y := by aesop
 
 -- Helper module for a Sigma lemma we need over and over again
 -- Helps dealing with HEq for sigma types

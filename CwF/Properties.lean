@@ -19,7 +19,6 @@ universe u v u2
 section
   variable {C : Type u} [Category.{v}  C] [cwf: CwF C]
 
-
   -- If you compose with an extension, this is the same as extending by the composition,
   -- except that you also end up substituting in the term you're extending by.
   -- Unfortunate ugliness due to the fact that Tm⦃g ≫ f⦄ is not definitionally equal to tm⦃f⦄⦃g⦄
