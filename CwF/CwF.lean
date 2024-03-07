@@ -104,11 +104,15 @@ section
     have eq := mapCast t ((tmTyF.map_comp f.op g.op))
     aesop_cat
 
+  theorem tySubExt {Γ Δ Ξ : C} {f : Δ ⟶ Γ } {g : Ξ ⟶ Γ } {T : Ty Γ } (ctxEq : Δ = Ξ)
+    (eq : HEq f g)
+    : HEq (tySub T f) (tySub T g) := by aesop
+
 
   @[simp]
   theorem tmSubCast {Γ Δ : C} {T : Ty Γ} {f g : Δ ⟶ Γ} {t : Tm T} (eq : f = g) : t⦃f⦄ = ↑ₜ t⦃g⦄ := by aesop
 
-  theorem tmHeq {Γ Δ : C} {S : Ty Γ} {T : Ty Δ} (eq : Γ = Δ) (heq : S = cast (by aesop) T)
+  theorem tmHeq {Γ Δ : C} {S : Ty Γ} {T : Ty Δ} (eq : Γ = Δ) (heq : HEq S  T)
     : Tm (Γ := Γ) S = Tm  T := by aesop
 
 end

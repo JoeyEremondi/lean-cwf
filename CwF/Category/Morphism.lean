@@ -50,6 +50,15 @@ def MapSub {C D : CwFCat} (F : TmTyMorphism C D) {Γ Δ : C.Ctx}
   : (MapCtx F Δ) ⟶ (MapCtx F Γ) :=
   F.CtxF.map θ
 
+theorem MapSubComp {C D : CwFCat} (F : TmTyMorphism C D) {Γ Δ Ξ : C.Ctx}
+  (f : Ξ ⟶ Δ) (g : Δ ⟶ Γ )
+  : MapSub F (f ≫ g) = (MapSub F f) ≫ (MapSub F g) :=
+    F.CtxF.map_comp f g
+
+theorem MapSubId {C D : CwFCat} (F : TmTyMorphism C D) {Γ : C.Ctx}
+  : MapSub F (𝟙 Γ) = 𝟙 (MapCtx F Γ) :=
+    F.CtxF.map_id Γ
+
 def MapTy {C D : CwFCat} (F : TmTyMorphism C D)
   {Γ : C.Ctx}
   (T : Ty Γ)
@@ -130,34 +139,72 @@ def MapTmCommut {C D : CwFCat} (F : TmTyMorphism C D)
 
 -- set_option pp.explicit true
 
+/-- We use HSub instead of cast sub because we didn't build up a bunch of infrastructure for dealing with-/
+/-casts in types and substitutions -/
+/-but we have Context equality (which we avoid in the CwF module), which induces casts on types-/
 class PreservesCwF {C D : CwFCat} (F : TmTyMorphism C D)  : Prop where
   snocPreserve :
     {Γ : C.Ctx}
     → {T : Ty Γ}
-    → MapCtx F (Γ ▹ T) = (MapCtx F Γ) ▹ (MapTy F T)
-  pPreserve :
+    → MapCtx F (Γ ▹ T) = (MapCtx F Γ) ▹ (MapTy F T) := by aesop_cat
+  pPreserveH :
     {Γ : C.Ctx}
     → {T : Ty Γ}
-    → MapSub F (CwFExt.p (T := T) )
-      = cast (by rw [snocPreserve (T := T)]) (D.exCwF.cwfExt.p (T := MapTy F T))
-  pPreserveTm :
+    → HEq (MapSub F (CwFExt.p (T := T) ))
+        (D.exCwF.cwfExt.p (T := MapTy F T)) := by aesop_cat
+  -- pPreserveTm :
+  --   {Γ : C.Ctx}
+  --   → {T : Ty Γ}
+  --   → Tm (tySub (MapTy F T) (p (T := MapTy F T))) = Tm (MapTy F T⦃p (T := T)⦄)
+  vPreserveH :
     {Γ : C.Ctx}
     → {T : Ty Γ}
-    → Tm (tySub (MapTy F T) (p (T := MapTy F T))) = Tm (MapTy F T⦃p (T := T)⦄)
-  vPreserve :
-    {Γ : C.Ctx}
-    → {T : Ty Γ}
-    → MapTm F (CwFExt.v (T := T)) = cast pPreserveTm (v (T := MapTy F T))
+    → HEq (MapTm F (CwFExt.v (T := T))) (v (T := MapTy F T)) := by aesop_cat
+
+open PreservesCwF
 
 attribute [simp] PreservesCwF.snocPreserve
-attribute [simp] PreservesCwF.pPreserve
-attribute [simp] PreservesCwF.vPreserve
+attribute [simp] PreservesCwF.pPreserveH
+attribute [simp] PreservesCwF.vPreserveH
 
 
-def vPreserveTmPf  (C D : CwFCat) (F : TmTyMorphism C D) [PreservesCwF F]
+theorem vPreserveTm  (C D : CwFCat) (F : TmTyMorphism C D) [PreservesCwF F]
     {Γ : C.Ctx}
     {T : Ty Γ}
     : Tm (tySub (MapTy F T) (p (T := MapTy F T))) = Tm (MapTy F T⦃p (T := T)⦄) := by
     fapply tmHeq <;> try aesop_cat
-    . simp
+    rw [MapTyCommut]
+    fapply tySubExt
+    . aesop_cat
+    . symm
+      apply pPreserveH
+
+
+theorem pPreserveCast {C D : CwFCat} {F : TmTyMorphism C D} [PreservesCwF F]
+    {Γ : C.Ctx}
+    {T : Ty Γ}
+    :  (MapSub F (CwFExt.p (T := T) ))
+       = cast (by aesop) (D.exCwF.cwfExt.p (T := MapTy F T)) := by
+       apply eq_of_heq
+       apply HEq.trans pPreserveH
+       apply heq_of_cast_eq <;> aesop_cat
+
+
+
+def extPreserve (C D : CwFCat) {F : TmTyMorphism C D} [PreservesCwF F]
+  {Γ Δ : C.Ctx} {T : Ty Γ} {f : Δ ⟶ Γ} {t : Tm (T⦃f⦄)}
+  : HEq (MapSub F (ext f t)) (ext (MapSub F f) (↑ₜ (MapTm F t))) := by
+    let eqP := C.exCwF.cwfProp.ext_p (T := T) (f := f) (t := t)
+    let eqPD := congrArg (MapSub F) eqP
+    let eqV := C.exCwF.cwfProp.ext_v (T := T) (f := f) (t := t)
+    let eqVD := congrArg (MapTm F) eqV
+    simp only [MapSubComp] at eqPD
+    simp only [pPreserveCast] at eqPD
+    let eqInD := D.exCwF.cwfProp.ext_unique (MapSub F f) _ _ eqPD (by aesop) (eqD)
+    apply heq_of_heq_of_eq
+    . skip
+    . apply eqInD
+      . simp
+      . aesop_cat
+      . simp
     . simp
