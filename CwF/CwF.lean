@@ -108,7 +108,8 @@ section
   @[simp]
   theorem tmSubCast {Γ Δ : C} {T : Ty Γ} {f g : Δ ⟶ Γ} {t : Tm T} (eq : f = g) : t⦃f⦄ = ↑ₜ t⦃g⦄ := by aesop
 
-
+  theorem tmHeq {Γ Δ : C} {S : Ty Γ} {T : Ty Δ} (eq : Γ = Δ) (heq : S = cast (by aesop) T)
+    : Tm (Γ := Γ) S = Tm  T := by aesop
 
 end
 

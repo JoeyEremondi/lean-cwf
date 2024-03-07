@@ -15,6 +15,7 @@ theorem hCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
       HEq (f x) (g y) := by aesop
 
 
+
 theorem hCongFun {A : Type u} {B C : A → Type v} {f : (a : A) → B a} {g : (a : A) → C a}
     (x : A)
     (eq : B = C)

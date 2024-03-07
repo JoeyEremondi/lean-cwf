@@ -57,7 +57,7 @@ def MapTy {C D : CwFCat} (F : TmTyMorphism C D)
 
 
 def MapTm {C D : CwFCat} (F : TmTyMorphism C D)
-  {Γ : C.Ctx}
+ {Γ : C.Ctx}
   {T : Ty Γ}
   (t : Tm T)
   : Tm (MapTy F T) := mapFam (F.natTrans.app (Opposite.op Γ )) t
@@ -93,7 +93,7 @@ def MapTm {C D : CwFCat} (F : TmTyMorphism C D)
 --   end
 
 
-@[aesop safe]
+@[simp]
 def MapTyCommut {C D : CwFCat} (F : TmTyMorphism C D)
   {Δ Γ : C.Ctx}
   {T : Ty Γ}
@@ -101,7 +101,7 @@ def MapTyCommut {C D : CwFCat} (F : TmTyMorphism C D)
   : MapTy F (T⦃θ⦄) = (MapTy F T)⦃MapSub F θ⦄ :=
     congrFun (congrArg mapIx (F.natTrans.naturality (Opposite.op θ))) T
 
-@[aesop safe]
+@[simp]
 def MapTmCommut {C D : CwFCat} (F : TmTyMorphism C D)
   {Δ Γ : C.Ctx}
   {T : Ty Γ}
@@ -130,7 +130,7 @@ def MapTmCommut {C D : CwFCat} (F : TmTyMorphism C D)
 
 -- set_option pp.explicit true
 
-structure CwFMorphism (C D : CwFCat) extends TmTyMorphism C D where
+class PreservesCwF {C D : CwFCat} (F : TmTyMorphism C D)  : Prop where
   snocPreserve :
     {Γ : C.Ctx}
     → {T : Ty Γ}
@@ -144,20 +144,20 @@ structure CwFMorphism (C D : CwFCat) extends TmTyMorphism C D where
     {Γ : C.Ctx}
     → {T : Ty Γ}
     → Tm (tySub (MapTy F T) (p (T := MapTy F T))) = Tm (MapTy F T⦃p (T := T)⦄)
-  vPreserve' :
+  vPreserve :
     {Γ : C.Ctx}
     → {T : Ty Γ}
-    → (tyEq : _)
-    → MapTm F (CwFExt.v (T := T)) = cast tyEq (v (T := MapTy F T))
+    → MapTm F (CwFExt.v (T := T)) = cast pPreserveTm (v (T := MapTy F T))
+
+attribute [simp] PreservesCwF.snocPreserve
+attribute [simp] PreservesCwF.pPreserve
+attribute [simp] PreservesCwF.vPreserve
 
 
-theorem vPreserve {C D : CwFCat} (F : CwFMorphism C D)
+def vPreserveTmPf  (C D : CwFCat) (F : TmTyMorphism C D) [PreservesCwF F]
     {Γ : C.Ctx}
     {T : Ty Γ}
-    : MapTm F.toTmTyMorphism (CwFExt.v (T := T)) = cast (by simp) (v (T := MapTy F.toTmTyMorphism T))
-
-
-
--- -- instance cwfCat :  Category CwFCat where
--- --   Hom C D := C.tmTyInst.F ⟶ D.tmTy.F
--- --   id C := 𝟙 C.Ctx
+    : Tm (tySub (MapTy F T) (p (T := MapTy F T))) = Tm (MapTy F T⦃p (T := T)⦄) := by
+    fapply tmHeq <;> try aesop_cat
+    . simp
+    . simp
