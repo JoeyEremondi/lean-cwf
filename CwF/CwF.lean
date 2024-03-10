@@ -64,7 +64,8 @@ section
   notation:500 "↑ₜ" t => castTm t (by aesop)
   notation:50 s "=ₜ" t => s = (↑ₜ t)
 
-  theorem castSymm {Γ : C} {S T : Ty Γ} {s : Tm S} {t : Tm T} {eq : S = T} (eq2 : s = castTm t eq) :
+  @[aesop unsafe 50% apply]
+  theorem castSymm {Γ : C} {S T : Ty Γ} {s : Tm S} {t : Tm T} {eq : S = T} (eq2 : s =ₜ t) :
     t =ₜ s := by
     aesop
 
@@ -79,6 +80,22 @@ section
   @[simp]
   theorem castEq  {Γ : C} {S T : Ty Γ} {s : Tm S} {s t : Tm T} {eq : S = T}  :
     castTm s eq = castTm t eq ↔ s = t := by aesop
+
+  @[simp]
+  theorem castTyOutOfSub { Γ1 Γ2 : C} {θ : Δ ⟶ Γ1} {T : Ty Γ2}
+    {eq : Γ1 = Γ2 }
+    : tySub T (cast (α := Δ ⟶ Γ1) (β := Δ ⟶ Γ2) (by rw [eq]) θ)
+      = tySub (cast (by aesop) T) θ  := by aesop
+
+  @[simp]
+  theorem castOutOfSub {Δ Γ1 Γ2 : C} {θ : Δ ⟶ Γ1} {T : Ty Γ2} {t : Tm T}
+    {eq : Γ1 = Γ2 }
+    : tmSub t (cast (α := Δ ⟶ Γ1) (β := Δ ⟶ Γ2) (by rw [eq]) θ)
+      = castTm
+        (S := tySub T (cast (by rw [eq]) θ)) (T := tySub (cast (by rw [eq]) T) θ)
+        (tmSub (cast   (by aesop) t ) θ)
+        (by aesop):= by aesop
+
 
   -- Subsitution by the identity has no effect
   @[simp]
@@ -103,6 +120,10 @@ section
     simp [tySub, tmSub]
     have eq := mapCast t ((tmTyF.map_comp f.op g.op))
     aesop_cat
+
+  @[aesop unsafe apply]
+  theorem tmSubComp' {Γ Δ Ξ : C} {T : Ty Γ} {f : Δ ⟶ Γ} {g : Ξ ⟶ Δ} {t : Tm T}
+  :  (t⦃g ≫ f⦄ ) =ₜ ((t⦃f⦄)⦃g⦄)  := by simp
 
   theorem tySubExt {Γ Δ Ξ : C} {f : Δ ⟶ Γ } {g : Ξ ⟶ Γ } {T : Ty Γ } (ctxEq : Δ = Ξ)
     (eq : HEq f g)
@@ -141,6 +162,7 @@ notation:5  "‼"  => empty
 notation:max Γ:1000 "▹" T:max => snoc Γ T
 notation:100 "⟪" θ "," t "⟫" => ext θ t
 
+
 class CwFProp (C : Type u) [catInst : Category.{v} C] [tmTy : TmTy C] [cwf : CwFExt C] : Prop where
   -- The extension is the unique morphism satisfying certain laws
   -- Extending and composing with p cancels: if you introduce an unused variable then replace it with t,
@@ -166,7 +188,7 @@ class CwFProp (C : Type u) [catInst : Category.{v} C] [tmTy : TmTy C] [cwf : CwF
   ext_unique : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ)
     → (t : Tm (tySub T f)) → (g : _)
     → (peq : g ≫ p = f)
-    → (v⦃g⦄ = castTm t (by simp [peq]))
+    → (v⦃g⦄ = castTm t (by aesop))
     → g = ⟪f,t⟫ := by aesop_cat
 
 attribute [simp] CwFProp.ext_p

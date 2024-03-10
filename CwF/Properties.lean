@@ -19,6 +19,29 @@ universe u v u2
 section
   variable {C : Type u} [Category.{v}  C] [cwf: CwF C]
 
+  -- Some cast lemmas
+  @[simp]
+  def castSnoc {Γ Δ : C} {T : Ty Γ} {eq : Γ = Δ}
+    : Δ ▹ (cast (by rw [eq]) T) = Γ ▹ T := by aesop
+  --
+  --
+  @[simp]
+  theorem castP {Γ Δ  : C} {T : Ty Γ} {eq : Γ = Δ } :
+    cast (β := Δ ▹ (cast (by aesop) T) ⟶ Δ ) (by aesop) (p (T := T))  = p :=
+      by aesop
+
+  @[simp]
+  theorem castV {Γ Δ  : C} {T : Ty Γ} {eq : Γ = Δ } :
+    cast (by aesop) (v (T := T))  = v (T := cast (β := Ty Δ) (congrArg Ty eq) T) :=
+      by aesop
+
+  @[simp]
+  theorem vExtComp {Γ Δ Ξ : C} {T : Ty Γ }
+  {f : Δ ⟶ Γ} {t : Tm (T⦃f⦄)} {θ : Ξ ⟶ Δ}
+    : tmSub v (θ ≫ ⟪f,t⟫)  = cast (by aesop) t⦃θ⦄  := by
+    simp [tmSubComp']
+
+
   -- If you compose with an extension, this is the same as extending by the composition,
   -- except that you also end up substituting in the term you're extending by.
   -- Unfortunate ugliness due to the fact that Tm⦃g ≫ f⦄ is not definitionally equal to tm⦃f⦄⦃g⦄
@@ -27,11 +50,8 @@ section
     (f : Δ ⟶ Γ)
     (g : Ξ ⟶ Δ)
     (t : Tm (T⦃f⦄))
-    : (g ≫ ⟪f , t⟫) = ⟪g ≫ f , (↑ₜ t⦃g⦄) ⟫ := by
+    : (g ≫ ⟪f , t⟫) = ⟪g ≫ f , (castTm t⦃g⦄ (by simp [tySubComp])) ⟫ := by
       fapply ext_unique <;> simp_all
-      have eq2 := castSymm (tmSubComp (f := ⟪f , t⟫) (g := g) (t := v))
-      rw [eq2]
-      simp_all
 
 
   -- If you take a weaning and extend it with the newly introduced variable, you get the identity,
@@ -44,6 +64,9 @@ section
   -- Helper function for dependent cong
   -- Should really be in the stdlib
   -- TODO PR?
+  --
+  --
+
 
   theorem castCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
     (funEq : f = g) (argEq : x = y) :
@@ -152,7 +175,6 @@ section
     simp_all
 
 
-
   @[simp]
   theorem vCast {Γ  : C} {T : Ty Γ} {f : _} (eq : f = 𝟙 (Γ ▹ T)) : (tmSub (v (T := T)) f)  =ₜ v := by
     aesop
@@ -180,10 +202,6 @@ section
       rw [<- ext_id (cwf := cwf1) (T := T)]
       fapply prop1.ext_unique (cwf := inst1)
         <;> try simp [ext_nat (cwf := cwf1), prop1.ext_p (cwf := inst1) ]
-      trans
-      . apply castSymm
-        apply tmSubComp
-      . simp [prop1.ext_v (cwf := inst1)]
 
   --Given the functoral definition of substitution on terms and types for a category of contexts,
   --context extension is unique up to isomorphism

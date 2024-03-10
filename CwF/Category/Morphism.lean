@@ -251,7 +251,6 @@ theorem undoEqToHom {C : Type u} [Category C] [CwF C]
 --          (cast (α := Tm T) (β := Tm T⦃eqToHom eq⦄) (by aesop ) t)
 --          θ )
 --         (by aesop)
---  := by let TX : Ty Ξ := T⦃eqToHom eq⦄ let tX : Tm TX := t⦃eqToHom eq⦄ simp let eq := castInTmSubHelper (Γ := Γ) (T := T) (t := t) (θ := θ) (eq := eq) rw [undoEqToHom] at eq assumption -- theorem castInTmSubOut {C : Type u} [Category C] [CwF C] {Γ Δ Ξ : C} {T : Ty Γ} {t : Tm T}  {θ : Δ ⟶ Ξ} {eq : Ξ = Γ} : t⦃cast (by rw [eq]) θ⦄ = (cast (by aesop) t)⦃θ⦄  := by aesop theorem vCastMap {C D : CwFCat} {F : TmTyMorphism C D} {Γ Δ : C.Ctx} {T : Ty Γ} {θ : Δ ⟶ Γ ▹ T} : tmSub (v (T := MapTy F T)) (cast (by admit) (MapSub F θ)) = cast (by admit) (tmSub (MapTm F v) (MapSub F θ)) := by admit
 
 
 @[simp]
