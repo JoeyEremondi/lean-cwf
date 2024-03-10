@@ -308,11 +308,17 @@ def extPreserveCast (C D : CwFCat) {F : TmTyMorphism C D} [PreservesCwF F]
       apply congrArg (MapSub F)
       apply C.exCwF.cwfProp.ext_p <;> aesop_cat
     fapply D.exCwF.cwfProp.ext_unique _ _ _ peq
+    simp [castTm]
+    rw [castCastGen]
+    apply castSymm <;> try aesop_cat
     simp
-    push_cast
-    rw [MapSubCastSnoc (F := F) ]
+    apply castSymm <;> try aesop_cat 
+    
+    simp [castTm]
+    norm_cast
+    -- rw [MapSubCastSnoc (F := F) ]
 
-rw [<- (MapSubCast F (θ := ⟪f,t⟫))]
+-- rw [<- (MapSubCast F (θ := ⟪f,t⟫))]
     -- . simp [castInTmSub]
     --   simp [<- vPreserveCastL]
     --   apply deleteBothCasts

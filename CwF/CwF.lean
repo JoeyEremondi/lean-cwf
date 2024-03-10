@@ -73,6 +73,12 @@ section
   theorem castSub {Γ Δ : C} {S T : Ty Γ} {t : Tm T} {eq : S = T} {f : Δ ⟶ Γ}  :
     (castTm t eq )⦃ f ⦄ = castTm (t⦃f⦄) (by aesop) := by aesop
 
+
+  @[simp]
+  theorem castSubGen {Γ Δ Ξ : C}  {T : Ty Γ} {t : Tm T} {eq : Γ = Ξ}
+  {f : Δ ⟶ Γ}  :
+    tmSub (cast (β := Tm {Γ = Ξ} ) (by aesop) t)  f = cast (by aesop) (t⦃f⦄)  := by aesop
+
   @[simp]
   theorem castCast  {Γ : C} {S T U: Ty Γ} {s : Tm S} {t : Tm U} {eq : S = T} {eq2 : T = U} :
     (castTm (castTm t eq2) eq) = castTm t (Eq.trans eq eq2) := by aesop
@@ -80,6 +86,12 @@ section
   @[simp]
   theorem castEq  {Γ : C} {S T : Ty Γ} {s : Tm S} {s t : Tm T} {eq : S = T}  :
     castTm s eq = castTm t eq ↔ s = t := by aesop
+
+
+  @[simp]
+  theorem castCastGen {X Y Z : Type u} {x : X} {y : Y}
+    {eq1 : X = Z} {eq2 : Y = Z}
+    : cast eq1 x = cast eq2 y ↔ x = cast (by aesop) y := by aesop
 
   @[simp]
   theorem castTyOutOfSub { Γ1 Γ2 : C} {θ : Δ ⟶ Γ1} {T : Ty Γ2}
