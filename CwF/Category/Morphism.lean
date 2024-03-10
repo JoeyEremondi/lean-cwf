@@ -278,26 +278,26 @@ theorem MapSubCast {C D : CwFCat} (F : TmTyMorphism C D)
   : cast (by rw [eq]) (MapSub F θ)  = MapSub F (cast (β := Δ ⟶ Ξ) (by rw [eq]) θ)  := by aesop
 
 
-lemma MapTyPLem {C D : CwFCat} (F : TmTyMorphism C D) [PreservesCwF F]
- {Γ Δ : C.Ctx}
- {T : Ty Γ }
- : MapTy F (T⦃p⦄) = cast (by aesop) (MapTy F T)⦃p⦄ := by
-   symm
-   apply eq_cast_of_heq
-   symm
-   simp only [MapTyCommut, pPreserveCastR]
-   rw [MapTyCast]
-   apply hCong (f := tySub (MapTy F T))  (g := tySub (MapTy F T)) (x := cast _ p) (y := p)
-   simp only [MapTyCast, MapTyCommut, pPreserveCastR]
+-- lemma MapTyPLem {C D : CwFCat} (F : TmTyMorphism C D) [PreservesCwF F]
+--  {Γ Δ : C.Ctx}
+--  {T : Ty Γ }
+--  : MapTy F (T⦃p⦄) = cast (by aesop) (MapTy F T)⦃p⦄ := by
+--    symm
+--    apply eq_cast_of_heq
+--    symm
+--    simp only [MapTyCommut, pPreserveCastR]
+--    rw [MapTyCast]
+--    apply hCong (f := tySub (MapTy F T))  (g := tySub (MapTy F T)) (x := cast _ p) (y := p)
+--    simp only [MapTyCast, MapTyCommut, pPreserveCastR]
 
 
-theorem MapSubCastSnoc {C D : CwFCat} (F : TmTyMorphism C D) [PreservesCwF F]
- {Γ Δ : C.Ctx}
- {T : Ty Γ }
-  {θ : Δ ⟶ Γ ▹ T}
-  : v ⦃cast (α := MapCtx F Δ ⟶ MapCtx  F (Γ ▹ T) ) (β := MapCtx F Δ ⟶ (MapCtx F Γ) ▹ (MapTy F T))
-       (by aesop) (MapSub F θ) ⦄
-    = castTm (MapTm F (v⦃θ⦄)) (by dsimp only [MapTyCommut]) := by admit
+-- theorem MapSubCastSnoc {C D : CwFCat} (F : TmTyMorphism C D) [PreservesCwF F]
+--  {Γ Δ : C.Ctx}
+--  {T : Ty Γ }
+--   {θ : Δ ⟶ Γ ▹ T}
+--   : v ⦃cast (α := MapCtx F Δ ⟶ MapCtx  F (Γ ▹ T) ) (β := MapCtx F Δ ⟶ (MapCtx F Γ) ▹ (MapTy F T))
+--        (by aesop) (MapSub F θ) ⦄
+--     = castTm (MapTm F (v⦃θ⦄)) (by simp [MapTyCommut]) := by admit
 
 
 def extPreserveCast (C D : CwFCat) {F : TmTyMorphism C D} [PreservesCwF F]
@@ -305,10 +305,12 @@ def extPreserveCast (C D : CwFCat) {F : TmTyMorphism C D} [PreservesCwF F]
   : (cast (by aesop) (MapSub F (ext f t))) = (ext (MapSub F f) (↑ₜ (MapTm F t))) := by
     let peq : cast (_ : (MapCtx F Δ ⟶ MapCtx F Γ▹T) = (MapCtx F Δ ⟶ (MapCtx F Γ)▹(MapTy F T))) (MapSub F (⟪f,t⟫)) ≫ p = MapSub F f := by
       rw [<- cast_comp] <;> try aesop_cat
-      simp only [<- pPreserveCast, <- MapSubComp]
+      simp only [<- pPreserveCastR, <- MapSubComp]
       apply congrArg (MapSub F)
       apply C.exCwF.cwfProp.ext_p <;> aesop_cat
     fapply D.exCwF.cwfProp.ext_unique _ _ _ peq
+    simp
+    push_cast
     rw [MapSubCastSnoc (F := F) ]
 
 rw [<- (MapSubCast F (θ := ⟪f,t⟫))]
