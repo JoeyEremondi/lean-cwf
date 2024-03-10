@@ -169,6 +169,8 @@ class CwFProp (C : Type u) [catInst : Category.{v} C] [tmTy : TmTy C] [cwf : CwF
     → (v⦃g⦄ = castTm t (by simp [peq]))
     → g = ⟪f,t⟫ := by aesop_cat
 
+attribute [simp] CwFProp.ext_p
+attribute [simp] CwFProp.ext_v
 
 open CwFProp
 
