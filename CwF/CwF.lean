@@ -75,11 +75,6 @@ section
 
 
   @[simp]
-  theorem castSubGen {Γ Δ Ξ : C}  {T : Ty Γ} {t : Tm T} {eq : Γ = Ξ}
-  {f : Δ ⟶ Γ}  :
-    tmSub (cast (β := Tm {Γ = Ξ} ) (by aesop) t)  f = cast (by aesop) (t⦃f⦄)  := by aesop
-
-  @[simp]
   theorem castCast  {Γ : C} {S T U: Ty Γ} {s : Tm S} {t : Tm U} {eq : S = T} {eq2 : T = U} :
     (castTm (castTm t eq2) eq) = castTm t (Eq.trans eq eq2) := by aesop
 
