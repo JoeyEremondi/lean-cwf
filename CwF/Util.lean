@@ -10,6 +10,14 @@ theorem eq_cast_of_heq  {a a_1 : Sort u_1} {a_2 : a} {a' : a_1}
   cases heq
   rfl
 
+
+theorem cast_moveR  {A B : Sort u_1} {a : A} {b : B}
+  {eq : A = B} (abeq : cast eq a = b) : a = cast (by rw [eq]) b := by aesop
+
+
+theorem cast_moveL  {A B : Sort u_1} {a : A} {b : B}
+  {eq : B = A} (abeq : a = cast eq b) : cast (by rw [eq]) a = b := by aesop
+
 theorem hCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
     (funEq : f = g) (argEq : x = y) :
       HEq (f x) (g y) := by aesop

@@ -68,6 +68,16 @@ section
   --
 
 
+  theorem v_eq {Γ Δ : C} {T : Ty Γ} {f g : Δ ⟶ Γ▹T }
+    (eq : f = g)
+    : (v (T := T))⦃f⦄ =ₜ (v (T := T))⦃g⦄  := by aesop
+
+
+  theorem v_id {Γ : C} {T : Ty Γ} {f : Γ▹T ⟶ Γ▹T }
+    (eq : f = 𝟙 (Γ▹T))
+    : (v (T := T))⦃f⦄ =ₜ v  := by aesop
+
+
   theorem castCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
     (funEq : f = g) (argEq : x = y) :
       (f x) = cast (by aesop) (g y) := by

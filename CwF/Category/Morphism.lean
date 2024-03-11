@@ -12,6 +12,7 @@ import Mathlib.CategoryTheory.Category.Basic
 
 import CwF.Fam
 import CwF.CwF
+import CwF.Properties
 import CwF.Util
 
 
@@ -55,10 +56,11 @@ def MapSub {C D : CwFCat} (F : TmTyMorphism C D) {Γ Δ : C.Ctx}
   : (MapCtx F Δ) ⟶ (MapCtx F Γ) :=
   F.CtxF.map θ
 
+@[simp]
 theorem MapSubComp {C D : CwFCat} (F : TmTyMorphism C D) {Γ Δ Ξ : C.Ctx}
   (f : Ξ ⟶ Δ) (g : Δ ⟶ Γ )
-  : MapSub F (f ≫ g) = (MapSub F f) ≫ (MapSub F g) :=
-    F.CtxF.map_comp f g
+  : (MapSub F f) ≫ (MapSub F g) = MapSub F (f ≫ g) :=
+    Eq.symm (F.CtxF.map_comp f g)
 
 theorem MapSubId {C D : CwFCat} (F : TmTyMorphism C D) {Γ : C.Ctx}
   : MapSub F (𝟙 Γ) = 𝟙 (MapCtx F Γ) :=
@@ -161,9 +163,34 @@ class PreservesCwF {C D : CwFCat} (F : TmTyMorphism C D)  : Type _ where
     {Γ : C.Ctx}
     → {T : Ty Γ}
     → (MapTm F (CwFExt.v (T := T)))
-     = cast (by simp [pPreserve]) (v (T := MapTy F T))⦃snocPreserve.hom⦄ := by aesop_cat
+     =ₜ (v (T := MapTy F T))⦃snocPreserve.hom⦄  := by aesop_cat
+
+open PreservesCwF
 
 attribute [simp] PreservesCwF.snocPreserve
 attribute [simp] PreservesCwF.pPreserve
 attribute [simp] PreservesCwF.vPreserve
 
+@[aesop unsafe apply]
+def pPreserve' {C D : CwFCat} {F : TmTyMorphism C D} [PreservesCwF F]
+    {Γ : C.Ctx}
+    {T : Ty Γ}
+    : p (T := MapTy F T) =  snocPreserve.inv ≫ MapSub F (p (T := T))
+      := by aesop
+
+def vPreserve'  {C D : CwFCat} {F : TmTyMorphism C D} [PreservesCwF F]
+    {Γ : C.Ctx}
+    {T : Ty Γ}
+    : (v (T := MapTy F T)) =
+       castTm (MapTm F (CwFExt.v (T := T)))⦃snocPreserve.inv⦄ (by aesop) := by simp
+
+set_option maxHeartbeats 1000000
+
+def extPreserveCast (C D : CwFCat) {F : TmTyMorphism C D} [pres : PreservesCwF F]
+  {Γ Δ : C.Ctx} {T : Ty Γ} {f : Δ ⟶ Γ} {t : Tm (T⦃f⦄)}
+  : MapSub F (ext f t) ≫ snocPreserve.hom
+    = (ext (MapSub F f) (cast (by aesop) (MapTm F t)))  := by
+    let vP := cast_moveL (pres.vPreserve (T := T))
+    fapply CwFProp.ext_unique
+    . simp [<- pPreserve]
+    . rw [vPreserve']

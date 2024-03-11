@@ -65,9 +65,9 @@ section
   notation:50 s "=ₜ" t => s = (↑ₜ t)
 
   @[aesop unsafe 50% apply]
-  theorem castSymm {Γ : C} {S T : Ty Γ} {s : Tm S} {t : Tm T} {eq : S = T} (eq2 : s =ₜ t) :
-    t =ₜ s := by
-    aesop
+  theorem castSymm {Γ : C} {S T : Ty Γ} {s : Tm S} {t : Tm T} {eq : S = T} :
+    (s =ₜ t) ↔ (t =ₜ s) := by
+    constructor <;> aesop
 
   @[simp]
   theorem castSub {Γ Δ : C} {S T : Ty Γ} {t : Tm T} {eq : S = T} {f : Δ ⟶ Γ}  :
@@ -79,8 +79,13 @@ section
     (castTm (castTm t eq2) eq) = castTm t (Eq.trans eq eq2) := by aesop
 
   @[simp]
-  theorem castEq  {Γ : C} {S T : Ty Γ} {s : Tm S} {s t : Tm T} {eq : S = T}  :
-    castTm s eq = castTm t eq ↔ s = t := by aesop
+  theorem castEq  {Γ : C} {T : Ty Γ}  {s t : Tm T}   :
+    castTm s (rfl) = castTm t rfl ↔ s = t := by aesop
+
+  theorem castTrans {Γ : C} {S T U : Ty Γ} {s : Tm S} {t : Tm T} {u : Tm U}
+    {eq1 : S = T} {eq2 : T = U}
+    (eqst : s =ₜ t)  (eqtu : t =ₜ u) : s =ₜ u := by aesop
+    
 
 
   @[simp]
