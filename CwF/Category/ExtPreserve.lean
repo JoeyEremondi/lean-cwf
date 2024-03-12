@@ -1,4 +1,5 @@
 
+
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.NatTrans
 import Mathlib.CategoryTheory.Comma.Over
@@ -12,15 +13,16 @@ import Mathlib.CategoryTheory.Category.Basic
 
 import CwF.Fam
 import CwF.CwF
-import CwF.Properties
+-- import CwF.Properties
 import CwF.Util
 import CwF.Category.TmTyMorphism
+import CwF.Category.Morphism
 
 
 open CategoryTheory
 open CwFExt
 open TmTy
+open PreservesCwF
 
 universe u v u2
-section
 
