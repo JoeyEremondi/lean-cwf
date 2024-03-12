@@ -35,6 +35,8 @@ section
     cast (by aesop) (v (T := T))  = v (T := cast (β := Ty Δ) (congrArg Ty eq) T) :=
       by aesop
 
+
+
   @[simp]
   theorem vExtComp {Γ Δ Ξ : C} {T : Ty Γ }
   {f : Δ ⟶ Γ} {t : Tm (T⦃f⦄)} {θ : Ξ ⟶ Δ}

@@ -14,8 +14,8 @@ universe u v u2
 -- Terms and Types in a CwF, without the comprehension structure
 -- A CwF over C has a Fam-valued presheaf
 -- We interpret objects of C as contexts
-class TmTy (C : Type u) [Category.{v} C] : Type (max u v (u2+1)) where
-  tmTyF : CategoryTheory.Functor Cᵒᵖ Fam.{u2}
+class TmTy (Ctx : Type u) [Category.{v} Ctx] : Type (max u v (u2+1)) where
+  tmTyF : CategoryTheory.Functor Ctxᵒᵖ Fam.{u2}
 
 open TmTy
 
