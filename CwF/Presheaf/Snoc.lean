@@ -13,7 +13,7 @@ import Mathlib.CategoryTheory.Types
 
 import CwF.Presheaf.TmTy
 
-import CwF.CwF
+import CwF.Basics
 
 open CategoryTheory
 

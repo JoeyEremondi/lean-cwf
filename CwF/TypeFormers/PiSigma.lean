@@ -7,7 +7,7 @@ import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 
 
-import CwF.CwF
+import CwF.Basics
 import CwF.Properties
 import CwF.TypeFormers.DepTyFormer
 
@@ -16,11 +16,12 @@ open CategoryTheory
 -- Pi type structure in a category with families
 
 
+namespace CwF
+
 universe u v u2
-variable {C : Type u} [Category.{v} C] [CwF C]
 
 
-class HasPi : Type _ where
+class HasPi {C : Type u} [Category.{v} C] [CwF C] : Type _ where
   Pi : DepTypeFormer C
   lam  {Γ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)}
     : Tm T → Tm (Pi S T)
@@ -36,8 +37,7 @@ class HasPi : Type _ where
       (app f s)⦃θ⦄
       (app (T := T⦃wk θ⦄) (castTm (f⦃θ⦄) (by rw [PiS]) ) s⦃θ⦄)
       (by
-          rw [tySubComp]
-          rw [tySubComp]
+          simp only [tySubComp]
           rw [wkTm]
       )
 
@@ -50,7 +50,9 @@ attribute [simp] Piβ PiS LamS AppS
 open CwFExt
 open CwFProp
 
-class HasSigma : Type _ where
+-- attribute [aesop unsafe 50% simp] Category.assoc
+
+class HasSigma {C : Type u} [Category.{v} C] [CwF C] : Type _ where
   Sigma : DepTypeFormer C
   pair  {Γ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)}
      : (s : Tm S) → Tm T⦃s⁻⦄ → Tm (Sigma S T)
@@ -62,27 +64,42 @@ class HasSigma : Type _ where
   SigmaProj1 : proj1 (pair s t) = s
   SigmaProj2 : proj2 (T := T) (pair s t) = castTm t (by simp [SigmaProj1])
   SigmaS : DepSubCongr Sigma
-  ProjS1 {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {t : Tm T} {θ : Δ ⟶ Γ} {x : Tm (Sigma S T)}
+  ProjS1 {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {θ : Δ ⟶ Γ} {x : Tm (Sigma S T)}
     : (proj1 x)⦃θ⦄ = proj1 (T := T⦃wk θ⦄) (castTm x⦃θ⦄ (by simp [SigmaS (P := T)]))
 
-  ProjS2 {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {t : Tm T} {θ : Δ ⟶ Γ} {x : Tm (Sigma S T)}
+  /-- Proof that (proj₂ x)⦃θ⦄ =ₜ proj₂ (↑ₜ x⦃θ⦄),
+      but aesop can't figure the type equalities out on its own  -/
+  ProjS2 {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {θ : Δ ⟶ Γ} {x : Tm (Sigma S T)}
     {x : Tm (Sigma S T)}
     : eqModCast
         (proj2 x)⦃θ⦄
         (proj2 (T := T⦃wk θ⦄) (castTm x⦃θ⦄ (by simp [SigmaS (P := T)])))
         (by
-            simp only [tySubComp] <;> try aesop_cat
-            apply  congrArg (tySub T) <;> try aesop_cat
-            simp
-            rw [ext_inj]
-            fconstructor
-            . simp [toSub]
-              apply congrArg (fun x => CategoryStruct.comp x θ)
-
-
+            simp only [tySubComp]
+            apply  congrTySub
+            simp [<- Category.assoc, ProjS1]
         )
-  -- PairS : (pair s t)⦃θ⦄ = pair s⦃θ⦄ t⦃wk θ⦄
+  PairS  {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)}  {θ : Δ ⟶ Γ} (s : Tm S) (t : Tm T⦃s⁻⦄)
+    : eqModCast
+      (pair s t)⦃θ⦄
+      (pair (T := tySub T (wk θ)) s⦃θ⦄ (castTm t⦃θ⦄ (by
+        simp
+        apply congrTySub
+        simp [<- Category.assoc])))
+      (by aesop_cat)
 
 open HasPi
+open HasSigma
 
 attribute [simp] Piβ PiS LamS AppS
+attribute [simp] SigmaProj1 SigmaProj2 SigmaS ProjS1 ProjS2 PairS
+
+-- class HasRecords {C : Type u} [Category.{v} C] [CwF C] : Type _ where
+--   BigSigma {Γ : C}
+--     : (Over Γ ) → Ty Γ
+
+--   mkBigSigma  {Γ : C} {fields : Over Γ}
+--     : (_ ⟶ fields) → Tm (BigSigma tele)
+
+
+end CwF

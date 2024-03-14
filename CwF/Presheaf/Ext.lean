@@ -14,7 +14,7 @@ import Mathlib.CategoryTheory.Types
 import CwF.Presheaf.TmTy
 import CwF.Presheaf.Snoc
 
-import CwF.CwF
+import CwF.Basics
 
 open CategoryTheory
 

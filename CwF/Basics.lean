@@ -1,12 +1,16 @@
 import CwF.Fam
 import Mathlib.CategoryTheory.Category.Basic
 import Mathlib.CategoryTheory.Functor.Basic
-import Mathlib.CategoryTheory.Functor.Basic
+-- import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 import Mathlib.Logic.Unique
 
 open CategoryTheory
+open Fam
+
+
+namespace CwF
 
 universe u v u2
 
@@ -20,7 +24,7 @@ class TmTy (Ctx : Type u) [Category.{v} Ctx] : Type (max u v (u2+1)) where
 open TmTy
 
 section
-  variable {C : Type u} [Category.{v}  C] [tmTy : TmTy.{u,v} C]
+  variable {C : Type u} [cat : Category.{v}  C] [tmTy : TmTy.{u,v} C]
 
   -- The index set of the functor F gives types over a given context
   def Ty (Γ : C) : Type u :=  ixSet (tmTyF.obj (Opposite.op Γ))
@@ -170,7 +174,7 @@ class CwFExt (C : Type u) [Category.{v} C]  [tmTy : TmTy C] : Type _  where
 
 
 open CwFExt
-notation:5  "‼"  => empty
+notation:5  "‼"  => CwFExt.empty
 notation:max Γ:1000 "▹" T:max => snoc Γ T
 notation:max "⟪" θ "," t "⟫" => ext θ t
 
@@ -209,7 +213,7 @@ open CwFProp
 
 -- A CwF has a type-term structure,
 -- plus context-extension, substitution extension, and a terminal object
-class CwF (C : Type u) [Category.{v} C]  : Type _ where
+class CwF (C : Type u) [cat : Category.{v} C]  : Type _ where
   [tmTy : TmTy C]
   [cwfExt : CwFExt C]
   [cwfProp : CwFProp C]
@@ -223,3 +227,6 @@ instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
 
 
 attribute [simp] ext_p ext_v
+
+
+end CwF

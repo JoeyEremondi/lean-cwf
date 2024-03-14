@@ -17,7 +17,7 @@ import CwF.Presheaf.TmTy
 import CwF.Presheaf.Snoc
 import CwF.Presheaf.Ext
 
-import CwF.CwF
+import CwF.Basics
 
 
 open CategoryTheory

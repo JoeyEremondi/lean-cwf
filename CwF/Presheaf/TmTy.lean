@@ -14,7 +14,7 @@ import Mathlib.CategoryTheory.Types
 
 
 
-import CwF.CwF
+import CwF.Basics
 
 /-!  The CwF functor for Presheaves. For a presheaf Γ, defines a structure of types over that presheaf
 (e.g. we interpret the presheaf as a context) and the structure of terms over a given type, as well

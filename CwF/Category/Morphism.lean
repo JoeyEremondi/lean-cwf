@@ -13,7 +13,7 @@ import Mathlib.CategoryTheory.Types
 
 
 import CwF.Fam
-import CwF.CwF
+import CwF.Basics
 import CwF.Properties
 import CwF.Util
 

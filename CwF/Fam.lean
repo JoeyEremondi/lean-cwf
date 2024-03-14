@@ -16,6 +16,8 @@ open Opposite
 
 universe  u
 
+namespace Fam
+
 -- Fam is equivalent to the arrow category of Set
 -- Fam can be defined fibrationally the arrow category of Set
 abbrev Fam : Type (u + 1)
@@ -247,3 +249,4 @@ theorem mapFamComp {AB₁ AB₂ AB₃ : Fam}  (f : AB₁ ⟶ AB₂) (g : AB₂ �
 
 
 
+end Fam
