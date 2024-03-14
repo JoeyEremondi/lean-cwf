@@ -40,7 +40,7 @@ section
   @[simp]
   theorem vExtComp {Γ Δ Ξ : C} {T : Ty Γ }
   {f : Δ ⟶ Γ} {t : Tm (T⦃f⦄)} {θ : Ξ ⟶ Δ}
-    : tmSub v (θ ≫ ⟪f,t⟫)  = cast (by aesop) t⦃θ⦄  := by
+    : v⦃θ ≫ ⟪f,t⟫⦄  = cast (by aesop) t⦃θ⦄  := by
     simp [tmSubComp']
 
 
@@ -188,7 +188,7 @@ section
 
 
   @[simp]
-  theorem vCast {Γ  : C} {T : Ty Γ} {f : _} (eq : f = 𝟙 (Γ ▹ T)) : (tmSub (v (T := T)) f)  =ₜ v := by
+  theorem vCast {Γ  : C} {T : Ty Γ} {f : _} (eq : f = 𝟙 (Γ ▹ T)) : (v (T := T))⦃f⦄  =ₜ v := by
     aesop
 
   @[simp]

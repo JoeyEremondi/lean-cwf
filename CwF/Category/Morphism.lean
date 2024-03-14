@@ -36,8 +36,7 @@ structure CwFCat : Type _ where
 instance : Coe CwFCat (Type _) where
   coe C := C.Ctx
 
-attribute [instance] CwFCat.exCat
-attribute [instance] CwFCat.exCwF
+attribute [instance] CwFCat.exCat CwFCat.exCwF
 
 structure TmTyMorphism (C D : CwFCat) : Type _ where
   CtxF : CategoryTheory.Functor.{v,v,u,u} C.Ctx D.Ctx
@@ -132,7 +131,7 @@ class IsoPreserveCwF {C D : CwFCat} (F : TmTyMorphism C D)  : Type _ where
   vPreserve :
     {Γ : C.Ctx}
     → {T : Ty Γ}
-    → (MapTm F (CwFExt.v (T := T)))
+    → (MapTm F (v (T := T)))
      =ₜ (v (T := MapTy F T))⦃snocIso.hom⦄  := by aesop_cat
 
 open IsoPreserveCwF
@@ -154,15 +153,15 @@ def vPreserve'  {C D : CwFCat} {F : TmTyMorphism C D} [IsoPreserveCwF F]
     {Γ : C.Ctx}
     {T : Ty Γ}
     : (v (T := MapTy F T)) =
-       castTm (MapTm F (CwFExt.v (T := T)))⦃snocIso.inv⦄ (by simp [pPreserve']) :=
+       castTm (MapTm F (v (T := T)))⦃snocIso.inv⦄ (by simp [pPreserve']) :=
          by simp only [vPreserve, castSub, tmSubComp, Iso.inv_hom_id, vCast, cast_cast, cast_eq]
 
 
 
 def extPreserve' (C D : CwFCat) {F : TmTyMorphism C D} [pres : IsoPreserveCwF F]
   {Γ Δ : C.Ctx} {T : Ty Γ} {f : Δ ⟶ Γ} {t : Tm (T⦃f⦄)}
-  : MapSub F (ext f t) ≫ snocIso.hom
-    = (ext (MapSub F f) (↑ₜ (MapTm F t) ))  := by
+  : MapSub F ⟪f, t⟫ ≫ snocIso.hom
+    = ⟪MapSub F f, ↑ₜ (MapTm F t) ⟫  := by
     fapply CwFProp.ext_unique <;> simp
     . simp [<- pPreserve]
     . let vid : v⦃⟪f,t⟫⦄ = castTm t (_ : T⦃p⦄⦃⟪f,t⟫⦄ = T⦃f⦄)
@@ -176,8 +175,8 @@ def extPreserve' (C D : CwFCat) {F : TmTyMorphism C D} [pres : IsoPreserveCwF F]
 @[simp]
 def extPreserve (C D : CwFCat) {F : TmTyMorphism C D} [pres : IsoPreserveCwF F]
   {Γ Δ : C.Ctx} {T : Ty Γ} {f : Δ ⟶ Γ} {t : Tm (T⦃f⦄)}
-  : MapSub F (ext f t)
-    = (ext (MapSub F f) (↑ₜ (MapTm F t) )) ≫ snocIso.inv  := by
+  : MapSub F ⟪f,t⟫
+    =  ⟪MapSub F f, ↑ₜ (MapTm F t) ⟫ ≫ snocIso.inv  := by
     symm
     rw [CategoryTheory.Iso.comp_inv_eq]
     symm
@@ -197,7 +196,7 @@ class StrictPreserveCwF {C D : CwFCat} (F : TmTyMorphism C D)  : Prop where
   vPreserveStrict :
     {Γ : C.Ctx}
     → {T : Ty Γ}
-    → (MapTm F (CwFExt.v (T := T)))
+    → (MapTm F (v (T := T)))
      =ₜ (v (T := MapTy F T))⦃eqToHom snocPreserve⦄  := by aesop_cat
 
 open StrictPreserveCwF
@@ -240,7 +239,6 @@ theorem preserveComp {C D E : CwFCat} {F : TmTyMorphism C D} {G : TmTyMorphism D
   : StrictPreserveCwF (tmTyComp F G) where
   snocPreserve := by
     intros
-    let FG := tmTyComp F G
     simp only [MapCtxComp]
     simp [Fpres.snocPreserve, Gpres.snocPreserve]
     rfl

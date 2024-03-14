@@ -96,16 +96,16 @@ section
   @[simp]
   theorem castTyOutOfSub { Γ1 Γ2 : C} {θ : Δ ⟶ Γ1} {T : Ty Γ2}
     {eq : Γ1 = Γ2 }
-    : tySub T (cast (α := Δ ⟶ Γ1) (β := Δ ⟶ Γ2) (by rw [eq]) θ)
+    : T⦃cast (α := Δ ⟶ Γ1) (β := Δ ⟶ Γ2) (by rw [eq]) θ⦄
       = tySub (cast (by aesop) T) θ  := by aesop
 
   @[simp]
   theorem castOutOfSub {Δ Γ1 Γ2 : C} {θ : Δ ⟶ Γ1} {T : Ty Γ2} {t : Tm T}
     {eq : Γ1 = Γ2 }
-    : tmSub t (cast (α := Δ ⟶ Γ1) (β := Δ ⟶ Γ2) (by rw [eq]) θ)
-      = castTm
+    : t⦃cast (α := Δ ⟶ Γ1) (β := Δ ⟶ Γ2) (by rw [eq]) θ⦄
+      =ₜ castTm
         (S := tySub T (cast (by rw [eq]) θ)) (T := tySub (cast (by rw [eq]) T) θ)
-        (tmSub (cast   (by aesop) t ) θ)
+        ((cast   (by aesop) t )⦃θ⦄)
         (by aesop):= by aesop
 
 
@@ -139,7 +139,7 @@ section
 
   theorem tySubExt {Γ Δ Ξ : C} {f : Δ ⟶ Γ } {g : Ξ ⟶ Γ } {T : Ty Γ } (ctxEq : Δ = Ξ)
     (eq : HEq f g)
-    : HEq (tySub T f) (tySub T g) := by aesop
+    : HEq T⦃f⦄ T⦃g⦄ := by aesop
 
 
   @[simp]
@@ -172,7 +172,7 @@ class CwFExt (C : Type u) [Category.{v} C]  [tmTy : TmTy C] : Type _  where
 open CwFExt
 notation:5  "‼"  => empty
 notation:max Γ:1000 "▹" T:max => snoc Γ T
-notation:100 "⟪" θ "," t "⟫" => ext θ t
+notation:max "⟪" θ "," t "⟫" => ext θ t
 
 
 class CwFProp (C : Type u) [catInst : Category.{v} C] [tmTy : TmTy C] [cwf : CwFExt C] : Prop where
@@ -198,13 +198,12 @@ class CwFProp (C : Type u) [catInst : Category.{v} C] [tmTy : TmTy C] [cwf : CwF
   -- The extension is unique
 
   ext_unique : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ)
-    → (t : Tm (tySub T f)) → (g : _)
+    → (t : Tm T⦃f⦄) → (g : _)
     → (peq : g ≫ p = f)
     → (v⦃g⦄ = castTm t (by aesop))
     → g = ⟪f,t⟫ := by aesop_cat
 
-attribute [simp] CwFProp.ext_p
-attribute [simp] CwFProp.ext_v
+attribute [simp] CwFProp.ext_p CwFProp.ext_v
 
 open CwFProp
 
@@ -215,13 +214,12 @@ class CwF (C : Type u) [Category.{v} C]  : Type _ where
   [cwfExt : CwFExt C]
   [cwfProp : CwFProp C]
 
-attribute [instance] CwF.tmTy
-attribute [instance] CwF.cwfExt
-attribute [instance] CwF.cwfProp
+attribute [instance] CwF.tmTy CwF.cwfExt CwF.cwfProp
 
 
 -- Any CwF is a terminal category
 instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
   Limits.IsTerminal.hasTerminal emptyTerminal
+
 
 attribute [simp] ext_p ext_v
