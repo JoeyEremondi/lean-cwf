@@ -19,10 +19,10 @@ universe u v u2
 
 
 -- Terms and Types in a CwF, without the comprehension structure
--- A CwF over C has a Fam-valued presheaf
--- We interpret objects of C as contexts
+-- A CwF over Ctx has a Fam-valued presheaf
+-- We interpret objects of Ctx as contexts.
 class TmTy (Ctx : Type u) [Category.{v} Ctx] : Type (max u v (u2+1)) where
-  tmTyF : CategoryTheory.Functor Ctxᵒᵖ Fam.{u2}
+  tmTyFam : CategoryTheory.Functor Ctxᵒᵖ Fam.{u2}
 
 open TmTy
 
@@ -30,21 +30,21 @@ section
   variable {C : Type u} [cat : Category.{v}  C] [tmTy : TmTy.{u,v} C]
 
   -- The index set of the functor F gives types over a given context
-  def Ty (Γ : C) : Type u :=  ixSet (tmTyF.obj (Opposite.op Γ))
+  def Ty (Γ : C) : Type u :=  ixSet (tmTyFam.obj (Opposite.op Γ))
 
   -- Ty is a contra-functor to Type u
   def TyFunctor : CategoryTheory.Functor Cᵒᵖ (Type u) :=
-    Functor.comp tmTyF  projIx
+    Functor.comp tmTyFam  projIx
 
   -- The family for a given context and type gives the set of
   -- terms of that type
-  def Tm {Γ : C} (T : Ty Γ) : Type u := famFor (tmTyF.obj (Opposite.op Γ)) T
+  def Tm {Γ : C} (T : Ty Γ) : Type u := famFor (tmTyFam.obj (Opposite.op Γ)) T
 
   -- Definition of substitution for types
   -- Any C-arrow can be lifted to a substitution function on types
   -- by the functoral structure of F.
   def tySub {Δ Γ: C} (T : Ty Δ) (θ : Γ ⟶ Δ) : Ty Γ :=
-    mapIx (tmTyF.map θ.op) T
+    mapIx (tmTyFam.map θ.op) T
 
   -- Notation for substitution on types
   notation:max T "⦃" θ "⦄"  => tySub T θ
@@ -53,7 +53,7 @@ section
   -- Like for types, but the resulting term also has the substitution applied
   -- in its type
   def tmSub  {Γ Δ : C} {T : Ty Δ} ( t : Tm T )  (θ : Γ ⟶ Δ) : Tm (T⦃θ⦄) :=
-    mapFam (tmTyF.map θ.op) t
+    mapFam (tmTyFam.map θ.op) t
 
   -- Notation for substitution on terms
   notation:max t "⦃" θ "⦄"  => tmSub t θ
@@ -134,14 +134,14 @@ section
   @[simp]
   theorem tmSubId {Γ : C} {T : Ty Γ} (t : Tm T) : (t⦃𝟙 Γ⦄) =ₜ t := by
     simp [tySub, tmSub]
-    have eq := mapCast t (symm (tmTyF.map_id (Opposite.op Γ)))
+    have eq := mapCast t (symm (tmTyFam.map_id (Opposite.op Γ)))
     aesop_cat
 
   @[simp]
   theorem tmSubComp {Γ Δ Ξ : C} {T : Ty Γ} {f : Δ ⟶ Γ} {g : Ξ ⟶ Δ} {t : Tm T}
   : ((t⦃f⦄)⦃g⦄) =ₜ (t⦃g ≫ f⦄ )  := by
     simp [tySub, tmSub]
-    have eq := mapCast t ((tmTyF.map_comp f.op g.op))
+    have eq := mapCast t ((tmTyFam.map_comp f.op g.op))
     aesop_cat
 
   @[aesop unsafe apply]

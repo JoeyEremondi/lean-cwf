@@ -33,10 +33,10 @@ open Democratic
 class Telescoping {C : Type u} [cat : Category.{v}  C] (tmF : CategoryTheory.Functor Cᵒᵖ Fam)  : Type _ where
   cwf : @CwF C cat
   demo : Democratic cwf
-  nat : NatTrans tmF cwf.tmTy.tmTyF
+  nat : NatTrans tmF cwf.tmTy.tmTyFam
 
 
-variable  {C : Type u} [cat : Category.{v}  C] [basecwf : CwF C] [tInst : Telescoping (basecwf.tmTy.tmTyF)]
+variable  {C : Type u} [cat : Category.{v}  C] [basecwf : CwF C] [tInst : Telescoping (basecwf.tmTy.tmTyFam)]
 
 open Telescoping
 

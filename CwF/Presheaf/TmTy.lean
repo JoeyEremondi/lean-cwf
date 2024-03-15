@@ -22,11 +22,12 @@ as substitution of terms into types and terms.
 -/
 
 open CategoryTheory
-
+open CwF
+open Fam
 
 
 universe u v u₂
-variable {C : Type u} [CCat : Category.{v}  C]
+variable {C : Type u} [cat : Category.{v}  C]
 
 
 /-- A type is a presheaf over the elements of Γ -/
@@ -135,6 +136,8 @@ def pshTmSub {Γ Δ : Cᵒᵖ ⥤ Type u₂} {T : pshTy Γ} (t : pshTm T) (θ : 
         )
     ⟩
 
+set_option pp.explicit true
+
 /-- Our types and terms give us a functor from Psh(C) to Fam,
    which is the first part of a CwF structure on Psh(C).
    Functorality is easy enough that aesop can figure it out. -/
@@ -162,4 +165,4 @@ def pshTmTyFunctor : (Cᵒᵖ ⥤ Type u₂)ᵒᵖ ⥤ Fam where
 
 
 instance pshTmTy : TmTy (Cᵒᵖ ⥤ Type u₂)  where
-  F := pshTmTyFunctor
+  tmTyFam := pshTmTyFunctor
