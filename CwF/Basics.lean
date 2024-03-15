@@ -15,14 +15,16 @@ open Fam
 
 namespace CwF
 
-universe u v u2
+universe u v
 
 
 -- Terms and Types in a CwF, without the comprehension structure
 -- A CwF over Ctx has a Fam-valued presheaf
 -- We interpret objects of Ctx as contexts.
-class TmTy (Ctx : Type u) [Category.{v} Ctx] : Type (max u v (u2+1)) where
-  tmTyFam : CategoryTheory.Functor Ctxᵒᵖ Fam.{u2}
+-- We use Fam.{u}, meaning Ctx : Type u, Ty(Γ) : Type u, and Tm(T) : Type u.
+-- The hom-sets might be smaller or bigger, so we give them size v.
+class TmTy (Ctx : Type u) [Category.{v} Ctx] : Type (max (u+1) v) where
+  tmTyFam : CategoryTheory.Functor Ctxᵒᵖ Fam.{u}
 
 open TmTy
 
