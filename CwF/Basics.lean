@@ -6,8 +6,11 @@ import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 import Mathlib.Logic.Unique
 
+import CwF.Util
+
 open CategoryTheory
 open Fam
+
 
 
 namespace CwF
@@ -28,6 +31,10 @@ section
 
   -- The index set of the functor F gives types over a given context
   def Ty (Γ : C) : Type u :=  ixSet (tmTyF.obj (Opposite.op Γ))
+
+  -- Ty is a contra-functor to Type u
+  def TyFunctor : CategoryTheory.Functor Cᵒᵖ (Type u) :=
+    Functor.comp tmTyF  projIx
 
   -- The family for a given context and type gives the set of
   -- terms of that type
@@ -152,14 +159,58 @@ section
   theorem tmHeq {Γ Δ : C} {S : Ty Γ} {T : Ty Δ} (eq : Γ = Δ) (heq : HEq S  T)
     : Tm (Γ := Γ) S = Tm  T := by aesop
 
+  -- Isomorphic contexts have isomorphic sets of types
+  def ctxIsoToType {Γ Δ : C} (iso : Γ ≅ Δ) : Ty Γ ≅ Ty Δ :=  by
+    simp [Ty]
+    apply Functor.mapIso TyFunctor
+    apply Iso.op
+    exact (iso.symm)
+
+  @[simp]
+  theorem ctxIsoTypeSubHom {Γ Δ : C} (iso : Γ ≅ Δ) {T : Ty Γ}
+    : (ctxIsoToType iso).hom  T = T⦃iso.inv⦄ :=  by aesop
+
+  @[simp]
+  theorem ctxIsoTypeSubInv {Γ Δ : C} (iso : Γ ≅ Δ) {T : Ty Δ}
+    : (ctxIsoToType iso).inv  T = T⦃iso.hom⦄ :=  by aesop
+
+-- Context isomorphisms can be transported over term sets
+
+  theorem ctxIsoToTm {Γ Δ : C} (iso : Γ ≅ Δ) {T : Ty Γ} :
+    Tm T ≅ Tm ((ctxIsoToType iso).hom T)  where
+    hom t :=  by
+      simp
+      apply tmSub t
+    inv t := by
+      let tsub := t⦃iso.hom⦄
+      simp at tsub
+      assumption
+    hom_inv_id := by
+      funext t
+      simp
+      let teq := tmSubId t
+      rw [castSymm] at teq
+      apply Eq.trans _ (Eq.symm teq) <;> try aesop_cat
+      symm
+      rw [castSymm, castCast] <;> try aesop_cat
+      apply tmSubCast
+      simp
+    inv_hom_id := by
+      funext t
+      simp
+      let teq := tmSubId t
+      rw [castSymm] at teq
+      apply Eq.trans _ (Eq.symm teq) <;> try aesop_cat
+      symm
+      rw [castSymm, castCast] <;> try aesop_cat
+      apply tmSubCast
+      simp
+      
+
 end
 
 
 class CwFExt (C : Type u) [Category.{v} C]  [tmTy : TmTy C] : Type _  where
-  -- Empty context
-  empty : C
-  -- Empty context is terminal
-  emptyTerminal : Limits.IsTerminal empty
   -- Context extension
   snoc : (Γ : C) → Ty Γ → C
   --The projection substitution
@@ -174,7 +225,6 @@ class CwFExt (C : Type u) [Category.{v} C]  [tmTy : TmTy C] : Type _  where
 
 
 open CwFExt
-notation:5  "‼"  => CwFExt.empty
 notation:max Γ:1000 "▹" T:max => snoc Γ T
 notation:max "⟪" θ "," t "⟫" => ext θ t
 
@@ -214,16 +264,26 @@ open CwFProp
 -- A CwF has a type-term structure,
 -- plus context-extension, substitution extension, and a terminal object
 class CwF (C : Type u) [cat : Category.{v} C]  : Type _ where
+  -- Empty context
+  empty : C
+  -- Unique morphism to the empty substitution
+  toEmpty {Γ : C} : Γ ⟶ empty
+  -- Empty context is terminal
+  emptyTerminal : Limits.IsTerminal empty
   [tmTy : TmTy C]
   [cwfExt : CwFExt C]
   [cwfProp : CwFProp C]
+
+
+-- notation:5  "‼"  => CwF.empty
+-- notation:5  "‼"  => CwF.toEmpty
 
 attribute [instance] CwF.tmTy CwF.cwfExt CwF.cwfProp
 
 
 -- Any CwF is a terminal category
 instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
-  Limits.IsTerminal.hasTerminal emptyTerminal
+  Limits.IsTerminal.hasTerminal CwF.emptyTerminal
 
 
 attribute [simp] ext_p ext_v

@@ -23,41 +23,44 @@ open CwFExt
 
 
 class Democratic {C : Type u} [Category.{v}  C] (cwf: CwF C) : Type _ where
-  asTy : C → Ty (tmTy := cwf.tmTy) (cwf.cwfExt.empty)
-  demIso : Γ ≅ cwf.cwfExt.snoc empty (asTy Γ)
+  asTy : C → Ty (tmTy := cwf.tmTy) (cwf.empty)
+  demIso : Γ ≅ cwf.cwfExt.snoc cwf.empty (asTy Γ)
 
 open Democratic
 
 -- We can define telescopes over a CwF if there's another CwF structure on the same
 -- category that is democratic
 class Telescoping {C : Type u} [cat : Category.{v}  C] (tmF : CategoryTheory.Functor Cᵒᵖ Fam)  : Type _ where
-  telecwf : @CwF C cat
-  teleDemo : Democratic telecwf
-  teleNat : NatTrans tmF telecwf.tmTy.tmTyF
+  cwf : @CwF C cat
+  demo : Democratic cwf
+  nat : NatTrans tmF cwf.tmTy.tmTyF
 
-attribute [instance] Telescoping.teleDemo
 
-variable  {C : Type u} [Category.{v}  C] [cwf: CwF C] [teleInst : Telescoping (cwf.tmTy.tmTyF)]
+variable  {C : Type u} [cat : Category.{v}  C] [basecwf : CwF C] [tInst : Telescoping (basecwf.tmTy.tmTyF)]
 
 open Telescoping
 
+def tcwf := tInst.cwf
 
-def Tele (Γ : C) := Ty (tmTy := teleInst.telecwf.tmTy) Γ
+instance : Democratic (@tcwf C cat basecwf tInst ) := tInst.demo
+
+def Tele (Γ : C) := Ty (tmTy := tcwf.tmTy) Γ
 
 def teleSub {Δ Γ : C} (Ts : Tele Γ) (θ : Δ ⟶ Γ) : Tele Δ
-  := tySub (tmTy := teleInst.telecwf.tmTy) Ts θ
+  := tySub (tmTy := tcwf.tmTy) Ts θ
 
 
-def Env {Γ : C} (Ts : Tele Γ) := Tm (tmTy := teleInst.telecwf.tmTy) Ts
+def Env {Γ : C} (Ts : Tele Γ) := Tm (tmTy := tcwf.tmTy) Ts
 
 
 def envSub {Δ Γ : C} {Ts : Tele Γ} (e : Env Ts) (θ : Δ ⟶ Γ) : Env (teleSub Ts θ)
-  := tmSub (tmTy := teleInst.telecwf.tmTy) e θ
+  := tmSub (tmTy := tcwf.tmTy) e θ
 
 def emptyTele (Γ : C) : Tele Γ :=
-   teleSub (teleInst.teleDemo.asTy empty) (by simp)
+   teleSub (asTy tcwf.empty) (tcwf.toEmpty)
 
-def teleSnoc (Γ : C) (T̂ : Tele Γ) : teleInst.telecwf.cwfExt.snoc
+def teleSnoc {Γ : C} (Ts : Tele Γ) (T : Ty Γ) : Tele Γ :=
+  asTy (by simp)
 
 -- class HasDemo :
 

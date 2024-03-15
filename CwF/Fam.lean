@@ -35,6 +35,7 @@ def mkFam (A : Type u) (B : A → Type u) :  Fam :=
 def ixSet (arr : Fam) : Type u :=
   arr.right
 
+
 --Projection to get the indexed type
 def famFor (arr : Fam) (a : ixSet arr) : Type u :=
   {ab : arr.left // arr.hom ab = a}
@@ -142,6 +143,12 @@ theorem mapIxId {AB : Fam} {x : ixSet AB} : mapIx (𝟙 AB) x = x := by
 -- Mapping a composite arrow over an index gives the composite
 @[simp]
 theorem mapIxComp  {AB₁ AB₂ AB₃ : Fam}  (f : AB₁ ⟶ AB₂) (g : AB₂ ⟶ AB₃) : mapIx (f ≫ g) = mapIx g ∘ mapIx f := by rfl
+
+
+-- This projection is functoral
+def projIx : CategoryTheory.Functor Fam (Type u) where
+  obj := ixSet
+  map := mapIx
 
 -- For an index a, a Fam arrow gives a function from the domain family over index a
 -- to the codomain family, whose index is the arrow mapped over a
