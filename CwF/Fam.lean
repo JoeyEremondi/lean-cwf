@@ -41,6 +41,7 @@ def famFor (arr : Fam) (a : ixSet arr) : Type u :=
   {ab : arr.left // arr.hom ab = a}
 
 --The index projection cancels with the constructor
+@[simp]
 theorem famForIxInv (A : Type u) (B : A → Type u) : ixSet (mkFam A B) = A
   := rfl
 
