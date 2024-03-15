@@ -34,6 +34,8 @@ section
 
     def demSnoc {Γ : C} {T : Ty Γ}
       : Tm (asTy (Γ ▹ T)) ≅ Tm T := by
+      trans
+      . apply termSecEquiv
 
 end
 

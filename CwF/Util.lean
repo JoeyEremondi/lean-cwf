@@ -1,4 +1,7 @@
 import Mathlib.CategoryTheory.Category.Basic
+import Mathlib.CategoryTheory.Iso
+import Mathlib.CategoryTheory.Types
+import Mathlib.Init.Function
 
 theorem heq_type_eq {a a_1 : Sort u_1} {x : a} {y : a_1}
   (eq : HEq x y) : a = a_1 := by
@@ -123,3 +126,11 @@ theorem HEq_iff {P : Prop}
   (p : P)
   (t : True)
   : HEq p t := by aesop
+
+
+-- --In Type u, two types are isomorphic if they're both in bijection
+-- --with the same type, regardless of its size
+-- def isoViaLarge {S T : Type u} {X : Type v}
+--   (siso : ULift.{v} S ≅ ULift.{u} X)
+--   (tiso : ULift.{v} T ≅ ULift.{u} X)
+--   : S ≅ T := by admit

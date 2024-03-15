@@ -1,4 +1,6 @@
 import Mathlib.CategoryTheory.Category.Basic
+import Mathlib.CategoryTheory.Types
+import Mathlib.Combinatorics.Quiver.Basic
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.Comma.Over
@@ -21,7 +23,7 @@ open CwFProp
 open CwFExt
 
 universe u v u2
-variable {C : Type u} [Category.{v}  C] [cwf: CwF C]
+variable {C : Type u} [cat : Category.{v}  C] [cwf: CwF C]
 
 -- Some cast lemmas
 @[simp]
@@ -154,6 +156,11 @@ theorem termSecEquiv {Γ : C} {T : Ty Γ} : Function.Bijective (toSection (T := 
     apply toTermSection
   . apply Function.RightInverse.surjective (g := toTerm)
     apply toSectionTerm
+
+-- This equivalence is an isomorphism in Set
+theorem termSecIso {Γ : C} {T : Ty Γ}
+  : CategoryTheory.Iso (ULift.{v,u} (Tm T)) (ULift.{u,v} (cat.Hom Γ (Γ▹T)))  := by
+  admit
 
 -- Corollary is that toTerm is injective: each unique section carves out a unique term
 -- which is useful when defining new terms by composing section
