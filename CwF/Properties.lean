@@ -17,6 +17,8 @@ import Mathlib.Data.ULift
 import CwF.Fam
 import CwF.Basics
 
+import CwF.Util.ULift
+
 open CategoryTheory
 
 namespace CwF
@@ -164,9 +166,12 @@ theorem termSecEquiv {Γ : C} {T : Ty Γ} : Function.Bijective (toSection (T := 
   . apply Function.RightInverse.surjective (g := toTerm)
     apply toSectionTerm
 
+
+
+
 -- This equivalence is an isomorphism in Set
 def termSecIso {Γ : C} {T : Ty Γ}
-  : uliftFunctor.{v,u}.obj (Tm T) ≅ uliftFunctor.obj.{u,v} (pSec T)  where
+  :  Tm T ↑≅ pSec T  where
   hom t := ULift.up (toSection t.down)
   inv θ := ULift.up (toTerm θ.down)
   hom_inv_id := by
@@ -190,13 +195,13 @@ def emptySecIso : pSec T ≅ (cwf.empty ⟶ cwf.empty▹T) where
 
 --Closed types are isomorphic to arrows into the context only containing that type
 def closedSnocIso {T : Ty ⬝}
-  : uliftFunctor.{v,u}.obj (Tm T) ≅ uliftFunctor.{u,v}.obj (cwf.empty ⟶ (⬝▹T)) :=
+  : Tm T ↑≅ cwf.empty ⟶ (⬝▹T) :=
   termSecIso ≪≫ uliftFunctor.mapIso emptySecIso
 
 
 --And we can transport isomorphisms across this equivalence,
 --because uliftFunctor is fully faithful
-theorem termSecPreserveEquiv  {Γ : C} {S T : Ty Γ}
+theorem termSecPreserveIso  {Γ Δ : C} {S : Ty Δ} {T : Ty Γ}
   (epiEquiv : pSec S ≅ pSec T)
   : Tm S ≅ Tm T := by
   let liftIso := termSecIso (T := S)

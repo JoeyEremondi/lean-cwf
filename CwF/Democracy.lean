@@ -32,10 +32,20 @@ open Democratic
 section
     variable {C : Type u} [Category.{v}  C] [cwf: CwF C] [dem : Democratic cwf]
 
-    -- def demSnoc {Γ : C} {T : Ty Γ}
-    --   : Tm (asTy (Γ ▹ T)) ≅ Tm T := by
-    --   trans
-    --   . apply termSecEquiv
+    def demTm {Γ : C}
+      : uliftFunctor.{v,u}.obj (Tm (asTy Γ))
+        ≅  uliftFunctor.{v,u}⬝ ⟶ Γ := by simp
+
+    def demSnoc {Γ : C} {T : Ty Γ}
+      : Tm (asTy (Γ ▹ T)) ≅ Tm T := by
+      apply termSecPreserveIso
+      trans
+      . apply emptySecIso
+      . fconstructor
+        . intros f
+          fconstructor
+          . apply CategoryStruct.comp (‼ ≫ f)
+
 
 end
 
