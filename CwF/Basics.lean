@@ -268,8 +268,6 @@ open CwFProp
 class CwF (C : Type u) [cat : Category.{v} C]  : Type _ where
   -- Empty context
   empty : C
-  -- Unique morphism to the empty substitution
-  toEmpty {Γ : C} : Γ ⟶ empty
   -- Empty context is terminal
   emptyTerminal : Limits.IsTerminal empty
   [tmTy : TmTy C]
@@ -277,8 +275,11 @@ class CwF (C : Type u) [cat : Category.{v} C]  : Type _ where
   [cwfProp : CwFProp C]
 
 
--- notation:5  "‼"  => CwF.empty
--- notation:5  "‼"  => CwF.toEmpty
+def weakenAll {C : Type u} [Category.{v} C] [cwf : CwF C] {Γ : C} : Γ ⟶ cwf.empty :=
+  Limits.IsTerminal.from cwf.emptyTerminal Γ
+
+notation:max  "⬝"  => CwF.empty
+notation:max  "‼"  => weakenAll
 
 attribute [instance] CwF.tmTy CwF.cwfExt CwF.cwfProp
 
@@ -286,6 +287,13 @@ attribute [instance] CwF.tmTy CwF.cwfExt CwF.cwfProp
 -- Any CwF is a terminal category
 instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
   Limits.IsTerminal.hasTerminal CwF.emptyTerminal
+
+--Not sure why this isn't in mathlib
+
+-- All arrows into ⬝ are equal
+@[simp]
+def toEmptyUnique {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C} {θ : Γ ⟶ ⬝}
+  : θ = ‼ := (Limits.IsTerminal.hom_ext cwf.emptyTerminal ‼ θ).symm
 
 
 attribute [simp] ext_p ext_v

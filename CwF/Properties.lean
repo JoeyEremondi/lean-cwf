@@ -6,10 +6,13 @@ import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.Comma.Over
 import Mathlib.CategoryTheory.Comma.StructuredArrow
 import Mathlib.CategoryTheory.Comma.Basic
+import Mathlib.CategoryTheory.Functor.ReflectsIso
 import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 import Mathlib.Logic.Unique
 
+
+import Mathlib.Data.ULift
 
 import CwF.Fam
 import CwF.Basics
@@ -112,12 +115,16 @@ theorem ext_inj {Γ Δ : C} {θ₁ θ₂ : Δ ⟶ Γ} {T : Ty Γ} {t₁ : Tm (T�
 abbrev toSub {Γ : C} {T : Ty Γ} (t : Tm T) : Γ ⟶ (Γ ▹ T) :=
   ⟪ 𝟙 _ , ↑ₜ t ⟫
 
+
+def pSec {Γ : C} (T : Ty Γ) : Type _ :=
+  SplitEpi (p (T := T))
+
 -- That subsitution is a section of p
-abbrev toSection {Γ : C} {T : Ty Γ} (t : Tm T) : SplitEpi (p (T := T)) :=
+abbrev toSection {Γ : C} {T : Ty Γ} (t : Tm T) : pSec T :=
   ⟨ toSub t , by simp_all ⟩
 
 -- Get a term out of any section of p
-abbrev toTerm {Γ : C} {T : Ty Γ} (epi : SplitEpi (p (T := T))) : Tm T :=
+abbrev toTerm {Γ : C} {T : Ty Γ} (epi : pSec T) : Tm T :=
   ↑ₜ ((v ) ⦃ epi.section_ ⦄)
 
 theorem congrDep₂  {A : Type } {B : A → Type} {R :  Type} (f : (a : A) → (b : B a) → R)
@@ -134,7 +141,7 @@ theorem extEq {Γ Δ : C} {T : Ty Γ } {f g : Δ ⟶ Γ } {t : Tm (T⦃f⦄)}
   (eq : f = g) : ⟪f , t ⟫ = ⟪ g , castTmSub t eq⟫ := by aesop
 
 
-theorem toSectionTerm {Γ : C} {T : Ty Γ} (epi : SplitEpi (p (T := T))) : toSection (toTerm epi) = epi := by
+theorem toSectionTerm {Γ : C} {T : Ty Γ} (epi : pSec T) : toSection (toTerm epi) = epi := by
   simp [toTerm, toSection, toSub]
   cases (epi) with
   | mk f eq =>
@@ -158,9 +165,44 @@ theorem termSecEquiv {Γ : C} {T : Ty Γ} : Function.Bijective (toSection (T := 
     apply toSectionTerm
 
 -- This equivalence is an isomorphism in Set
-theorem termSecIso {Γ : C} {T : Ty Γ}
-  : CategoryTheory.Iso (ULift.{v,u} (Tm T)) (ULift.{u,v} (cat.Hom Γ (Γ▹T)))  := by
-  admit
+def termSecIso {Γ : C} {T : Ty Γ}
+  : uliftFunctor.{v,u}.obj (Tm T) ≅ uliftFunctor.obj.{u,v} (pSec T)  where
+  hom t := ULift.up (toSection t.down)
+  inv θ := ULift.up (toTerm θ.down)
+  hom_inv_id := by
+    funext t
+    apply ULift.down_injective
+    simp [toTermSection]
+  inv_hom_id := by
+    funext t
+    apply ULift.down_injective
+    simp [toSectionTerm]
+
+
+-- All arrows out of the empty context are sections of p
+def emptySecIso : pSec T ≅ (cwf.empty ⟶ cwf.empty▹T) where
+      hom sec := sec.section_
+      inv f := by
+        fconstructor
+        . apply f
+        . aesop_cat
+
+
+--Closed types are isomorphic to arrows into the context only containing that type
+def closedSnocIso {T : Ty ⬝}
+  : uliftFunctor.{v,u}.obj (Tm T) ≅ uliftFunctor.{u,v}.obj (cwf.empty ⟶ (⬝▹T)) :=
+  termSecIso ≪≫ uliftFunctor.mapIso emptySecIso
+
+
+--And we can transport isomorphisms across this equivalence,
+--because uliftFunctor is fully faithful
+theorem termSecPreserveEquiv  {Γ : C} {S T : Ty Γ}
+  (epiEquiv : pSec S ≅ pSec T)
+  : Tm S ≅ Tm T := by
+  let liftIso := termSecIso (T := S)
+    ≪≫ uliftFunctor.{u,v}.mapIso epiEquiv
+    ≪≫ (termSecIso (T := T)).symm
+  apply Functor.preimageIso uliftFunctor.{v,u} liftIso
 
 -- Corollary is that toTerm is injective: each unique section carves out a unique term
 -- which is useful when defining new terms by composing section
@@ -220,12 +262,12 @@ theorem wkTm {Γ Δ : C} (θ : Δ ⟶ Γ) {T : Ty Γ} {t : Tm T}
 abbrev tyToSlice {Γ : C} (T : Ty Γ) : Over Γ :=
   Over.mk (p (T := T))
 
-def secToSliceArrow {Γ : C} {T : Ty Γ} (sec : SplitEpi (p (T := T)))
+def secToSliceArrow {Γ : C} {T : Ty Γ} (sec : pSec T)
   : (Over.mk (𝟙 Γ) ⟶ tyToSlice T) :=
     Over.homMk (SplitEpi.section_ sec)
 
 def sliceArrowToSection {Γ : C} {T : Ty Γ} (sliceArr : Over.mk (𝟙 Γ) ⟶ tyToSlice T)
-  : SplitEpi (p (T := T)) := SplitEpi.mk (sliceArr.left)
+  : pSec T := SplitEpi.mk (sliceArr.left)
     (by have pf := Over.w sliceArr
         simp_all [tyToSlice]
         )

@@ -32,10 +32,10 @@ open Democratic
 section
     variable {C : Type u} [Category.{v}  C] [cwf: CwF C] [dem : Democratic cwf]
 
-    def demSnoc {Γ : C} {T : Ty Γ}
-      : Tm (asTy (Γ ▹ T)) ≅ Tm T := by
-      trans
-      . apply termSecEquiv
+    -- def demSnoc {Γ : C} {T : Ty Γ}
+    --   : Tm (asTy (Γ ▹ T)) ≅ Tm T := by
+    --   trans
+    --   . apply termSecEquiv
 
 end
 
