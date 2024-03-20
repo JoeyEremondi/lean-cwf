@@ -30,6 +30,8 @@ open CwFExt
 universe u v u2
 variable {C : Type u} [cat : Category.{v}  C] [cwf: CwF C]
 
+
+
 -- Some cast lemmas
 @[simp]
 def castSnoc {Γ Δ : C} {T : Ty Γ} {eq : Γ = Δ}
@@ -65,6 +67,17 @@ theorem ext_nat {Γ Δ Ξ : C} {T : Ty Γ}
   (t : Tm (T⦃f⦄))
   : (g ≫ ⟪f , t⟫) = ⟪g ≫ f , (castTm t⦃g⦄ (by simp [tySubComp])) ⟫ := by
     fapply ext_unique <;> simp_all
+
+-- Simp re-associates composition, so we need a version that accounts for this
+-- so we can rewrite nicely
+@[simp]
+theorem ext_nat_comp {Γ Δ Ξ Ξ' : C} {T : Ty Γ}
+  (f : Δ ⟶ Γ)
+  (g : Ξ ⟶ Δ)
+  (h : Γ▹T ⟶ Ξ')
+  (t : Tm (T⦃f⦄))
+  : (g ≫ (⟪f , t⟫ ≫ h)) = ⟪g ≫ f , (castTm t⦃g⦄ (by simp [tySubComp])) ⟫ ≫ h
+  := by simp [<- Category.assoc]
 
 
 -- If you take a weaning and extend it with the newly introduced variable, you get the identity,
@@ -249,10 +262,12 @@ theorem eqAsSections {Γ : C} {T : Ty Γ} {t1 t2 : Tm T} (eq :  t1⁻ =  t2⁻)
 theorem vCast {Γ  : C} {T : Ty Γ} {f : _} (eq : f = 𝟙 (Γ ▹ T)) : (v (T := T))⦃f⦄  =ₜ v := by
   aesop
 
-@[simp]
+
+
+-- @[simp]
 theorem wkTm {Γ Δ : C} (θ : Δ ⟶ Γ) {T : Ty Γ} {t : Tm T}
 : (t⦃θ⦄)⁻ ≫ (wk θ) = θ ≫ (t⁻) := by
-  simp [toSub, <- Category.assoc]
+  simp [<- Category.assoc]
 
 
 ----------------------------------------------------------

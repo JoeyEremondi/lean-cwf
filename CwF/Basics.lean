@@ -284,6 +284,13 @@ notation:max  "‼"  => weakenAll
 attribute [instance] CwF.tmTy CwF.cwfExt CwF.cwfProp
 
 
+
+-- Version of ext_p that works better with reassociating
+@[simp]
+def ext_p_comp {C : Type u} [Category.{v} C] [cwf : CwF C] {Γ Δ Ξ : C} {T : Ty Γ}
+    {f : Δ ⟶ Γ} {g : Γ ⟶ Ξ} {t : Tm (T⦃f⦄)}
+    : ⟪f , t⟫ ≫ (p ≫ g) = f ≫ g := by simp [<- Category.assoc]
+
 -- Any CwF is a terminal category
 instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
   Limits.IsTerminal.hasTerminal CwF.emptyTerminal
@@ -294,6 +301,13 @@ instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
 @[simp]
 theorem toEmptyUnique {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C} {θ : Γ ⟶ ⬝}
   : θ = ‼ := (Limits.IsTerminal.hom_ext cwf.emptyTerminal ‼ θ).symm
+
+--Version of the above that works better with simp
+--Composing with ‼ produces ‼
+@[simp]
+theorem toEmptyComp {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ Δ : C} {θ : Δ ⟶ Γ}
+  : θ ≫ ‼ = ‼ := by
+  simp [<- Category.assoc]
 
 -- Only one self-arrow into empty
 theorem emptySelfUnique {C : Type u} [cat : Category.{v} C] [cwf : CwF C]

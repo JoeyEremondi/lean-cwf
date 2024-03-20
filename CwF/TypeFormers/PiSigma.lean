@@ -33,13 +33,8 @@ class HasPi {C : Type u} [Category.{v} C] [CwF C] : Type _ where
   LamS {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {t : Tm T} {θ : Δ ⟶ Γ}
     : (lam t)⦃θ⦄ =ₜ (lam (t⦃wk θ⦄))
   AppS {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {θ : Δ ⟶ Γ} {f : Tm (Pi S T)} {s : Tm S}
-    : eqModCast
-      (app f s)⦃θ⦄
-      (app (T := T⦃wk θ⦄) (castTm (f⦃θ⦄) (by rw [PiS]) ) s⦃θ⦄)
-      (by
-          simp only [tySubComp]
-          rw [wkTm]
-      )
+    :  (app f s)⦃θ⦄ =ₜ (app (T := T⦃wk θ⦄) (castTm (f⦃θ⦄) (by rw [PiS]) ) s⦃θ⦄)
+
 
 open HasPi
 
@@ -71,22 +66,11 @@ class HasSigma {C : Type u} [Category.{v} C] [CwF C] : Type _ where
       but aesop can't figure the type equalities out on its own  -/
   ProjS2 {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {θ : Δ ⟶ Γ} {x : Tm (Sigma S T)}
     {x : Tm (Sigma S T)}
-    : eqModCast
-        (proj2 x)⦃θ⦄
-        (proj2 (T := T⦃wk θ⦄) (castTm x⦃θ⦄ (by simp [SigmaS (P := T)])))
-        (by
-            simp only [tySubComp]
-            apply  congrTySub
-            simp [<- Category.assoc, ProjS1]
-        )
+    :  (proj2 x)⦃θ⦄ =ₜ  (proj2 (T := T⦃wk θ⦄) (castTm x⦃θ⦄ (by simp [SigmaS (P := T)])))
+
   PairS  {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)}  {θ : Δ ⟶ Γ} (s : Tm S) (t : Tm T⦃s⁻⦄)
-    : eqModCast
-      (pair s t)⦃θ⦄
-      (pair (T := tySub T (wk θ)) s⦃θ⦄ (castTm t⦃θ⦄ (by
-        simp
-        apply congrTySub
-        simp [<- Category.assoc])))
-      (by aesop_cat)
+    :  (pair s t)⦃θ⦄ =ₜ (pair (T := tySub T (wk θ)) s⦃θ⦄ (↑ₜ t⦃θ⦄ ))
+
 
 open HasPi
 open HasSigma
