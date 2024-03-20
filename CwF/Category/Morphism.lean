@@ -19,8 +19,8 @@ import CwF.Util
 
 open CategoryTheory
 open NatTrans Category Functor
-open CwFExt
-open TmTy
+
+namespace CwF
 
 universe u v u2
 section
@@ -42,8 +42,8 @@ structure TmTyMorphism (C D : CwFCat) : Type _ where
   CtxF : CategoryTheory.Functor.{v,v,u,u} C.Ctx D.Ctx
   transSubst :
     NatTrans
-      (tmTyF (Ctx := C)) --C's functor
-      (Functor.comp (CtxF.op) (tmTyF (Ctx := D)) ) -- D's functor
+      (tmTyFam (Ctx := C)) --C's functor
+      (Functor.comp (CtxF.op) (tmTyFam (Ctx := D)) ) -- D's functor
 
 
 
@@ -261,7 +261,7 @@ theorem preserveComp {C D E : CwFCat} {F : TmTyMorphism C D} {G : TmTyMorphism D
     rw [MapTmCommut]
     rw [Gpres.vPreserveStrict]
     simp
-    apply v_eq
+    apply tm_eq
     simp [MapSub, eqToHom_map]
 
 

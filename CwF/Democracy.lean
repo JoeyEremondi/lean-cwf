@@ -43,31 +43,7 @@ section
         apply yNatIso.app (Opposite.op ⬝)
 
     --TODO move this out of democracy?
-    def snocIso {Γ : C} {T : Ty Γ}
-      : (cwf.empty ⟶ Γ▹T) ↑≅ (γ : cwf.empty ⟶ Γ) × (Tm T⦃γ⦄) where
-      hom θ := by
-        apply ULift.up
-        fconstructor
-        . apply θ.down ≫ p
-        . let x := v (T := T)
-          let y := x⦃θ.down⦄
-          simp only [tySubComp] at y
-          assumption
-      inv := fun ⟨γ, t⟩ => ULift.up (γ ≫ by
-        let t' := t⁻
-        fapply ext
-        . exact (‼ ≫ γ)
-        . let ret := t⦃(‼ : Γ ⟶ ⬝)⦄
-          simp at ret
-          assumption
-        )
-      hom_inv_id := by
-        funext θ
-        cases θ
-        apply ULift.ext
-        simp
-        rw [ext_nat]
-        
+
 
         -- simp
 --      hom_in v_id := by

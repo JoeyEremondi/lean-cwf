@@ -87,21 +87,39 @@ theorem ext_id {Γ : C} {T : Ty Γ} : ⟪p , v⟫ = 𝟙 (Γ ▹ T) := by
   symm
   fapply ext_unique <;> simp_all
 
+-- We can combine these to decompose any morphism to a Snoc into an extension arrow
+theorem ext_decomp {Γ Δ : C} {T : Ty Γ} {θ : Δ ⟶ Γ▹T}
+  : θ = cwf.cwfExt.ext (θ ≫ p) (↑ₜ v⦃θ⦄ )  := by
+  trans
+  . apply (Eq.symm (Category.comp_id _))
+  . rw [<- ext_id]
+    rw [ ext_nat ]
+
+  
+
 -- Helper function for dependent cong
 -- Should really be in the stdlib
 -- TODO PR?
 --
 --
 
-
-theorem v_eq {Γ Δ : C} {T : Ty Γ} {f g : Δ ⟶ Γ▹T }
+theorem tm_eq {Γ Δ : C} {T : Ty Γ} {f g : Δ ⟶ Γ } {t : Tm T}
   (eq : f = g)
-  : (v (T := T))⦃f⦄ =ₜ (v (T := T))⦃g⦄  := by aesop
+  : t⦃f⦄ =ₜ t ⦃g⦄  := by aesop
 
 
-theorem v_id {Γ : C} {T : Ty Γ} {f : Γ▹T ⟶ Γ▹T }
-  (eq : f = 𝟙 (Γ▹T))
-  : (v (T := T))⦃f⦄ =ₜ v  := by aesop
+theorem tm_id {Γ : C} {T : Ty Γ} {g : Γ ⟶ Γ } {t : Tm T}
+  (eq : g = 𝟙 Γ)
+  : t =ₜ t ⦃g⦄  := by aesop
+
+-- theorem v_eq {Γ Δ : C} {T : Ty Γ} {f g : Δ ⟶ Γ▹T }
+--   (eq : f = g)
+--   : (v (T := T))⦃f⦄ =ₜ (v (T := T))⦃g⦄  := by aesop
+
+
+-- theorem v_id {Γ : C} {T : Ty Γ} {f : Γ▹T ⟶ Γ▹T }
+--   (eq : f = 𝟙 (Γ▹T))
+--   : (v (T := T))⦃f⦄ =ₜ v  := by aesop
 
 
 theorem castCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
@@ -119,7 +137,14 @@ theorem ext_inj {Γ Δ : C} {θ₁ θ₂ : Δ ⟶ Γ} {T : Ty Γ} {t₁ : Tm (T�
     simp at peq
     aesop
 
-
+-- @[simp]
+theorem ext_inj_general {Γ Δ : C} {θ : Δ ⟶ Γ} {T : Ty Γ} {t : Tm (T⦃θ⦄)} {f : Δ ⟶ Γ▹ T}
+  :
+  (⟪θ,t⟫ = f) ↔ (∃ x : (θ = f ≫ (p (T := T))), t =ₜ (v (T := T))⦃f⦄) := by
+  let decomp := ext_decomp (θ := f)
+  rw [decomp]
+  rw [ext_inj]
+  fconstructor <;> simp <;> aesop_cat
 
 
 ---- Terms and Sections
@@ -357,5 +382,48 @@ theorem congrTy {Γ : C} {S T : Ty Γ}
 theorem congrTySub {Δ Γ : C} {T : Ty Γ} {f g : Δ ⟶ Γ }
   (eq : f = g)
   : T⦃f⦄ = T⦃g⦄ := by aesop_cat
+
+-- Any morphism to Γ▹T is just a dependent pair
+-- of a morphism to Γ and a term of type T
+def snocIso {Γ : C} {T : Ty Γ}
+  : (cwf.empty ⟶ Γ▹T) ↑≅ (γ : cwf.empty ⟶ Γ) × (Tm T⦃γ⦄) where
+  hom θ := by
+    apply ULift.up
+    fconstructor
+    . apply θ.down ≫ p
+    . let x := v (T := T)
+      let y := x⦃θ.down⦄
+      simp only [tySubComp] at y
+      assumption
+  inv := fun ⟨γ, t⟩ => ULift.up (γ ≫ by
+    let t' := t⁻
+    fapply ext
+    . exact (‼ ≫ γ)
+    . let ret := t⦃(‼ : Γ ⟶ ⬝)⦄
+      simp at ret
+      assumption
+    )
+  hom_inv_id := by
+    funext θ
+    cases θ
+    apply ULift.ext
+    simp [ext_inj_general]
+    apply tm_eq
+    aesop_cat
+  inv_hom_id := by
+    funext γt
+    cases γt with
+    | up γt =>
+    cases γt with
+    | mk γ t =>
+      apply ULift.ext
+      simp
+      apply heq_of_cast_eq <;> try aesop_cat
+      symm
+      simp
+      apply tm_id
+      simp
+
+
 
 end CwF

@@ -309,9 +309,21 @@ theorem toEmptyComp {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ Δ : C
   : θ ≫ ‼ = ‼ := by
   simp [<- Category.assoc]
 
+
+@[simp]
+theorem toEmptyCompComp {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ Δ Ξ : C} {θ : Δ ⟶ Γ} {g : ⬝ ⟶ Ξ}
+  : θ ≫ (‼ ≫ g) = ‼ ≫ g := by
+  simp [<- Category.assoc]
+
 -- Only one self-arrow into empty
 theorem emptySelfUnique {C : Type u} [cat : Category.{v} C] [cwf : CwF C]
   : ‼ = 𝟙 (cwf.empty) := by simp
+
+@[simp]
+theorem emptySelfComp {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C} {f : ⬝ ⟶ Γ}
+  : ‼ ≫ f = f := by
+    rw [emptySelfUnique]
+    simp only [Category.id_comp]
 
 attribute [simp] ext_p ext_v
 
