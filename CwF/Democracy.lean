@@ -1,6 +1,7 @@
 
 import CwF.Fam
 import Mathlib.CategoryTheory.Category.Basic
+import Mathlib.CategoryTheory.Yoneda
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.NatTrans
 import Mathlib.Data.Opposite
@@ -8,6 +9,7 @@ import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 
 
 import CwF.Basics
+import CwF.Util.ULift
 import CwF.Properties
 import CwF.TypeFormers.PiSigma
 
@@ -33,18 +35,22 @@ section
     variable {C : Type u} [Category.{v}  C] [cwf: CwF C] [dem : Democratic cwf]
 
     def demTm {Γ : C}
-      : uliftFunctor.{v,u}.obj (Tm (asTy Γ))
-        ≅  uliftFunctor.{v,u}⬝ ⟶ Γ := by simp
+      : (Tm (asTy Γ)) ↑≅ ⬝ ⟶ Γ :=  by
+      apply Iso.trans
+      . apply closedSnocIso
+      . apply Functor.mapIso uliftFunctor
+        let yNatIso := Functor.mapIso (yoneda (C := C)) (X := ⬝▹(asTy Γ)) (Y := Γ) demIso.symm
+        apply yNatIso.app (Opposite.op ⬝)
 
-    def demSnoc {Γ : C} {T : Ty Γ}
-      : Tm (asTy (Γ ▹ T)) ≅ Tm T := by
-      apply termSecPreserveIso
-      trans
-      . apply emptySecIso
-      . fconstructor
-        . intros f
-          fconstructor
-          . apply CategoryStruct.comp (‼ ≫ f)
+    -- def demSnoc {Γ : C} {T : Ty Γ}
+    --   : Tm (asTy (Γ ▹ T)) ≅ Tm T := by
+    --   apply termSecPreserveIso
+    --   trans
+    --   . apply emptySecIso
+    --   . fconstructor
+    --     . intros f
+    --       fconstructor
+    --       . apply CategoryStruct.comp (‼ ≫ f)
 
 
 end
