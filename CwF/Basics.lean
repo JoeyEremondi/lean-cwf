@@ -292,9 +292,12 @@ instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
 
 -- All arrows into ⬝ are equal
 @[simp]
-def toEmptyUnique {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C} {θ : Γ ⟶ ⬝}
+theorem toEmptyUnique {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C} {θ : Γ ⟶ ⬝}
   : θ = ‼ := (Limits.IsTerminal.hom_ext cwf.emptyTerminal ‼ θ).symm
 
+-- Only one self-arrow into empty
+theorem emptySelfUnique {C : Type u} [cat : Category.{v} C] [cwf : CwF C]
+  : ‼ = 𝟙 (cwf.empty) := by simp
 
 attribute [simp] ext_p ext_v
 

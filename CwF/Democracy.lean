@@ -42,18 +42,68 @@ section
         let yNatIso := Functor.mapIso (yoneda (C := C)) (X := ⬝▹(asTy Γ)) (Y := Γ) demIso.symm
         apply yNatIso.app (Opposite.op ⬝)
 
-    -- def demSnoc {Γ : C} {T : Ty Γ}
-    --   : Tm (asTy (Γ ▹ T)) ≅ Tm T := by
-    --   apply termSecPreserveIso
-    --   trans
-    --   . apply emptySecIso
-    --   . fconstructor
-    --     . intros f
-    --       fconstructor
-    --       . apply CategoryStruct.comp (‼ ≫ f)
+    --TODO move this out of democracy?
+    def snocIso {Γ : C} {T : Ty Γ}
+      : (cwf.empty ⟶ Γ▹T) ↑≅ (γ : cwf.empty ⟶ Γ) × (Tm T⦃γ⦄) where
+      hom θ := by
+        apply ULift.up
+        fconstructor
+        . apply θ.down ≫ p
+        . let x := v (T := T)
+          let y := x⦃θ.down⦄
+          simp only [tySubComp] at y
+          assumption
+      inv := fun ⟨γ, t⟩ => ULift.up (γ ≫ by
+        let t' := t⁻
+        fapply ext
+        . exact (‼ ≫ γ)
+        . let ret := t⦃(‼ : Γ ⟶ ⬝)⦄
+          simp at ret
+          assumption
+        )
+      hom_inv_id := by
+        funext θ
+        cases θ
+        apply ULift.ext
+        simp
+        rw [ext_nat]
+        
+
+        -- simp
+--      hom_in v_id := by
+--         funext θ
+--         simp [<- Category.assoc]
+--         rw [emptySelfUnique]
+--         simp only [Category.id_comp]
+--       inv_hom_id := by
+--         funext γθ
+--         cases γθ with
+--         | mk γ  θ =>
+--           simp
+--           constructor
+
+--     def demSnoc {Γ : C} {T : Ty Γ}
+--       : Tm (asTy (Γ ▹ T)) ≅ Tm (asTy Γ) × Tm T := by
+--       apply viaUlift
+--       . apply demTm
+--       . apply termSecIso
+--       . fconstructor
+--         . intros θ
+--           apply SplitEpi.mk (‼ ≫ θ) (by
+--             simp
+--             simp)
+--       -- apply Iso.trans
+--       -- . apply demTm
+--       -- apply termSecPreserveIso
+--       -- trans
+--       -- . apply emptySecIso
+--       -- . fconstructor
+--       --   . intros f
+--       --     fconstructor
+--       --     . apply CategoryStruct.comp (‼ ≫ f)
 
 
-end
+-- end
 
 
-end CwF
+-- end CwF
