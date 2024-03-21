@@ -41,6 +41,11 @@ theorem hCongFun {A : Type u} {B C : A → Type v} {f : (a : A) → B a} {g : (a
       HEq (f x) (g x) := by aesop
 
 
+theorem hCongArg {A : Type u} {B : A → Type v} {f : (a : A) → B a}
+    {x y : A}
+    (eq : x = y)  :
+      HEq (f x) (f y) := by aesop
+
 theorem hCongFunImplicit {A : Type u} {B C : A → Type v} {f : {a : A} → B a} {g : {a : A} → C a}
     (x : A)
     (eq : B = C)

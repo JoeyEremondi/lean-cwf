@@ -42,41 +42,37 @@ section
         let yNatIso := Functor.mapIso (yoneda (C := C)) (X := ⬝▹(asTy Γ)) (Y := Γ) demIso.symm
         apply yNatIso.app (Opposite.op ⬝)
 
-    --TODO move this out of democracy?
+    -- instance demSigma : HasSigma C where
+    --   Sigma {Γ} S T := (asTy (Γ▹S)▹T)⦃‼⦄
+    --   pair s t := by
+    --     apply tmSub _ ‼
+    --     apply demTm
 
 
-        -- simp
---      hom_in v_id := by
---         funext θ
---         simp [<- Category.assoc]
---         rw [emptySelfUnique]
---         simp only [Category.id_comp]
---       inv_hom_id := by
---         funext γθ
---         cases γθ with
---         | mk γ  θ =>
---           simp
---           constructor
-
---     def demSnoc {Γ : C} {T : Ty Γ}
---       : Tm (asTy (Γ ▹ T)) ≅ Tm (asTy Γ) × Tm T := by
---       apply viaUlift
---       . apply demTm
---       . apply termSecIso
---       . fconstructor
---         . intros θ
---           apply SplitEpi.mk (‼ ≫ θ) (by
---             simp
---             simp)
---       -- apply Iso.trans
---       -- . apply demTm
---       -- apply termSecPreserveIso
---       -- trans
---       -- . apply emptySecIso
---       -- . fconstructor
---       --   . intros f
---       --     fconstructor
---       --     . apply CategoryStruct.comp (‼ ≫ f)
+    def demSnoc {Γ : C} {T : Ty Γ}
+      : Tm (asTy (Γ ▹ T)) ≅ ((γ : Tm (asTy Γ)) × Tm (tySub T (γ⁻ ≫ demIso.inv))) where
+      hom t :=
+        let θ := (demTm.hom (ULift.up t)).down
+        by admit
+      -- apply viaUlift
+      -- . apply demTm
+      -- . let sn := (snocIso (Δ := Γ) (T := T)).symm
+      --   simp [uliftIsoMax]
+      --   apply sn.symm
+      -- . fconstructor
+      --   . intros θ
+      --     apply SplitEpi.mk (‼ ≫ θ) (by
+      --       simp
+      --       simp)
+      -- apply Iso.trans
+      -- . apply demTm
+      -- apply termSecPreserveIso
+      -- trans
+      -- . apply emptySecIso
+      -- . fconstructor
+      --   . intros f
+      --     fconstructor
+      --     . apply CategoryStruct.comp (‼ ≫ f)
 
 
 -- end

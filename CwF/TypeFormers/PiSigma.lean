@@ -21,7 +21,7 @@ namespace CwF
 universe u v u2
 
 
-class HasPi {C : Type u} [Category.{v} C] [CwF C] : Type _ where
+class HasPi (C : Type u) [Category.{v} C] [CwF C] : Type _ where
   Pi : DepTypeFormer C
   lam  {Γ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)}
     : Tm T → Tm (Pi S T)
@@ -47,7 +47,7 @@ open CwFProp
 
 -- attribute [aesop unsafe 50% simp] Category.assoc
 
-class HasSigma {C : Type u} [Category.{v} C] [CwF C] : Type _ where
+class HasSigma (C : Type u) [Category.{v} C] [CwF C] : Type _ where
   Sigma : DepTypeFormer C
   pair  {Γ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)}
      : (s : Tm S) → Tm T⦃s⁻⦄ → Tm (Sigma S T)

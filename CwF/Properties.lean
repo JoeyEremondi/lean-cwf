@@ -147,6 +147,39 @@ theorem ext_inj_general {Γ Δ : C} {θ : Δ ⟶ Γ} {T : Ty Γ} {t : Tm (T⦃θ
   fconstructor <;> simp <;> aesop_cat
 
 
+-- Any morphism to Γ▹T is just a dependent pair
+-- of a morphism to Γ and a term of type T
+def snocIso {Δ Γ : C} {T : Ty Γ}
+  : (Δ ⟶ Γ▹T) ↑≅ (γ : Δ ⟶ Γ) × (Tm T⦃γ⦄) where
+  hom θ := by
+    apply ULift.up
+    fconstructor
+    . apply θ.down ≫ p
+    . let x := v (T := T)
+      let y := x⦃θ.down⦄
+      simp only [tySubComp] at y
+      assumption
+  inv := fun ⟨γ, t⟩ => by
+    apply ULift.up
+    fapply ext
+    . apply γ
+    . apply t
+  hom_inv_id := by
+    funext θ
+    cases θ
+    apply ULift.ext
+    simp
+    rw [ext_inj_general]
+    aesop_cat
+  inv_hom_id := by
+    funext γt
+    cases γt with
+    | up γt => cases γt with
+    | mk γ t =>
+      apply ULift.ext
+      simp
+
+
 ---- Terms and Sections
 -- There is an equivalence between terms of Tm T
 -- and sections p_T
@@ -294,6 +327,41 @@ theorem wkTm {Γ Δ : C} (θ : Δ ⟶ Γ) {T : Ty Γ} {t : Tm T}
 : (t⦃θ⦄)⁻ ≫ (wk θ) = θ ≫ (t⁻) := by
   simp [<- Category.assoc]
 
+-- -- Version of snocIso that plays better with universes
+-- def snocSecIso {Δ Γ : C} {T : Ty Γ}
+--   : (Δ ⟶ Γ▹T) ≅ (γ : Δ ⟶ Γ) × (pSec T⦃γ⦄) where
+--   hom θ := by
+--     fconstructor
+--     . apply θ≫ p
+--     . let x := v (T := T)
+--       let y := x⦃θ⦄
+--       simp only [tySubComp] at y
+--       apply toSection
+--       assumption
+--   inv := fun ⟨γ, t⟩ => by
+--     fapply ext
+--     . apply γ
+--     . apply toTerm
+--       assumption
+--   hom_inv_id := by
+--     funext θ
+--     simp
+--     rw [ext_inj_general]
+--     aesop_cat
+--   inv_hom_id := by
+--     funext γt
+--     cases γt with
+--     | mk γ t =>
+--       simp
+--       apply heq_of_heq_of_eq _ (toSectionTerm t)
+--       simp [toTerm, castTm]
+--       apply hCong (f := toSection) (g := toSection) (y := cast _ v⦃t.section_⦄)
+--       rfl
+--       apply heq_of_eq
+--       reduce
+--       apply hCongArg (f := toSection) (x := cast _ _) (y := toTerm t)
+
+
 
 ----------------------------------------------------------
 -- Some useful tools for going between morphisms and terms
@@ -382,47 +450,6 @@ theorem congrTy {Γ : C} {S T : Ty Γ}
 theorem congrTySub {Δ Γ : C} {T : Ty Γ} {f g : Δ ⟶ Γ }
   (eq : f = g)
   : T⦃f⦄ = T⦃g⦄ := by aesop_cat
-
--- Any morphism to Γ▹T is just a dependent pair
--- of a morphism to Γ and a term of type T
-def snocIso {Γ : C} {T : Ty Γ}
-  : (cwf.empty ⟶ Γ▹T) ↑≅ (γ : cwf.empty ⟶ Γ) × (Tm T⦃γ⦄) where
-  hom θ := by
-    apply ULift.up
-    fconstructor
-    . apply θ.down ≫ p
-    . let x := v (T := T)
-      let y := x⦃θ.down⦄
-      simp only [tySubComp] at y
-      assumption
-  inv := fun ⟨γ, t⟩ => ULift.up (γ ≫ by
-    let t' := t⁻
-    fapply ext
-    . exact (‼ ≫ γ)
-    . let ret := t⦃(‼ : Γ ⟶ ⬝)⦄
-      simp at ret
-      assumption
-    )
-  hom_inv_id := by
-    funext θ
-    cases θ
-    apply ULift.ext
-    simp [ext_inj_general]
-    apply tm_eq
-    aesop_cat
-  inv_hom_id := by
-    funext γt
-    cases γt with
-    | up γt =>
-    cases γt with
-    | mk γ t =>
-      apply ULift.ext
-      simp
-      apply heq_of_cast_eq <;> try aesop_cat
-      symm
-      simp
-      apply tm_id
-      simp
 
 
 
