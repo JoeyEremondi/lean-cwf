@@ -17,7 +17,7 @@ import Mathlib.Data.ULift
 import CwF.Fam
 import CwF.Basics
 
-import CwF.Util.ULift
+-- import CwF.Util.ULift
 
 open CategoryTheory
 
@@ -150,33 +150,25 @@ theorem ext_inj_general {Γ Δ : C} {θ : Δ ⟶ Γ} {T : Ty Γ} {t : Tm (T⦃θ
 -- Any morphism to Γ▹T is just a dependent pair
 -- of a morphism to Γ and a term of type T
 def snocIso {Δ Γ : C} {T : Ty Γ}
-  : (Δ ⟶ Γ▹T) ↑≅ (γ : Δ ⟶ Γ) × (Tm T⦃γ⦄) where
-  hom θ := by
-    apply ULift.up
+  : (Δ ⟶ Γ▹T)  ≃ (γ : Δ ⟶ Γ) × (Tm T⦃γ⦄) where
+  toFun θ := by
     fconstructor
-    . apply θ.down ≫ p
+    . apply θ ≫ p
     . let x := v (T := T)
-      let y := x⦃θ.down⦄
+      let y := x⦃θ⦄
       simp only [tySubComp] at y
       assumption
-  inv := fun ⟨γ, t⟩ => by
-    apply ULift.up
+  invFun := fun ⟨γ, t⟩ => by
     fapply ext
     . apply γ
     . apply t
-  hom_inv_id := by
-    funext θ
-    cases θ
-    apply ULift.ext
+  left_inv θ := by
     simp
     rw [ext_inj_general]
     aesop_cat
-  inv_hom_id := by
-    funext γt
+  right_inv γt := by
     cases γt with
-    | up γt => cases γt with
     | mk γ t =>
-      apply ULift.ext
       simp
 
 
@@ -229,29 +221,15 @@ theorem toTermSection {Γ : C} {T : Ty Γ} (t : Tm T) : toTerm (toSection t) = t
   simp [toTerm, toSection, toSub]
 
 
--- Terms and sections are equivalent
-theorem termSecEquiv {Γ : C} {T : Ty Γ} : Function.Bijective (toSection (T := T))  := by
-  constructor
-  . apply Function.LeftInverse.injective (g := toTerm)
-    apply toTermSection
-  . apply Function.RightInverse.surjective (g := toTerm)
-    apply toSectionTerm
-
-
-
-
--- This equivalence is an isomorphism in Set
-def termSecIso {Γ : C} {T : Ty Γ}
-  :  Tm T ↑≅ pSec T  where
-  hom t := ULift.up (toSection t.down)
-  inv θ := ULift.up (toTerm θ.down)
-  hom_inv_id := by
-    funext t
-    apply ULift.down_injective
+-- This equivalence is an equivalence between types.
+-- Would be a Set-isomorphism except for the universe mismatch
+def termSecEquiv {Γ : C} {T : Ty Γ}
+  :  Tm T ≃ pSec T  where
+  toFun := toSection
+  invFun := toTerm
+  left_inv t := by
     simp [toTermSection]
-  inv_hom_id := by
-    funext t
-    apply ULift.down_injective
+  right_inv t := by
     simp [toSectionTerm]
 
 
@@ -266,8 +244,8 @@ def emptySecIso : pSec T ≅ (cwf.empty ⟶ cwf.empty▹T) where
 
 --Closed types are isomorphic to arrows into the context only containing that type
 def closedSnocIso {T : Ty ⬝}
-  : Tm T ↑≅ cwf.empty ⟶ (⬝▹T) :=
-  termSecIso ≪≫ uliftFunctor.mapIso emptySecIso
+  : Tm T ≃ (cwf.empty ⟶ (⬝▹T) ):=
+  Equiv.trans termSecEquiv emptySecIso.toEquiv
 
 
 --And we can transport isomorphisms across this equivalence,
@@ -275,10 +253,10 @@ def closedSnocIso {T : Ty ⬝}
 theorem termSecPreserveIso  {Γ Δ : C} {S : Ty Δ} {T : Ty Γ}
   (epiEquiv : pSec S ≅ pSec T)
   : Tm S ≅ Tm T := by
-  let liftIso := termSecIso (T := S)
-    ≪≫ uliftFunctor.{u,v}.mapIso epiEquiv
-    ≪≫ (termSecIso (T := T)).symm
-  apply Functor.preimageIso uliftFunctor.{v,u} liftIso
+  apply Equiv.toIso
+  apply Equiv.trans (termSecEquiv)
+  apply Equiv.trans epiEquiv.toEquiv
+  apply termSecEquiv.symm
 
 -- Corollary is that toTerm is injective: each unique section carves out a unique term
 -- which is useful when defining new terms by composing section
