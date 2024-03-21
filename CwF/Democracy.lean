@@ -41,6 +41,24 @@ section
         let yNatIso := Functor.mapIso (yoneda (C := C)) (X := ⬝▹(asTy Γ)) (Y := Γ) demIso.symm
         apply yNatIso.app (Opposite.op ⬝)
 
+    open HasPi
+    def demPi [HasPi C] {Γ Δ : C}
+      : (Tm (Pi (asTy Δ) (asTy Γ)⦃p⦄)) ≃ (Δ ⟶ Γ) := by
+          let yΓ := Functor.mapIso yoneda (dem.demIso (Γ := Γ))
+          let yΓ' := yΓ.app (Opposite.op Δ)
+          simp at yΓ'
+          let yΔ := Functor.mapIso coyoneda (dem.demIso (Γ := Δ)).op
+          let yΔ' := (yΔ.app  (⬝ ▹ (asTy Γ)))
+          simp at yΔ'
+          let lem : ((⬝ ▹ (asTy Δ)) ⟶ (⬝ ▹ (asTy Γ))) ≅ (Δ ⟶ Γ) :=
+            yΔ' ≪≫ yΓ'.symm
+          apply Equiv.trans _ lem.toEquiv
+          fconstructor <;> intros x
+          . fapply ext
+            . apply ‼
+            . let fx := app x
+
+
 
     /-- Snoc is exactly the dependent product in a democratic CwF -/
     def demSnoc {Γ : C} {T : Ty Γ}
@@ -58,6 +76,14 @@ section
         symm
         rw [Iso.comp_inv_eq, ext_inj_general]
         aesop_cat
+
+  def demSigma : HasSigma C where
+    Sigma {Γ} S T := (asTy ((Γ ▹ S) ▹ T))⦃‼⦄
+    pair s t := by
+      apply tmSub _ ‼
+      apply demTm.invFun
+      apply demSnoc.inv
+      simp
 
       -- apply viaUlift
       -- . apply demTm

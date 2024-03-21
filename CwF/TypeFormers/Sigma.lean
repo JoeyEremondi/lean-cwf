@@ -21,27 +21,6 @@ namespace CwF
 universe u v u2
 
 
-class HasPi (C : Type u) [Category.{v} C] [CwF C] : Type _ where
-  Pi : DepTypeFormer C
-  lam  {Γ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)}
-    : Tm T → Tm (Pi S T)
-  app {Γ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)}
-    : (f : Tm (Pi S T)) → (x : Tm S) → Tm (T⦃x⁻⦄)
-  -- Laws for functions: beta reduction and substitution
-  Piβ : app (lam t) s = t⦃s⁻⦄
-  PiS : DepSubCongr Pi
-  LamS {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {t : Tm T} {θ : Δ ⟶ Γ}
-    : (lam t)⦃θ⦄ =ₜ (lam (t⦃wk θ⦄))
-  AppS {Γ Δ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)} {θ : Δ ⟶ Γ} {f : Tm (Pi S T)} {s : Tm S}
-    :  (app f s)⦃θ⦄ =ₜ (app (T := T⦃wk θ⦄) (castTm (f⦃θ⦄) (by rw [PiS]) ) s⦃θ⦄)
-
-
-open HasPi
-
-attribute [simp] Piβ PiS LamS AppS
-
--- set_option pp.notation false
-
 open CwFExt
 open CwFProp
 
@@ -72,10 +51,8 @@ class HasSigma (C : Type u) [Category.{v} C] [CwF C] : Type _ where
     :  (pair s t)⦃θ⦄ =ₜ (pair (T := tySub T (wk θ)) s⦃θ⦄ (↑ₜ t⦃θ⦄ ))
 
 
-open HasPi
 open HasSigma
 
-attribute [simp] Piβ PiS LamS AppS
 attribute [simp] SigmaProj1 SigmaProj2 SigmaS ProjS1 ProjS2 PairS
 
 -- class HasRecords {C : Type u} [Category.{v} C] [CwF C] : Type _ where
