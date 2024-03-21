@@ -31,6 +31,13 @@ universe u v u2
 variable {C : Type u} [cat : Category.{v}  C] [cwf: CwF C]
 
 
+--We work with (type) equivalences, but any time we have equivalences at
+--the same universe level, we want to be able to use isomorphisms
+-- instance {A B : Type u} : Coe (A ≅ B) (Equiv A  B) where
+--   coe := Iso.toEquiv
+-- instance {A B : Type u} : Coe (Equiv A  B) (A ≅ B) where
+--   coe := Equiv.toIso
+
 
 -- Some cast lemmas
 @[simp]

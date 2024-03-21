@@ -9,7 +9,6 @@ import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 
 
 import CwF.Basics
-import CwF.Util.ULift
 import CwF.Properties
 import CwF.TypeFormers.PiSigma
 
@@ -35,25 +34,31 @@ section
     variable {C : Type u} [Category.{v}  C] [cwf: CwF C] [dem : Democratic cwf]
 
     def demTm {Γ : C}
-      : (Tm (asTy Γ)) ↑≅ ⬝ ⟶ Γ :=  by
-      apply Iso.trans
+      : (Tm (asTy Γ)) ≃ (⬝ ⟶ Γ) :=  by
+      apply Equiv.trans
       . apply closedSnocIso
-      . apply Functor.mapIso uliftFunctor
+      . apply Iso.toEquiv
         let yNatIso := Functor.mapIso (yoneda (C := C)) (X := ⬝▹(asTy Γ)) (Y := Γ) demIso.symm
         apply yNatIso.app (Opposite.op ⬝)
 
-    -- instance demSigma : HasSigma C where
-    --   Sigma {Γ} S T := (asTy (Γ▹S)▹T)⦃‼⦄
-    --   pair s t := by
-    --     apply tmSub _ ‼
-    --     apply demTm
 
-
+    /-- Snoc is exactly the dependent product in a democratic CwF -/
     def demSnoc {Γ : C} {T : Ty Γ}
-      : Tm (asTy (Γ ▹ T)) ≅ ((γ : Tm (asTy Γ)) × Tm (tySub T (γ⁻ ≫ demIso.inv))) where
-      hom t :=
-        let θ := (demTm.hom (ULift.up t)).down
-        by admit
+      : Tm (asTy (Γ ▹ T)) ≅ ((γ : Tm (asTy Γ)) × Tm (tySub T (γ⁻ ≫ demIso.inv))) := by
+      apply Equiv.toIso
+      apply Equiv.trans demTm
+      apply Equiv.trans snocIso
+      fapply Equiv.sigmaCongr
+      . apply demTm.symm
+      . intros γ
+        simp [demTm, closedSnocIso, termSecEquiv, emptySecIso, toTerm, toSub]
+        apply Equiv.cast
+        apply  congrArg Tm
+        apply congrArg (tySub T)
+        symm
+        rw [Iso.comp_inv_eq, ext_inj_general]
+        aesop_cat
+
       -- apply viaUlift
       -- . apply demTm
       -- . let sn := (snocIso (Δ := Γ) (T := T)).symm
