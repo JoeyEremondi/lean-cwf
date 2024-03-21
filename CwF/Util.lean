@@ -46,6 +46,26 @@ theorem hCongArg {A : Type u} {B : A → Type v} {f : (a : A) → B a}
     (eq : x = y)  :
       HEq (f x) (f y) := by aesop
 
+
+-- theorem hCongArg2 {A A' : Type u}
+--     {B : A → Type v}
+--     {B' : A' → Type v}
+--     {C : (a : A) → B a → Type v}
+--     {C' : (a : A') -> B' a -> Type v}
+--     {f : (a : A) → (b : B a) → C a b}
+--     {g : (a : A') → (b : B' a) → C' a b}
+--     {x : A} {y : A'}
+--     {bx : B x} {byy : B' y}
+--     (feq : HEq f g)
+--     (eq : HEq x y)
+--     (heq : HEq bx byy):
+--       HEq (f x bx) (g y byy) := by
+--     cases eq
+--     let teq := heq_type_eq heq
+--     apply heq_of_cast_eq <;> aesop_cat
+--     cases teq
+--     cases heq
+
 theorem hCongFunImplicit {A : Type u} {B C : A → Type v} {f : {a : A} → B a} {g : {a : A} → C a}
     (x : A)
     (eq : B = C)

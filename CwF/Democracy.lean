@@ -53,10 +53,17 @@ section
           let lem : ((⬝ ▹ (asTy Δ)) ⟶ (⬝ ▹ (asTy Γ))) ≅ (Δ ⟶ Γ) :=
             yΔ' ≪≫ yΓ'.symm
           apply Equiv.trans _ lem.toEquiv
-          fconstructor <;> intros x
+          fconstructor <;> intros f
           . fapply ext
             . apply ‼
-            . let fx := app x
+            . let f' := f⦃p (T := asTy Δ)⦄
+              simp at f'
+              let x := v (T := asTy Δ)
+              simp at x
+              let fx := app f' x
+              simp at fx
+              assumption
+          . simp
 
 
 

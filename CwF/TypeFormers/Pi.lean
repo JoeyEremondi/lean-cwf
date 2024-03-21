@@ -47,6 +47,57 @@ open HasPi
 
 attribute [simp] Piβ PiS LamS AppS
 
+-- theorem app_heq {C : Type u} [Category.{v} C] [CwF C] [HasPi C]
+--   {Γ : C} {S S' : Ty Γ } {T : Ty Γ▹S} {T' : Ty Γ▹S'} {f : Tm (Pi S T)} {g : Tm (Pi S' T')}
+--   {x : Tm S} {y : Tm S'}
+--   (eq : Tm (T⦃x⁻⦄) = Tm (T'⦃y⁻⦄))
+--   (eq1 : HEq f g) (eq2 : HEq x y)
+--   : (app f x) = (cast (eq.symm) (app g y) ) := by aesop_cat
+
+
+
+def ηBody {C : Type u} [Category.{v} C] [CwF C] [HasPi C]
+  {Γ : C} {S : Ty Γ} {T : Ty Γ▹S} (f : Tm (HasPi.Pi S T))
+  : Tm T
+  := (castTm (app (↑ₜ f⦃p⦄) v) (by
+            simp [toSub]
+            apply ty_id
+            rw [ext_inj_general]
+            aesop_cat
+            ))
+
+
+def ηExpand  {C : Type u} [Category.{v} C] [CwF C] [HasPi C]
+  {Γ : C} {S : Ty Γ} {T : Ty Γ▹S} (f : Tm (HasPi.Pi S T))
+  : Tm (HasPi.Pi S T)
+  :=  lam (S := S) (ηBody f)
+
+
+class HasEta (C : Type u) [Category.{v} C] [CwF C] extends HasPi C : Type _ where
+  Piη {Γ : C} {S : Ty Γ} {T : Ty Γ▹S} {f : Tm (HasPi.Pi S T)}
+    : f = ηExpand f
+
+
+def piIso [Category.{v} C] [CwF C] [HasEta C]
+  {Γ : C} {S T : Ty Γ}
+  : Tm (Pi S T⦃p⦄) ≅ Tm T⦃p (T := S)⦄ where
+  hom f := ηBody f
+  inv := lam
+  hom_inv_id := by
+    funext f
+    simp
+    symm
+    apply HasEta.Piη
+  inv_hom_id := by
+    funext f
+    simp [ηBody]
+    symm
+    apply tm_id
+    simp [wk]
+    rw [ext_inj_general]
+    aesop_cat
+
+
 -- class HasRecords {C : Type u} [Category.{v} C] [CwF C] : Type _ where
 --   BigSigma {Γ : C}
 --     : (Over Γ ) → Ty Γ

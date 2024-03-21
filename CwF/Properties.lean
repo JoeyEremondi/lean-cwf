@@ -108,13 +108,27 @@ theorem ext_decomp {Γ Δ : C} {T : Ty Γ} {θ : Δ ⟶ Γ▹T}
 -- Should really be in the stdlib
 -- TODO PR?
 --
---
 
+
+@[aesop unsafe 90%]
+theorem ty_eq {Γ Δ : C} {f g : Δ ⟶ Γ } {T : Ty Γ}
+  (eq : f = g)
+  : T⦃f⦄ = T ⦃g⦄  := by aesop
+
+
+@[aesop unsafe 90%]
+theorem ty_id {Γ : C} {g : Γ ⟶ Γ } {T : Ty Γ}
+  (eq : g = 𝟙 Γ)
+  : T = T ⦃g⦄  := by aesop
+
+
+@[aesop unsafe 90%]
 theorem tm_eq {Γ Δ : C} {T : Ty Γ} {f g : Δ ⟶ Γ } {t : Tm T}
   (eq : f = g)
   : t⦃f⦄ =ₜ t ⦃g⦄  := by aesop
 
 
+@[aesop unsafe 90%]
 theorem tm_id {Γ : C} {T : Ty Γ} {g : Γ ⟶ Γ } {t : Tm T}
   (eq : g = 𝟙 Γ)
   : t =ₜ t ⦃g⦄  := by aesop
