@@ -48,6 +48,7 @@ section
 
 
 
+
     /-- Snoc is exactly the dependent product in a democratic CwF -/
     def demSnoc {Γ : C} {T : Ty Γ}
       : Tm (asTy (Γ ▹ T)) ≅ ((γ : Tm (asTy Γ)) × Tm (tySub T (γ⁻ ≫ demIso.inv))) := by
@@ -67,8 +68,11 @@ section
 
 
     open HasPi
-    def demPi [HasPiEta C] {Γ Δ : C}
-      : (Tm (Pi (asTy Δ) (asTy Γ)⦃p⦄)) ≃ (Δ ⟶ Γ) := by
+
+    -- With democracy, arrows from Δ to Γ are precisely terms of type Γ
+    -- with a variable of type Δ
+    def demOpenEquiv  {Γ Δ : C}
+      : (Δ ⟶ Γ) ≃ Tm ((asTy Γ)⦃p (T := asTy Δ )⦄) := by
           let yΓ := Functor.mapIso yoneda (dem.demIso (Γ := Γ))
           let yΓ' := yΓ.app (Opposite.op Δ)
           simp at yΓ'
@@ -77,45 +81,21 @@ section
           simp at yΔ'
           let lem : ((⬝ ▹ (asTy Δ)) ⟶ (⬝ ▹ (asTy Γ))) ≅ (Δ ⟶ Γ) :=
             yΔ' ≪≫ yΓ'.symm
+          symm
           apply Equiv.trans _ lem.toEquiv
           apply Equiv.trans _ snocIso.symm
-          apply Equiv.trans piIso.toEquiv
           simp
           symm
           apply Equiv.trans (Equiv.sigmaEquivProd _ _)
           apply Equiv.trans (Equiv.prodComm _ _)
           apply Equiv.prodUnique
 
-  def demSigma : HasSigma C where
-    Sigma {Γ} S T := (asTy ((Γ ▹ S) ▹ T))⦃‼⦄
-    pair s t := by
-      apply tmSub _ ‼
-      apply demTm.invFun
-      apply demSnoc.inv
-      simp
-
-      -- apply viaUlift
-      -- . apply demTm
-      -- . let sn := (snocIso (Δ := Γ) (T := T)).symm
-      --   simp [uliftIsoMax]
-      --   apply sn.symm
-      -- . fconstructor
-      --   . intros θ
-      --     apply SplitEpi.mk (‼ ≫ θ) (by
-      --       simp
-      --       simp)
-      -- apply Iso.trans
-      -- . apply demTm
-      -- apply termSecPreserveIso
-      -- trans
-      -- . apply emptySecIso
-      -- . fconstructor
-      --   . intros f
-      --     fconstructor
-      --     . apply CategoryStruct.comp (‼ ≫ f)
+    -- If we have democracy and η, then each hom-set is equivalent to a function type
+    def demPiEquiv [HasPiEta C] {Γ Δ : C}
+      :  (Δ ⟶ Γ) ≃ (Tm (Pi (asTy Δ) (asTy Γ)⦃p⦄)) := by
+          apply Equiv.trans demOpenEquiv
+          symm
+          apply piIso.toEquiv
 
 
--- end
-
-
--- end CwF
+   -- TODO: can we get Sigma types from democracy?

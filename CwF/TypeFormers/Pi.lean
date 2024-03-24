@@ -3,6 +3,7 @@ import CwF.Fam
 import Mathlib.CategoryTheory.Category.Basic
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.Functor.Basic
+import Mathlib.CategoryTheory.Types
 import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 
@@ -10,6 +11,8 @@ import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 import CwF.Basics
 import CwF.Properties
 import CwF.TypeFormers.DepTyFormer
+
+import Mathlib.CategoryTheory.EpiMono
 
 open CategoryTheory
 
@@ -54,6 +57,14 @@ attribute [simp] Piβ PiS LamS AppS
 --   (eq1 : HEq f g) (eq2 : HEq x y)
 --   : (app f x) = (cast (eq.symm) (app g y) ) := by aesop_cat
 
+-- Helper for building lambdas using Lean functions instead of CwF notation
+def fromFun  {C : Type u} [Category.{v} C] [CwF C] [HasPi C]
+  {Γ : C} {S : Ty Γ} {T : Ty Γ▹S}
+  (f : Tm S⦃p (T := S)⦄ → Tm T)
+  : Tm (Pi S T) := by
+  apply lam
+  apply f
+  apply v (T := S)
 
 
 def ηBody {C : Type u} [Category.{v} C] [CwF C] [HasPi C]
@@ -71,6 +82,19 @@ def ηExpand  {C : Type u} [Category.{v} C] [CwF C] [HasPi C]
   {Γ : C} {S : Ty Γ} {T : Ty Γ▹S} (f : Tm (HasPi.Pi S T))
   : Tm (HasPi.Pi S T)
   :=  lam (S := S) (ηBody f)
+
+-- Regardless of η, ηBody and lam are left-inverses
+-- This means that there's an embedding of  Pi S T into T
+def bodyLeftInv {C : Type u} [Category.{v} C] [CwF C] [haspi : HasPi C] {Γ : C}
+  {S : Ty Γ} {T : Ty (Γ▹S)}
+  : Function.LeftInverse (ηBody (T := T)) haspi.lam := by
+    intros t
+    simp [ηBody, wk, toSub]
+    symm
+    apply tm_id
+    simp
+    rw [ext_inj_general]
+    aesop_cat
 
 
 class HasPiEta (C : Type u) [Category.{v} C] [CwF C] extends HasPi C : Type _ where
@@ -90,12 +114,7 @@ def piIso [Category.{v} C] [CwF C] [HasPiEta C]
     apply HasPiEta.Piη
   inv_hom_id := by
     funext f
-    simp [ηBody]
-    symm
-    apply tm_id
-    simp [wk]
-    rw [ext_inj_general]
-    aesop_cat
+    apply bodyLeftInv
 
 
 -- class HasRecords {C : Type u} [Category.{v} C] [CwF C] : Type _ where
