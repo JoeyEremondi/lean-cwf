@@ -1,6 +1,8 @@
 
 import CwF.Fam
 import Mathlib.CategoryTheory.Category.Basic
+import Mathlib.CategoryTheory.Comma.Over
+import Mathlib.CategoryTheory.Equivalence
 import Mathlib.CategoryTheory.Yoneda
 import Mathlib.CategoryTheory.Functor.Basic
 import Mathlib.CategoryTheory.NatTrans
@@ -67,7 +69,6 @@ section
         aesop_cat
 
 
-    open HasPi
 
     -- With democracy, arrows from Δ to Γ are precisely terms of type Γ
     -- with a variable of type Δ
@@ -90,6 +91,9 @@ section
           apply Equiv.trans (Equiv.prodComm _ _)
           apply Equiv.prodUnique
 
+
+
+    open HasPi
     -- If we have democracy and η, then each hom-set is equivalent to a function type
     def demPiEquiv [HasPiEta C] {Γ Δ : C}
       :  (Δ ⟶ Γ) ≃ (Tm (Pi (asTy Δ) (asTy Γ)⦃p⦄)) := by

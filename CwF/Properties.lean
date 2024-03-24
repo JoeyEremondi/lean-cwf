@@ -432,6 +432,14 @@ theorem termFromToSlice {Γ Δ : C} {T : Ty Δ}
   : termFromSlice f (termToSlice f t) = t := by
     simp [termFromSlice, termToSlice, extHead]
 
+def termSliceEquiv {Γ Δ : C} {T : Ty Δ}
+  {f : Γ ⟶ Δ}
+  : Tm T⦃f⦄ ≃ ((Over.mk f) ⟶ tyToSlice T) where
+  toFun := termToSlice f
+  invFun := termFromSlice f
+  left_inv := termFromToSlice f
+  right_inv := termToFromSlice f
+
 -- theorem termSliceIso {Γ Δ : C} {T : Ty Δ} (f : Γ ⟶ Δ)
 --   : Iso (Tm T⦃f⦄) ( (Over.mk f) ⟶ tyToSlice T)  where
 --   hom := termToSlice
