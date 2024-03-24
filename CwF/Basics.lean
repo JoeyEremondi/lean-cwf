@@ -302,6 +302,11 @@ instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
 theorem toEmptyUnique {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C} {θ : Γ ⟶ ⬝}
   : θ = ‼ := (Limits.IsTerminal.hom_ext cwf.emptyTerminal ‼ θ).symm
 
+instance {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C}
+  : Unique (Γ ⟶ ⬝) where
+  default := ‼
+  uniq _ := toEmptyUnique
+
 --Version of the above that works better with simp
 --Composing with ‼ produces ‼
 @[simp]

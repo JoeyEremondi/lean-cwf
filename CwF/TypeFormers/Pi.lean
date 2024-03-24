@@ -73,12 +73,12 @@ def ηExpand  {C : Type u} [Category.{v} C] [CwF C] [HasPi C]
   :=  lam (S := S) (ηBody f)
 
 
-class HasEta (C : Type u) [Category.{v} C] [CwF C] extends HasPi C : Type _ where
+class HasPiEta (C : Type u) [Category.{v} C] [CwF C] extends HasPi C : Type _ where
   Piη {Γ : C} {S : Ty Γ} {T : Ty Γ▹S} {f : Tm (HasPi.Pi S T)}
     : f = ηExpand f
 
 
-def piIso [Category.{v} C] [CwF C] [HasEta C]
+def piIso [Category.{v} C] [CwF C] [HasPiEta C]
   {Γ : C} {S T : Ty Γ}
   : Tm (Pi S T⦃p⦄) ≅ Tm T⦃p (T := S)⦄ where
   hom f := ηBody f
@@ -87,7 +87,7 @@ def piIso [Category.{v} C] [CwF C] [HasEta C]
     funext f
     simp
     symm
-    apply HasEta.Piη
+    apply HasPiEta.Piη
   inv_hom_id := by
     funext f
     simp [ηBody]
