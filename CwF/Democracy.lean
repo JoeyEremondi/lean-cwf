@@ -15,6 +15,7 @@ import Mathlib.Logic.Equiv.Basic
 
 import CwF.Basics
 import CwF.Properties
+import CwF.TypeFormers.EmptyUnit
 import CwF.TypeFormers.Pi
 import CwF.TypeFormers.Sigma
 
@@ -47,7 +48,16 @@ section
         let yNatIso := Functor.mapIso (yoneda (C := C)) (X := ⬝▹(asTy Γ)) (Y := Γ) demIso.symm
         apply yNatIso.app (Opposite.op ⬝)
 
-
+    -- Isomorphic contexts have isomorphic term-sets.
+    def preserveIso {Γ Δ : C} (iso : Γ ≅ Δ) :
+      Tm (asTy Γ) ≅ Tm (asTy Δ) := by
+        let tYonedaIso := Functor.mapIso (yoneda (C := C)) (X := Δ) (Y := Γ) iso.symm
+        let tIso := tYonedaIso.app (Opposite.op ⬝)
+        apply Equiv.toIso
+        apply Equiv.trans demTm
+        symm
+        apply Equiv.trans demTm
+        apply tIso.toEquiv
 
 
 
@@ -92,6 +102,49 @@ section
           apply Equiv.prodUnique
 
 
+    def demOpenEquivCtx  {Γ Δ : C}
+      : (Δ ⟶ Γ) ≃ Tm ((asTy Γ)⦃(‼ : Δ ⟶ ⬝)⦄) := by
+          let iso := dem.demIso (Γ := Δ)
+          let fEquiv := ctxIsoToTm  iso (T := (asTy Γ)⦃‼⦄)
+          apply Equiv.trans _ fEquiv.toEquiv.symm
+          simp
+          simp at fEquiv
+          let yΔ := Functor.mapIso coyoneda (dem.demIso (Γ := Δ)).op
+          let yΔ' := (yΔ.app  Γ).symm
+          simp at yΔ'
+          apply yΔ'.toEquiv.trans
+
+    instance initUniqueTm' {Δ : C} : Unique (Tm ((asTy ⬝)⦃p (T := asTy Δ )⦄)) := by
+      let eq := (demOpenEquiv (Δ := Δ) (Γ := ⬝)).symm
+      apply eq.unique
+
+
+    instance initUniqueTm {Δ : C} {θ : ⬝▹(asTy Δ) ⟶ ⬝} : Unique (Tm  ((asTy ⬝)⦃θ⦄)) := by
+      let peq := toEmptyUnique (C := C) (θ := p (T := asTy Δ))
+      let peq2 := toEmptyUnique (C := C) (θ := θ)
+      let peq3 := Eq.trans peq2 peq.symm
+      cases peq3
+      apply initUniqueTm'
+
+
+    instance initUniqueTmGen {Δ : C} {θ : Δ ⟶ ⬝} : Unique (Tm  ((asTy ⬝)⦃θ⦄)) := by
+      cases peq3
+      apply initUniqueTm'
+
+
+    --All democratic CwFs have a unit type
+    instance : HasUnitEta C where
+      Unit := asTy ⬝
+      unit := demTm.invFun ‼
+      unitElim {Γ} {P} {x} pu := by
+        simp [toSub]
+        simp [toSub] at pu
+        admit
+      ηUnit := fun {Δ} x y => by
+        let uniq := (initUniqueTm (Δ := Δ) (θ := ‼)).uniq
+        let xeq := uniq x
+        let yeq := uniq y
+        simp
 
     open HasPi
     -- If we have democracy and η, then each hom-set is equivalent to a function type
@@ -101,5 +154,12 @@ section
           symm
           apply piIso.toEquiv
 
+
+
+    instance (C : Type u) [Category.{v} C] [CwF C] [empty : HasEmptyEta C]
+      : Limits.IsInitial (⬝ ▹ empty.Empty) := by
+      fapply Limits.IsInitial.ofUniqueHom <;> intros Γ
+      . simp
+      intros
 
    -- TODO: can we get Sigma types from democracy?

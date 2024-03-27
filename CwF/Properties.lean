@@ -7,6 +7,7 @@ import Mathlib.CategoryTheory.Comma.Over
 import Mathlib.CategoryTheory.Comma.StructuredArrow
 import Mathlib.CategoryTheory.Comma.Basic
 import Mathlib.CategoryTheory.Functor.ReflectsIso
+import Mathlib.CategoryTheory.Conj
 import Mathlib.Data.Opposite
 import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 import Mathlib.Logic.Unique
@@ -213,6 +214,7 @@ abbrev toSection {Γ : C} {T : Ty Γ} (t : Tm T) : pSec T :=
 abbrev toTerm {Γ : C} {T : Ty Γ} (epi : pSec T) : Tm T :=
   ↑ₜ ((v ) ⦃ epi.section_ ⦄)
 
+
 theorem congrDep₂  {A : Type } {B : A → Type} {R :  Type} (f : (a : A) → (b : B a) → R)
   {a₁ a₂ : A} (eqa : a₁ = a₂) {b₁ : B a₁} {b₂ : B a₂} (eqb : b₁ = cast (by aesop) b₂)
   : f a₁ b₁ = (f a₂ b₂) := by
@@ -287,6 +289,52 @@ theorem toTermInj {Γ : C} {T : Ty Γ} : Function.Injective (toTerm (T := T)) :=
   apply toSectionTerm
 
 notation:10000 t "⁻" => toSub t
+
+-- def pIso {Γ Δ : C} {S : Ty Γ} {T : Ty Δ}
+--   (ciso : Γ ≅ Δ)
+--   (tiso : Γ▹S ≅ Δ▹T)
+--   : p ≫ ciso.hom = tiso.hom ≫ p := by
+--   simp [<- Iso.inv_comp_eq]
+--   let lem := ext_decomp (θ := tiso.inv)
+--   rw [lem]
+--   simp only [<- Category.assoc]
+--   rw [ext_p]
+--   rw [ext_nat]
+
+-- Types with isomorphic contexts produce isomorphic term-sets
+-- TODO does this actually hold?
+-- def tyIsoToTerm {Γ Δ  : C} {S : Ty Γ} {T : Ty Δ}
+--   (ciso : Γ ≅ Δ)
+--   (tiso : Γ▹S ≅ Δ▹T)
+--   : Tm S ≅ Tm T := by
+--   apply Equiv.toIso
+--   apply Equiv.trans termSecEquiv
+--   apply Equiv.trans _ termSecEquiv.symm
+--   simp [pSec]
+--   let hiso := Iso.homCongr ciso tiso
+--   let piso := Iso.homCongr tiso ciso
+--   fconstructor <;> try intros sec <;> try fconstructor
+--   . apply (ciso.inv ≫ _)
+--     apply (sec.section_ ≫ _)
+--     apply tiso.hom
+--   . simp
+--     let lem := ext_decomp (θ := (ciso.inv ≫ sec.section_) )
+--     simp only [<- Category.assoc]
+--     simp only [lem]
+--     simp
+--     rw [ext_p]
+--     simp
+--     rw [Iso.inv_comp_eq_id]
+--   . apply (ciso.hom ≫ _)
+--     apply (sec.section_ ≫ _)
+--     apply tiso.inv
+
+  -- fconstructor <;> try intros f
+  -- . fconstructor
+  --   . apply (ciso.inv ≫ f.section_ ≫ tiso.hom)
+  --   . simp
+
+
 
 -- Weakening
 -- Lifts any substitution to work on an extended context
@@ -457,6 +505,9 @@ theorem congrTy {Γ : C} {S T : Ty Γ}
 theorem congrTySub {Δ Γ : C} {T : Ty Γ} {f g : Δ ⟶ Γ }
   (eq : f = g)
   : T⦃f⦄ = T⦃g⦄ := by aesop_cat
+
+
+
 
 
 
