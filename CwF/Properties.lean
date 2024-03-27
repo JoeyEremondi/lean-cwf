@@ -28,8 +28,8 @@ open Fam
 open CwFProp
 open CwFExt
 
-universe u v u2
-variable {C : Type u} [cat : Category.{v}  C] [cwf: CwF C]
+universe u v' u2
+variable {C : Type u} [cat : Category.{v'}  C] [cwf: CwF C]
 
 
 --We work with (type) equivalences, but any time we have equivalences at
@@ -48,12 +48,12 @@ def castSnoc {Γ Δ : C} {T : Ty Γ} {eq : Γ = Δ}
 --
 @[simp]
 theorem castP {Γ Δ  : C} {T : Ty Γ} {eq : Γ = Δ } :
-  cast (β := Δ ▹ (cast (by aesop) T) ⟶ Δ ) (by aesop) (p (T := T))  = p :=
+  cast (β := Δ ▹ (cast (by aesop) T) ⟶ Δ ) (by aesop) (p_ T)  = p :=
     by aesop
 
 @[simp]
 theorem castV {Γ Δ  : C} {T : Ty Γ} {eq : Γ = Δ } :
-  cast (by aesop) (v (T := T))  = v (T := cast (β := Ty Δ) (congrArg Ty eq) T) :=
+  cast (by aesop) (v_ T)  = v_ ( cast (β := Ty Δ) (congrArg Ty eq) T) :=
     by aesop
 
 
@@ -144,7 +144,7 @@ theorem tm_id {Γ : C} {T : Ty Γ} {g : Γ ⟶ Γ } {t : Tm T}
 --   : (v (T := T))⦃f⦄ =ₜ v  := by aesop
 
 
-theorem castCong {A : Type u} {B : A → Type v} {f g : (a : A) → B a} {x y : A}
+theorem castCong {A : Type u} {B : A → Type v'} {f g : (a : A) → B a} {x y : A}
   (funEq : f = g) (argEq : x = y) :
     (f x) = cast (by aesop) (g y) := by
     aesop
@@ -162,7 +162,7 @@ theorem ext_inj {Γ Δ : C} {θ₁ θ₂ : Δ ⟶ Γ} {T : Ty Γ} {t₁ : Tm (T�
 -- @[simp]
 theorem ext_inj_general {Γ Δ : C} {θ : Δ ⟶ Γ} {T : Ty Γ} {t : Tm (T⦃θ⦄)} {f : Δ ⟶ Γ▹ T}
   :
-  (⟪θ,t⟫ = f) ↔ (∃ x : (θ = f ≫ (p (T := T))), t =ₜ (v (T := T))⦃f⦄) := by
+  (⟪θ,t⟫ = f) ↔ (∃ x : (θ = f ≫ (p_ T)), t =ₜ (v_ T)⦃f⦄) := by
   let decomp := ext_decomp (θ := f)
   rw [decomp]
   rw [ext_inj]
@@ -176,7 +176,7 @@ def snocIso {Δ Γ : C} {T : Ty Γ}
   toFun θ := by
     fconstructor
     . apply θ ≫ p
-    . let x := v (T := T)
+    . let x := v_ T
       let y := x⦃θ⦄
       simp only [tySubComp] at y
       assumption
@@ -204,7 +204,7 @@ abbrev toSub {Γ : C} {T : Ty Γ} (t : Tm T) : Γ ⟶ (Γ ▹ T) :=
 
 
 def pSec {Γ : C} (T : Ty Γ) : Type _ :=
-  SplitEpi (p (T := T))
+  SplitEpi (p_ T)
 
 -- That subsitution is a section of p
 abbrev toSection {Γ : C} {T : Ty Γ} (t : Tm T) : pSec T :=
@@ -339,7 +339,7 @@ notation:10000 t "⁻" => toSub t
 -- Weakening
 -- Lifts any substitution to work on an extended context
 abbrev wk {Γ Δ : C} (f : Δ ⟶ Γ) {T : Ty Γ} : (Δ ▹ T⦃f⦄) ⟶ (Γ ▹ T) :=
-  ⟪p (T := T⦃f⦄) ≫ f , ↑ₜ v ⟫
+  ⟪p_ T⦃f⦄ ≫ f , ↑ₜ v ⟫
 
 -- Weakening morphisms are the CwF version of a substitution Γ(x:T)Δ ⟶ Γ Δ
 -- i.e. as a substitution, we can introduce an unused variable anywhere in the context
@@ -363,9 +363,9 @@ theorem eqAsSections {Γ : C} {T : Ty Γ} {t1 t2 : Tm T} (eq :  t1⁻ =  t2⁻)
   simp_all
 
 
-@[simp]
-theorem vCast {Γ  : C} {T : Ty Γ} {f : _} (eq : f = 𝟙 (Γ ▹ T)) : (v (T := T))⦃f⦄  =ₜ v := by
-  aesop
+-- @[simp]
+-- theorem vCast {Γ  : C} {T : Ty Γ} {f : _} (eq : f = 𝟙 (Γ ▹ T)) : (v_ (T⦃f⦄)) =ₜ v_ T := by
+--   aesop
 
 
 
@@ -380,7 +380,7 @@ theorem wkTm {Γ Δ : C} (θ : Δ ⟶ Γ) {T : Ty Γ} {t : Tm T}
 --   hom θ := by
 --     fconstructor
 --     . apply θ≫ p
---     . let x := v (T := T)
+--     . let x := v_ T
 --       let y := x⦃θ⦄
 --       simp only [tySubComp] at y
 --       apply toSection
@@ -420,7 +420,7 @@ theorem wkTm {Γ Δ : C} (θ : Δ ⟶ Γ) {T : Ty Γ} {t : Tm T}
 -- When you plug in id for the arrow, you get terms as sections
 
 abbrev tyToSlice {Γ : C} (T : Ty Γ) : Over Γ :=
-  Over.mk (p (T := T))
+  Over.mk (p_ T)
 
 def secToSliceArrow {Γ : C} {T : Ty Γ} (sec : pSec T)
   : (Over.mk (𝟙 Γ) ⟶ tyToSlice T) :=
@@ -437,8 +437,8 @@ def extHead {Γ Δ : C} {T : Ty Γ} (f : Δ ⟶ Γ ▹ T) : Tm (T⦃f ≫ p⦄) 
   ↑ₜ v⦃f⦄
 
 theorem headTmEq {Γ Δ : C} {T : Ty Γ} (f : Δ ⟶ Γ ▹ T) : f = ⟪f ≫ p, extHead f⟫ := by
-  have p : _ := ext_nat p f v
-  rw [ext_id] at p
+  have pf : _ := ext_nat p f v
+  rw [ext_id] at pf
   aesop
 
 -- Γ is the "telescope of indices"
@@ -507,7 +507,31 @@ theorem congrTySub {Δ Γ : C} {T : Ty Γ} {f g : Δ ⟶ Γ }
   : T⦃f⦄ = T⦃g⦄ := by aesop_cat
 
 
-
+-- Isomorphism properties
+-- TODO organize
+def closedWeakenIso {Γ Δ : C} {T : Ty ⬝}
+  (iso : Γ ≅ Δ)
+  : Tm (T⦃⟨⟩Γ⦄) ≃ Tm (T⦃⟨⟩Δ⦄)  where
+  toFun t := by
+    let t' := t⦃iso.inv⦄
+    simp at t'
+    exact t'
+  invFun t := by
+    let t' := t⦃iso.hom⦄
+    simp at t'
+    exact t'
+  left_inv := by
+    intros t
+    symm
+    simp
+    apply tm_id
+    aesop_cat
+  right_inv := by
+    intros t
+    symm
+    simp
+    apply tm_id
+    aesop_cat
 
 
 

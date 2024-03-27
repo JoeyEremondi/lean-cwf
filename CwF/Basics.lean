@@ -15,7 +15,7 @@ open Fam
 
 namespace CwF
 
-universe u v
+universe u v'
 
 
 -- Terms and Types in a CwF, without the comprehension structure
@@ -23,13 +23,13 @@ universe u v
 -- We interpret objects of Ctx as contexts.
 -- We use Fam.{u}, meaning Ctx : Type u, Ty(Γ) : Type u, and Tm(T) : Type u.
 -- The hom-sets might be smaller or bigger, so we give them size v.
-class TmTy (Ctx : Type u) [Category.{v} Ctx] : Type (max (u+1) v) where
+class TmTy (Ctx : Type u) [Category.{v'} Ctx] : Type (max (u+1) v') where
   tmTyFam : CategoryTheory.Functor Ctxᵒᵖ Fam.{u}
 
 open TmTy
 
 section
-  variable {C : Type u} [cat : Category.{v}  C] [tmTy : TmTy.{u,v} C]
+  variable {C : Type u} [cat : Category.{v'}  C] [tmTy : TmTy.{u,v'} C]
 
   -- The index set of the functor F gives types over a given context
   def Ty (Γ : C) : Type u :=  ixSet (tmTyFam.obj (Opposite.op Γ))
@@ -178,7 +178,7 @@ section
 
 -- Context isomorphisms can be transported over term sets
 
-  theorem ctxIsoToTm {Γ Δ : C} (iso : Γ ≅ Δ) {T : Ty Γ} :
+  def ctxIsoToTm {Γ Δ : C} (iso : Γ ≅ Δ) {T : Ty Γ} :
     Tm T ≅ Tm ((ctxIsoToType iso).hom T)  where
     hom t :=  by
       simp
@@ -212,15 +212,15 @@ section
 end
 
 
-class CwFExt (C : Type u) [Category.{v} C]  [tmTy : TmTy C] : Type _  where
+class CwFExt (C : Type u) [Category.{v'} C]  [tmTy : TmTy C] : Type _  where
   -- Context extension
   snoc : (Γ : C) → Ty Γ → C
   --The projection substitution
   --Applying this weakens a type/term
   --by introducing an unused variable
-  p : {Γ : C} → {T : Ty Γ} → snoc Γ T ⟶ Γ
+  p_ : {Γ : C} → (T : Ty Γ) → snoc Γ T ⟶ Γ
   --The variable introduced by extending a context
-  v : {Γ : C} → {T : Ty Γ} → Tm (T⦃p⦄ : Ty (snoc Γ T))
+  v_ : {Γ : C} → (T : Ty Γ) → Tm (T⦃p_ T⦄ : Ty (snoc Γ T))
   -- Every morphism can be extended to extended contexts
   -- This basically says "do whatever f does, and replace the newly introduced variable with t"
   ext : {Γ Δ : C} → {T : Ty Γ} → (f : Δ ⟶ Γ) → (t : Tm (T⦃f⦄)) → Δ ⟶ snoc Γ T
@@ -231,7 +231,16 @@ notation:max Γ:1000 "▹" T:max => snoc Γ T
 notation:max "⟪" θ "," t "⟫" => ext θ t
 
 
-class CwFProp (C : Type u) [catInst : Category.{v} C] [tmTy : TmTy C] [cwf : CwFExt C] : Prop where
+notation:max "p" => p_ _
+notation:max "v" => v_ _
+
+-- abbrev p (C : Type u) [Category.{v'} C]  [tmTy : TmTy C] [CwFExt C]
+--   {Γ : C} {T : Ty Γ} : snoc Γ T ⟶ Γ := p_ T
+
+-- abbrev v (C : Type u) [Category.{v'} C]  [tmTy : TmTy C] [CwFExt C]
+--   {Γ : C} {T : Ty Γ} : Tm (T⦃p_ T⦄ : Ty (snoc Γ T)) := v_ T
+
+class CwFProp (C : Type u) [catInst : Category.{v'} C] [tmTy : TmTy C] [cwf : CwFExt C] : Prop where
   -- The extension is the unique morphism satisfying certain laws
   -- Extending and composing with p cancels: if you introduce an unused variable then replace it with t,
   -- you get the original substitution
@@ -265,7 +274,7 @@ open CwFProp
 
 -- A CwF has a type-term structure,
 -- plus context-extension, substitution extension, and a terminal object
-class CwF (C : Type u) [cat : Category.{v} C]  : Type _ where
+class CwF (C : Type u) [cat : Category.{v'} C]  : Type _ where
   -- Empty context
   empty : C
   -- Empty context is terminal
@@ -275,11 +284,12 @@ class CwF (C : Type u) [cat : Category.{v} C]  : Type _ where
   [cwfProp : CwFProp C]
 
 
-def weakenAll {C : Type u} [Category.{v} C] [cwf : CwF C] {Γ : C} : Γ ⟶ cwf.empty :=
+def wkAll {C : Type u} [Category.{v'} C] [cwf : CwF C] (Γ : C) : Γ ⟶ cwf.empty :=
   Limits.IsTerminal.from cwf.emptyTerminal Γ
 
 notation:max  "⬝"  => CwF.empty
-notation:max  "‼"  => weakenAll
+notation:max  "⟨⟩" T  => wkAll T
+notation:max  "‼"  => wkAll _
 
 attribute [instance] CwF.tmTy CwF.cwfExt CwF.cwfProp
 
@@ -287,22 +297,22 @@ attribute [instance] CwF.tmTy CwF.cwfExt CwF.cwfProp
 
 -- Version of ext_p that works better with reassociating
 @[simp]
-def ext_p_comp {C : Type u} [Category.{v} C] [cwf : CwF C] {Γ Δ Ξ : C} {T : Ty Γ}
+def ext_p_comp {C : Type u} [Category.{v'} C] [cwf : CwF C] {Γ Δ Ξ : C} {T : Ty Γ}
     {f : Δ ⟶ Γ} {g : Γ ⟶ Ξ} {t : Tm (T⦃f⦄)}
     : ⟪f , t⟫ ≫ (p ≫ g) = f ≫ g := by simp [<- Category.assoc]
 
 -- Any CwF is a terminal category
-instance (C : Type u) [Category.{v} C] [CwF C] : Limits.HasTerminal C :=
+instance (C : Type u) [Category.{v'} C] [CwF C] : Limits.HasTerminal C :=
   Limits.IsTerminal.hasTerminal CwF.emptyTerminal
 
 --Not sure why this isn't in mathlib
 
 -- All arrows into ⬝ are equal
 @[simp]
-theorem toEmptyUnique {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C} {θ : Γ ⟶ ⬝}
+theorem toEmptyUnique {C : Type u} [cat : Category.{v'} C] [cwf : CwF C] {Γ : C} {θ : Γ ⟶ ⬝}
   : θ = ‼ := (Limits.IsTerminal.hom_ext cwf.emptyTerminal ‼ θ).symm
 
-instance {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C}
+instance {C : Type u} [cat : Category.{v'} C] [cwf : CwF C] {Γ : C}
   : Unique (Γ ⟶ ⬝) where
   default := ‼
   uniq _ := toEmptyUnique
@@ -310,22 +320,22 @@ instance {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C}
 --Version of the above that works better with simp
 --Composing with ‼ produces ‼
 @[simp]
-theorem toEmptyComp {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ Δ : C} {θ : Δ ⟶ Γ}
+theorem toEmptyComp {C : Type u} [cat : Category.{v'} C] [cwf : CwF C] {Γ Δ : C} {θ : Δ ⟶ Γ}
   : θ ≫ ‼ = ‼ := by
   simp [<- Category.assoc]
 
 
 @[simp]
-theorem toEmptyCompComp {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ Δ Ξ : C} {θ : Δ ⟶ Γ} {g : ⬝ ⟶ Ξ}
+theorem toEmptyCompComp {C : Type u} [cat : Category.{v'} C] [cwf : CwF C] {Γ Δ Ξ : C} {θ : Δ ⟶ Γ} {g : ⬝ ⟶ Ξ}
   : θ ≫ (‼ ≫ g) = ‼ ≫ g := by
   simp [<- Category.assoc]
 
 -- Only one self-arrow into empty
-theorem emptySelfUnique {C : Type u} [cat : Category.{v} C] [cwf : CwF C]
+theorem emptySelfUnique {C : Type u} [cat : Category.{v'} C] [cwf : CwF C]
   : ‼ = 𝟙 (cwf.empty) := by simp
 
 @[simp]
-theorem emptySelfComp {C : Type u} [cat : Category.{v} C] [cwf : CwF C] {Γ : C} {f : ⬝ ⟶ Γ}
+theorem emptySelfComp {C : Type u} [cat : Category.{v'} C] [cwf : CwF C] {Γ : C} {f : ⬝ ⟶ Γ}
   : ‼ ≫ f = f := by
     rw [emptySelfUnique]
     simp only [Category.id_comp]

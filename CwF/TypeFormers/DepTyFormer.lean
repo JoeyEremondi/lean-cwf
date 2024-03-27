@@ -9,11 +9,10 @@ open CategoryTheory
 
 namespace CwF
 
-universe u v u2
-abbrev DepTypeFormer (C : Type u) [Category.{v}  C] [cwf: CwF C] : Type _ :=
+abbrev DepTypeFormer (C : Type u) [Category.{v'}  C] [cwf: CwF C] : Type _ :=
   {Γ : C} → (S : Ty Γ) → (P : Ty (Γ ▹ S)) → Ty Γ
 
-abbrev DepSubCongr {C : Type u} [Category.{v}  C] [cwf: CwF C] (X : DepTypeFormer C) : Prop :=
+abbrev DepSubCongr {C : Type u} [Category.{v'}  C] [cwf: CwF C] (X : DepTypeFormer C) : Prop :=
   {Δ Γ : C} → {S : Ty Γ} → {P : Ty (Γ ▹ S)} → {θ : Δ ⟶ Γ }
     → (X S P)⦃θ⦄  = X S⦃θ⦄ P⦃wk θ⦄
 

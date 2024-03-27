@@ -18,7 +18,6 @@ open CategoryTheory
 
 namespace CwF
 
-universe u v u2
 
 
 open CwFExt
@@ -26,7 +25,7 @@ open CwFProp
 
 -- attribute [aesop unsafe 50% simp] Category.assoc
 
-class HasSigma (C : Type u) [Category.{v} C] [CwF C] : Type _ where
+class HasSigma (C : Type u) [Category.{v'} C] [CwF C] : Type _ where
   Sigma : DepTypeFormer C
   pair  {Γ : C} {S : Ty Γ} {T : Ty (Γ ▹ S)}
      : (s : Tm S) → Tm T⦃s⁻⦄ → Tm (Sigma S T)
@@ -55,7 +54,7 @@ open HasSigma
 
 attribute [simp] SigmaProj1 SigmaProj2 SigmaS ProjS1 ProjS2 PairS
 
--- class HasRecords {C : Type u} [Category.{v} C] [CwF C] : Type _ where
+-- class HasRecords {C : Type u} [Category.{v'} C] [CwF C] : Type _ where
 --   BigSigma {Γ : C}
 --     : (Over Γ ) → Ty Γ
 

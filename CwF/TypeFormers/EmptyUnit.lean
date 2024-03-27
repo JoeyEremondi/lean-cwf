@@ -19,25 +19,24 @@ open CategoryTheory
 
 namespace CwF
 
-universe u v u2
 
 
-class HasEmpty (C : Type u) [Category.{v} C] [CwF C] : Type _ where
+class HasEmpty (C : Type u) [Category.{v'} C] [CwF C] : Type _ where
   Empty : Ty (C := C) ⬝
   exfalso : {Γ: C} → {T : Ty Γ} → Tm (Empty⦃‼⦄ : Ty Γ ) → Tm T
 
-class HasEmptyEta (C : Type u) [Category.{v} C] [CwF C] extends HasEmpty C : Type _ where
-  ηEmpty : {Γ : C} → (x y : Tm (Empty⦃‼⦄ : Ty Γ)) → x = y
+class HasEmptyEta (C : Type u) [Category.{v'} C] [CwF C] extends HasEmpty C : Type _ where
+  ηEmpty : {Γ : C} → Subsingleton (Tm (Empty⦃‼⦄ : Ty Γ))
 
 
 
 
-class HasUnit (C : Type u) [Category.{v} C] [CwF C] : Type _ where
+class HasUnit (C : Type u) [Category.{v'} C] [CwF C] : Type _ where
   Unit : Ty (C := C) ⬝
   unit : Tm Unit
   unitElim : {Γ : C} → {P : Ty (Γ▹Unit⦃‼⦄)} → {x : Tm (Unit⦃‼⦄ : Ty Γ)}
     → Tm P⦃unit⦃‼⦄⁻⦄  → Tm (P⦃x⁻⦄)
 
 
-class HasUnitEta (C : Type u) [Category.{v} C] [CwF C] extends HasUnit C : Type _ where
-  ηUnit : {Γ : C} → (x y : Tm (Unit⦃‼⦄ : Ty Γ)) → x = y
+class HasUnitEta (C : Type u) [Category.{v'} C] [CwF C] extends HasUnit C : Type _ where
+  ηUnit : {Γ : C} → Subsingleton (Tm (Unit⦃‼⦄ : Ty Γ))
