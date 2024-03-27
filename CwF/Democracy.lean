@@ -140,6 +140,17 @@ section
         let uniq := (initUniqueTm (Δ := Δ) (θ := ‼)).uniq
         aesop
 
+    -- instance [Limits.HasInitial C] : HasEmptyEta C where
+    --   Empty := asTy (Limits.initial C)
+    --   exfalso fls := by
+    --     apply toTerm
+    --     fconstructor
+    --     let f := toSub fls
+    --     apply (f ≫ _)
+    --     fapply ext
+    --     . apply p
+    --     .
+
     open HasPi
     -- If we have democracy and η, then each hom-set is equivalent to a function type
     def demPiEquiv [HasPiEta C] {Γ Δ : C}
@@ -161,7 +172,3 @@ section
       apply Equiv.trans closedSnocIso.symm
       apply Equiv.trans depPiIso.toEquiv
       apply (ctxIsoToTm demIso).toEquiv.symm
-
-
-
-
