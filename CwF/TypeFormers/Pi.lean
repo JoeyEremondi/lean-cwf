@@ -66,6 +66,14 @@ def fromFun  {C : Type u} [Category.{v'} C] [CwF C] [HasPi C]
   apply v_ S
 
 
+def PiFun  {C : Type u} [Category.{v'} C] [CwF C] [HasPi C]
+  {Γ : C} {S : Ty Γ} {T : Ty Γ▹S}
+  (f : Tm S⦃p_ S⦄ → Ty Γ▹S)
+  : Ty Γ := by
+  apply Pi
+  apply f
+  apply v_ S
+
 def ηBody {C : Type u} [Category.{v'} C] [CwF C] [HasPi C]
   {Γ : C} {S : Ty Γ} {T : Ty Γ▹S} (f : Tm (HasPi.Pi S T))
   : Tm T

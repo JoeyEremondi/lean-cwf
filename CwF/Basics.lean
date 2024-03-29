@@ -234,6 +234,23 @@ notation:max "⟪" θ "," t "⟫" => ext θ t
 notation:max "p" => p_ _
 notation:max "v" => v_ _
 
+
+
+def bindTy {C : Type u} [Category.{v'} C]  [tmTy : TmTy C] [CwFExt C]
+  {Γ : C} {S : Ty Γ}
+  (f : Tm S⦃p_ S⦄ → Ty (Γ▹S))
+  : Ty (Γ▹S) := f (v_ S)
+
+def bindTm {C : Type u} [Category.{v'} C]  [tmTy : TmTy C] [CwFExt C]
+  {Γ : C} {S : Ty Γ} {T : Ty (Γ▹S)}
+  (f : Tm S⦃p_ S⦄ → Tm T)
+  : Tm T := f (v_ S)
+
+def bindTmTy {C : Type u} [Category.{v'} C]  [tmTy : TmTy C] [CwFExt C]
+  {Γ : C} {S : Ty Γ}
+  (f : Tm S⦃p_ S⦄ → ((T : Ty (Γ ▹ S)) × Tm T))
+  : Tm (f v).fst := (f v).snd
+
 -- abbrev p (C : Type u) [Category.{v'} C]  [tmTy : TmTy C] [CwFExt C]
 --   {Γ : C} {T : Ty Γ} : snoc Γ T ⟶ Γ := p_ T
 

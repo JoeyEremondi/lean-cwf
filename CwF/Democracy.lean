@@ -194,15 +194,21 @@ section
       apply Equiv.trans depPiIso.toEquiv
       apply (ctxIsoToTm demIso).toEquiv.symm
 
-
-    instance [HasPiEta C] : HasSigma C where
-      Sigma {Γ} S T := (asTy ((Γ ▹ S) ▹ T))⦃‼⦄
-      pair {Γ} {S} {T} s t := by
-        dsimp only
-        apply funToDemTm
-        intros γ
-        apply demSnoc.inv
-        fconstructor
-        . apply demSnoc.inv
-          fconstructor
-          .
+    --TODO I think we can get this to work from extensional equality types
+    --since it lets
+    -- instance [HasPiEta C] : HasSigma C where
+    --   Sigma {Γ} S T := by
+    --     apply tySub _ ‼
+    --     fapply Pi
+    --     . apply (asTy Γ)
+    --     . apply bindTy
+    --       intros γ
+    --       apply tySub _ ‼
+    --       apply asTy
+    --       fapply snoc
+    --       . fapply snoc
+    --         . fapply snoc
+    --           . apply Γ
+    --           . apply S
+    --         . apply T
+    --       .
