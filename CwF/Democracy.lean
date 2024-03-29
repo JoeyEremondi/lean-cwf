@@ -46,6 +46,7 @@ section
       . apply Iso.homCongr (Iso.refl _)
         apply demIso.symm
 
+
     -- Isomorphic contexts have isomorphic term-sets.
     def preserveIso {Γ Δ : C} (iso : Γ ≅ Δ) :
       Tm (asTy Γ) ≅ Tm (asTy Δ) := by
@@ -93,6 +94,14 @@ section
           apply Equiv.trans (Equiv.prodComm _ _)
           apply Equiv.prodUnique
 
+
+
+
+    def demEmptyEquiv  {Γ Δ : C}
+      : (Δ ⟶ Γ) ≃ Tm ((asTy Γ)⦃⟨⟩(⬝▹(asTy Δ))⦄) := by
+      let ret := demOpenEquiv (Γ := Γ) (Δ := Δ)
+      simp at ret
+      apply ret
 
     def demOpenEquivCtx  {Γ Δ : C}
       : (Δ ⟶ Γ) ≃ Tm (asTy Γ)⦃ (‼ : Δ ⟶ ⬝) ⦄ := by
@@ -159,6 +168,18 @@ section
           symm
           apply piIso.toEquiv
 
+    def funToDemTm [HasPiEta C] {Γ Δ : C} {θ : Δ ⟶ ⬝}
+      (f : Tm (asTy Δ)⦃p_ (asTy Δ)⦄ → Tm (asTy Γ)) : Tm (asTy Γ)⦃θ⦄ := by
+      simp
+      apply (closedWeakenIso (dem.demIso (Γ := Δ))).invFun
+      apply demEmptyEquiv.toFun
+      apply demPiEquiv.invFun
+      apply fromFun
+      intros δ
+      apply tmSub
+      apply f
+      apply δ
+
     --With functions, every type yields a context whose corresponding type has isomorphic terms
     --i.e. We can freely treat types as contexts and vice versa
     def asCtx [HasPi C] {Γ : C} (T : Ty Γ)
@@ -172,3 +193,16 @@ section
       apply Equiv.trans closedSnocIso.symm
       apply Equiv.trans depPiIso.toEquiv
       apply (ctxIsoToTm demIso).toEquiv.symm
+
+
+    instance [HasPiEta C] : HasSigma C where
+      Sigma {Γ} S T := (asTy ((Γ ▹ S) ▹ T))⦃‼⦄
+      pair {Γ} {S} {T} s t := by
+        dsimp only
+        apply funToDemTm
+        intros γ
+        apply demSnoc.inv
+        fconstructor
+        . apply demSnoc.inv
+          fconstructor
+          .
