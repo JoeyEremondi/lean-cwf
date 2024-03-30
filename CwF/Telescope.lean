@@ -8,7 +8,9 @@ import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 
 import CwF.Basics
 import CwF.Properties
-import CwF.TypeFormers.PiSigma
+import CwF.TypeFormers.Pi
+import CwF.TypeFormers.Sigma
+import CwF.Democracy
 
 
 open CategoryTheory
@@ -22,49 +24,47 @@ open CwFProp
 open CwFExt
 
 
-class Democratic {C : Type u} [Category.{v}  C] (cwf: CwF C) : Type _ where
-  asTy : C → Ty (tmTy := cwf.tmTy) (cwf.empty)
-  demIso : Γ ≅ cwf.cwfExt.snoc cwf.empty (asTy Γ)
-
-open Democratic
 
 -- We can define telescopes over a CwF if there's another CwF structure on the same
--- category that is democratic
-class Telescoping {C : Type u} [cat : Category.{v}  C] (tmF : CategoryTheory.Functor Cᵒᵖ Fam)  : Type _ where
-  cwf : @CwF C cat
-  demo : Democratic cwf
-  nat : NatTrans tmF cwf.tmTy.tmTyFam
+-- category that is democratic and has Sigma types.
+-- We also require that we can inject from single types/terms into telescopes/envs,
+-- and that this respects substitution
+-- (expressed by a natural transformation)
+class Telescoping {C : Type u} [cat : Category.{v'}  C] (cwf: CwF C) : Type _ where
+  tcwf : CwF C
+  isDem : Democratic tcwf
+  uinst : @HasUnit C cat tcwf
+  sigma : @HasSigma C cat tcwf
+  nat : NatTrans cwf.tmTy.tmTyFam tcwf.tmTy.tmTyFam
 
 
-variable  {C : Type u} [cat : Category.{v}  C] [basecwf : CwF C] [tInst : Telescoping (basecwf.tmTy.tmTyFam)]
+section
 
-open Telescoping
-
-def tcwf := tInst.cwf
-
-instance : Democratic (@tcwf C cat basecwf tInst ) := tInst.demo
-
-def Tele (Γ : C) := Ty (tmTy := tcwf.tmTy) Γ
-
-def teleSub {Δ Γ : C} (Ts : Tele Γ) (θ : Δ ⟶ Γ) : Tele Δ
-  := tySub (tmTy := tcwf.tmTy) Ts θ
+  -- variable {C : Type u} [cat : Category.{v'}  C] {cwf: @CwF C cat} [tele : @Telescoping C cat cwf]
 
 
-def Env {Γ : C} (Ts : Tele Γ) := Tm (tmTy := tcwf.tmTy) Ts
+  open Telescoping
 
 
-def envSub {Δ Γ : C} {Ts : Tele Γ} (e : Env Ts) (θ : Δ ⟶ Γ) : Env (teleSub Ts θ)
-  := tmSub (tmTy := tcwf.tmTy) e θ
+  -- @[default_instance]
+  -- local instance  : @CwF C cat  := cwf
+  -- def ttm : TmTy C := tele.tcwf.tmTy
 
-def emptyTele (Γ : C) : Tele Γ :=
-   teleSub (asTy tcwf.empty) (tcwf.toEmpty)
+  def Tele {C : Type u} [cat : Category.{v'}  C] {cwf: @CwF C cat} [tele : @Telescoping C cat cwf]
+  (Γ : C) : Type u :=
+    Ty  (tmTy := tele.tcwf.tmTy) Γ
 
-def teleSnoc {Γ : C} (Ts : Tele Γ) (T : Ty Γ) : Tele Γ :=
-  asTy (by simp)
+  def Env {C : Type u} [cat : Category.{v'}  C] {cwf: @CwF C cat} [tele : @Telescoping C cat cwf]
+    {Γ : C}
+    (TT : Tele (tele := tele) Γ) : Type u :=
+    Tm (tmTy := tele.tcwf.tmTy) TT
 
--- class HasDemo :
+  def emptyTele {C : Type u} [cat : Category.{v'}  C] {cwf: @CwF C cat} [tele : @Telescoping C cat cwf]
+    {Γ : C} : Tele (tele := tele) Γ := by
+    apply tySub (tmTy := tele.tcwf.tmTy)
+    . apply uinst.Unit
+    simp
 
--- structure Telescope (Γ : C) where
---   fields : C
---   asType : Ty Γ
---   iso : fields ≅ Tm (asType)
+
+end
+

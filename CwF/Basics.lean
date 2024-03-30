@@ -31,6 +31,7 @@ open TmTy
 section
   variable {C : Type u} [cat : Category.{v'}  C] [tmTy : TmTy.{u,v'} C]
 
+
   -- The index set of the functor F gives types over a given context
   def Ty (Γ : C) : Type u :=  ixSet (tmTyFam.obj (Opposite.op Γ))
 
