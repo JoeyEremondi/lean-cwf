@@ -47,6 +47,15 @@ namespace Tele
   def map {Γ Δ : Ctx} (θ : Δ ⟶ Γ ) : Tele Γ → Tele Δ
   | teleNil => teleNil
   | teleCons T TT => teleCons T⦃θ⦄ (map (wk θ) TT)
+
+  theorem map_id {Γ : Ctx} {TT : Tele Γ} : Tele.map (𝟙 Γ) TT = TT := by
+    induction TT with
+    | teleNil => aesop_cat
+    | teleCons T TT IH =>
+      simp [Tele.map]
+      apply heq_of_heq_of_eq _ IH
+
+
 end Tele
 
 namespace Env
@@ -72,9 +81,20 @@ def teleFam : CategoryTheory.Functor.{v',u,u,u+1} (Ctxᵒᵖ) Fam.{u} where
       apply fromFam
       apply Env.map θ.unop (toFam tt)
   map_id := by
-    intros Γ
-    funext
+    intros Γop
+    cases Γop
     simp
+    symm
+    apply Eq.trans
+    . apply (unmapMap _).symm
+    . apply unmapExt <;> simp
+      . funext TT
+        simp at TT
+        simp
+        induction TT <;> try aesop_cat
+        simp [Tele.map]
+        apply heq_of_eq_of_heq <;> try assumption
+        rfl
 
 
 

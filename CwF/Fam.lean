@@ -16,7 +16,6 @@ open Opposite
 
 universe  u
 
-namespace Fam
 
 -- Fam is equivalent to the arrow category of Set
 -- Fam can be defined fibrationally the arrow category of Set
@@ -24,6 +23,7 @@ abbrev Fam : Type (u + 1)
   := Arrow (Type u)
 
 
+namespace Fam
 
 -- We can make a family from any type and something indexed by this type
 def mkFam (A : Type (u)) (B : A → Type u) :  Fam.{u} :=
@@ -178,6 +178,15 @@ def unmapFam {AB₁ AB₂ : Fam}
     funext x
     let prop := (famMap ⟨x , Eq.refl _⟩).property
     simp_all
+
+
+theorem unmapExt {AB₁ AB₂ : Fam}
+  {imap1 imap2  : ixSet AB₁ → ixSet AB₂}
+  {fmap1 : {a : ixSet AB₁} -> famFor AB₁ a -> famFor AB₂ (imap1 a)}
+  {fmap2 : {a : ixSet AB₁} -> famFor AB₁ a -> famFor AB₂ (imap2 a)}
+  (ieq : imap1 = imap2)
+  (heq : {a : ixSet AB₁} → HEq (@fmap1 a) (@fmap2 a))
+  : (unmapFam imap1 fmap1) = (unmapFam imap2 fmap2) := by aesop_cat
 
 
 @[simp]
