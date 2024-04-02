@@ -25,48 +25,58 @@ open CwFProp
 open CwFExt
 
 
+universe u v' u2
+variable {Ctx : Type u} [cat : Category.{v'}  Ctx] [cwf: CwF Ctx]
 
 
--- We can define telescopes over a CwF if there's another CwF structure on the same
--- category that is democratic and has Sigma types.
--- We also require that we can inject from single types/terms into telescopes/envs,
--- and that this respects substitution
--- (expressed by a natural transformation)
-class IsoTelescoping (C : Type u) {D : Type u}
-    [Category.{v'} C] [dcat : Category.{v'} D] [cwf : CwF C] (tcwf : CwF D) : Type _ where
-  equ : Equivalence C D
-  -- isDem : Democratic tcwf
-  uinst : HasUnit D
-  sigma : HasSigma D
-  nat : NatTrans cwf.tmTy.tmTyFam (Functor.comp equ.op.functor tcwf.tmTy.tmTyFam)
+inductive Tele : Ctx → Type u where
+  | teleNil : {Γ : Ctx} → Tele Γ
+  | teleCons : {Γ : Ctx} → (T : Ty  Γ) → Tele (Γ ▹ T) → Tele Γ
+
+open Tele
+
+inductive Env : {Γ : Ctx} → Tele Γ → Type u where
+  | envNil : Env teleNil
+  | envCons : {Γ : Ctx} → {T : Ty Γ} → {TT : Tele (Γ▹T)} →
+    (t : Tm T) → Env TT → Env (teleCons T TT)
+
+set_option pp.universes true
+-- #check cwf.tmTy.tmTyFam
+
+namespace Tele
+  def map {Γ Δ : Ctx} (θ : Δ ⟶ Γ ) : Tele Γ → Tele Δ
+  | teleNil => teleNil
+  | teleCons T TT => teleCons T⦃θ⦄ (map (wk θ) TT)
+end Tele
+
+namespace Env
+  def map {Γ Δ : Ctx} {TT : Tele Γ} (θ : Δ ⟶ Γ ) : Env TT → Env (TT.map θ)
+  | envNil => envNil
+  | envCons t tt => envCons t⦃θ⦄ (map (wk θ) tt)
+end Env
+
+-- def teleTmTy : TmTy Ctx where
+--   tmTyFam := {
+--     obj := fun Γ => mkFam (Tele (Opposite.unop Γ)) (Env)
+-- }
+
+def teleFam : CategoryTheory.Functor.{v',u,u,u+1} (Ctxᵒᵖ) Fam.{u} where
+  obj Γ := mkFam (Tele (Opposite.unop Γ)) Env
+  map {X} {Y} θ := by
+    cases X
+    cases Y
+    fapply unmapFam <;> simp
+    . apply Tele.map θ.unop
+    . intros TT tt
+      simp
+      apply fromFam
+      apply Env.map θ.unop (toFam tt)
+  map_id := by
+    intros Γ
+    funext
+    simp
 
 
-section
 
-  variable {C D : Type u} [cat : Category.{v'}  C] [dcat : Category D]
-    [cwf: @CwF C cat] [tcwf : @CwF D dcat] [tele : IsoTelescoping C tcwf]
-
-
-  open IsoTelescoping
-  local instance : CwF D := tcwf
-  def tty := tcwf.tmTy
-
-
-  -- @[default_instance]
-  -- local instance  : @CwF C cat  := cwf
-  -- def ttm : TmTy C := tele.tcwf.tmTy
-
-  abbrev Tele (Γ : C) : Type u :=
-    Ty  (tmTy := tty) (tele.equ.functor.obj Γ)
-
-  abbrev Env {Γ : C} (TT : Tele (tele := tele) Γ) : Type u :=
-    Tm  (tmTy := tty) TT
-
-  def emptyTele : Tele (tele := tele) ⬝ := by
-    dsimp only [Tele]
-    apply tele.uinst.Unit
-
-
-
-end
-
+--   map θ := by
+--     apply unmapFam

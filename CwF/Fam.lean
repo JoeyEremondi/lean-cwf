@@ -26,7 +26,7 @@ abbrev Fam : Type (u + 1)
 
 
 -- We can make a family from any type and something indexed by this type
-def mkFam (A : Type (max u v)) (B : A → Type v) :  Fam.{max u v} :=
+def mkFam (A : Type (u)) (B : A → Type u) :  Fam.{u} :=
   { left := Σ x : A , B x
     right := A
     hom := Sigma.fst }
@@ -42,35 +42,35 @@ def famFor (arr : Fam) (a : ixSet arr) : Type u :=
 
 --The index projection cancels with the constructor
 @[simp]
-theorem famForIxInv (A : Type (max u v)) (B : A → Type v) : ixSet (mkFam.{u,v} A B) = A
+theorem famForIxInv (A : Type (u)) (B : A → Type u) : ixSet (mkFam.{u} A B) = A
   := rfl
 
-def toFam {A : Type (max u v)} {B : A → Type v} {a : A}
- : (b : famFor (mkFam.{u,v} A B) a) → B a := fun
+def toFam {A : Type (u)} {B : A → Type u} {a : A}
+ : (b : famFor (mkFam.{u} A B) a) → B a := fun
     | .mk ab eq => by
       rw [<- eq]
       exact ab.snd
 
-def fromFam {A : Type (max u v)} {B : A → Type v} {a : A}
-  (b : B a) : famFor (mkFam.{u,v} A B) a where
+def fromFam {A : Type (u)} {B : A → Type u} {a : A}
+  (b : B a) : famFor (mkFam.{u} A B) a where
     val := .mk a b
     property := rfl
 
-instance toFamLeftInv {A : Type (max u v)} {B : A → Type v} {a : A}
-  : Function.LeftInverse fromFam.{u,v} (toFam (A := A) (B := B) (a := a))  := by
+instance toFamLeftInv {A : Type (u)} {B : A → Type u} {a : A}
+  : Function.LeftInverse fromFam.{u} (toFam (A := A) (B := B) (a := a))  := by
   intros b
   cases b
   aesop_cat
 
 
-instance toFamRightInv {A : Type (max u v)} {B : A → Type v} {a : A}
-  : Function.RightInverse (fromFam.{u,v} (A := A) (B := B) (a := a)) toFam := by aesop_cat
+instance toFamRightInv {A : Type (u)} {B : A → Type u} {a : A}
+  : Function.RightInverse (fromFam.{u} (A := A) (B := B) (a := a)) toFam := by aesop_cat
 
 -- Removed since the universes don't line up
 -- TODO add back with ULift?
 
--- instance toFamIsIso {A : Type (max u v)} {B : A → Type v} {a : A}
---   : CategoryTheory.IsIso (X := famFor.{max u v} (mkFam.{u, v} A B) a) (Y := B a) (toFam (B := B) (a := a)) := by
+-- instance toFamIsIso {A : Type (u)} {B : A → Type u} {a : A}
+--   : CategoryTheory.IsIso (X := famFor.{u} (mkFam.{u, v} A B) a) (Y := B a) (toFam (B := B) (a := a)) := by
 --   simp [isIso_iff_bijective]
 --   constructor
 --   . apply Function.LeftInverse.injective
