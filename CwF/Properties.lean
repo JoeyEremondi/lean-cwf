@@ -488,6 +488,27 @@ def termSliceEquiv {Γ Δ : C} {T : Ty Δ}
   left_inv := termFromToSlice f
   right_inv := termToFromSlice f
 
+
+def termSliceEquiv' {Δ : C} {T : Ty Δ}
+  {f : Over Δ}
+  : Tm T⦃f.hom⦄ ≃ (f ⟶ tyToSlice T) := by
+  let ff := f.hom
+  simp at ff
+  let ret := @termSliceEquiv _ _ _ f.left Δ T ff
+  simp at ret
+  apply Equiv.trans ret
+  apply Equiv.cast
+  apply congrArg (fun x => x ⟶ _)
+  cases f
+  rfl
+
+
+def termSliceEquivId {Γ : C} {T : Ty Γ}
+  : Tm T ≃ ((Over.mk (𝟙 Γ)) ⟶ tyToSlice T) := by
+    let eq : Tm T⦃𝟙 Γ⦄ ≃ ((Over.mk (𝟙 Γ)) ⟶ tyToSlice T) := termSliceEquiv (f := 𝟙 Γ)
+    simp at eq
+    assumption
+
 -- theorem termSliceIso {Γ Δ : C} {T : Ty Δ} (f : Γ ⟶ Δ)
 --   : Iso (Tm T⦃f⦄) ( (Over.mk f) ⟶ tyToSlice T)  where
 --   hom := termToSlice
