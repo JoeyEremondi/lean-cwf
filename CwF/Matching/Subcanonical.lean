@@ -92,6 +92,32 @@ def coverage_isSheaf_yondea_obj
     apply Sheaf.isSheaf_yoneda_obj
     assumption
 
+theorem canonicalCoverageGenerate {Γ : C} (R : Presieve Γ)
+  (mem : R ∈ canonicalCoverage.covering Γ)
+  : Sieve.generate R ∈ (Sheaf.canonicalTopology C).sieves Γ :=
+    (Coverage.ofGrothendieck_iff (Sheaf.canonicalTopology C)).mp mem
+
+theorem generateToSlice  {Γ : C} (θ : Over Γ) (R : Presieve θ.left) {Δi : Over Γ} {f : Δi ⟶ θ}
+  : Sieve.generate (toSlicePresieve θ R) f ↔ toSlicePresieve θ (Sieve.generate R).arrows f :=
+  by
+    simp [toSlicePresieve, setOf]
+    fconstructor <;> intros H
+    . choose Y h g mem eq using H
+      cases eq
+      reduce
+      aesop_cat
+    . simp at H
+      choose Y h g mem eq using H
+      cases eq
+      reduce
+      apply H
+      aesop_cat
+      
+    aesop_cat
+
+-- Helper lemma between sieves and covers
+def helperCompose
+  {R : Presieve Γ} (mem : R ∈ canonicalCoverage.covering Γ)
 
 --We try to follow the notation/naming from Elephant C2.2.17, even though
 --it doesn't quite match our usual stuff
@@ -100,10 +126,24 @@ def slicePreserveSubcanonical {Γ : C} (f : Over Γ)
   : Presieve.IsSheafFor (yoneda.obj g) (toSlicePresieve f R) :=
     by
       intros Xᵢ compat
-      let baseFam :  Presieve.FamilyOfElements (yoneda.obj g.left) R :=
+      let Xsieve : Presieve.FamilyOfElements
+        (yoneda.toPrefunctor.obj g)
+        (Sieve.generate (toSlicePresieve f R)).arrows := by
+        intros θ fθ mem
+        rw [Sieve.generate_apply] at mem
+        -- Uses choice, since sieve stuff is not constructive
+        -- TODO document
+        choose Mid left right mem' eq using mem
+        let retPart := Xᵢ _ mem'
+        simp at retPart
+        simp
+        cases eq
+        apply (left ≫ retPart)
+      let baseFam :  Presieve.FamilyOfElements (yoneda.obj g.left) (Sieve.generate R).arrows :=
         fun _ k mem =>
-          (Xᵢ (Y := Over.mk (k ≫ f.hom)) (Over.homMk k) mem).left
-      let baseShf := coverage_isSheaf_yondea_obj mem
+          (Xsieve (Y := Over.mk (k ≫ f.hom)) (Over.homMk k) (by dsimp only)).left
+      let baseShf := Sheaf.isSheaf_yoneda_obj (Sheaf.canonicalTopology C)
+      -- coverage_isSheaf_yondea_obj mem
       let baseCompat : Presieve.FamilyOfElements.Compatible baseFam :=
         by admit
       let ⟨h, hAmalg, hUnique⟩ := baseShf _ baseFam baseCompat
