@@ -33,8 +33,8 @@ namespace Renaming
   | ABT.plain t => ABT.plain (rename θ t)
   | ABT.bind t => ABT.bind (rename (wk θ ) t)
 
-  def weaken (n : ℕ) (t : ABT sig m ty) : ABT sig (m + n) ty :=
-    rename (fun x => Fin2.add x n) t
+  def shift  (t : ABT sig m ty) : ABT sig (Nat.succ m) ty :=
+    rename Fin2.fs t
 end Renaming
 
 notation:max t "⦇" ρ "⦈ᵣ" => Renaming.rename ρ t
@@ -47,7 +47,7 @@ namespace Renaming
   @[simp]
   theorem wk_id : wk (n := n) id = id := by
     funext x
-    simp only [wk, id, Renaming.weaken]
+    simp only [wk, id, shift]
     cases x <;> try aesop_cat
 
 
@@ -66,31 +66,11 @@ namespace Renaming
   theorem rename_comp {t : ABT sig c tag} : ∀ {a} {b} {ρ1 : Renaming a b} {ρ2 : Renaming b c} ,  t⦇ρ2⦈ᵣ⦇ρ1⦈ᵣ = t⦇ρ1 ∘ ρ2⦈ᵣ := by
     induction t <;> intros a b ρ1 ρ2 <;> simp [rename, wk_comp] <;> try aesop_cat
 
-  -- @[simp]
-  -- theorem weaken_bind {t : ABT sig (Nat.succ c) (ABTArg.Arg s) } :
-  --   weaken n (ABT.bind t) = ABT.bind (cast (congrArg (fun x => ABT sig x _) (by simp_arith)) (weaken n t)) := by
-  --     induction n with simp [weaken, rename]
-  --     | zero =>
-  --         apply congrArg (fun x => rename x t)
-  --         funext x
-  --         cases x <;> aesop
-  --     | succ n IH =>
-  --         symm
-  --         apply eq_cast_of_heq
-  --         symm
-  --         let lem : @HEq (Renaming (c + (Nat.succ n)) (Nat.succ c)) (wk fun x => Fin2.add x (Nat.succ n)) (Renaming (Nat.succ (c + n)) c) (fun x => Fin2.add x (Nat.succ n)) := by
-  --           apply hFunExt
-  --         apply hCongFun t
 
-
-  -- @[simp]
-  theorem weaken_succ {n : ℕ} {t : ABT sig m ty} : weaken (Nat.succ n) t  = weaken 1 (weaken n t) := by
-    simp [weaken, rename, Function.comp]
-    rfl
 
   @[simp]
-  theorem weaken_wk {t : ABT sig n tag} : ∀ {ρ : Renaming m n }, (Renaming.weaken 1 t)⦇Renaming.wk ρ⦈ᵣ = Renaming.weaken 1 t⦇ρ⦈ᵣ := by
-   induction t <;> intros ρ <;> simp [weaken] <;> try aesop_cat
+  theorem weaken_wk {t : ABT sig n tag} : ∀ {ρ : Renaming m n }, (shift t)⦇Renaming.wk ρ⦈ᵣ = shift t⦇ρ⦈ᵣ := by
+   induction t <;> intros ρ  <;> simp [shift] <;> aesop_cat
 
 
 end Renaming

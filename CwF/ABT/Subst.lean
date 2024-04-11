@@ -23,24 +23,11 @@ namespace Subst
   def ofRenaming (ρ : Renaming m n) : Subst sig m n := fun x =>
     ABT.var (ρ x)
 
-  def projN (n : ℕ) : Subst sig (m+n) m := ofRenaming fun x => Fin2.add x n
-
-  def proj : Subst sig (Nat.succ m) m  := projN 1
+  def proj : Subst sig (Nat.succ m) m  := ofRenaming Fin2.fs
 
   def wk (θ : Subst sig m n)  : Subst sig (Nat.succ m) (Nat.succ n)
   | Fin2.fz => ABT.var Fin2.fz
-  | Fin2.fs x => Renaming.weaken 1 (θ x)
-
-  def wkN : (n : ℕ) → (θ : Subst sig a b) → Subst sig (a + n) (b + n)
-  | Nat.zero, θ => θ
-  | Nat.succ n, θ => wk (wkN n θ)
-
-  -- @[simp]
-  theorem wkOne {n : ℕ} {θ : Subst sig a b}  : wkN (Nat.succ n) θ = wk (wkN n θ) := by simp [wkN]
-  -- @[simp]
-  theorem wkZ {n : ℕ} {θ : Subst sig a b}  : wkN 0 θ = θ := by
-    reduce
-    rfl
+  | Fin2.fs x => Renaming.shift (θ x)
 
 
   abbrev subst (θ : Subst sig m n) : ABT sig n a →  ABT sig m a
