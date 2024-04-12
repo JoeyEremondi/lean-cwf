@@ -39,8 +39,8 @@ section
     | op : (op : Op) → ABT n (Args (sig op)) → ABT n Term'
 
     -- Args consist of an arg for each inductive in the signature
-    | nil : ABT n (Args [])
-    | cons :  ABT n (Arg g) →  ABT n (Args t) → ABT n (Args (h :: t))
+    | argsNil : ABT n (Args [])
+    | argsCons :  ABT n (Arg g) →  ABT n (Args t) → ABT n (Args (h :: t))
 
     -- Arg for ◾ is just a term
     | termArg : ABT n Term' → ABT n (Arg ◾)
@@ -61,8 +61,20 @@ section
 
 end
 
+open ABT
+
 abbrev Term (sig : Op → List Sig) (n : ℕ) := ABT sig n ABTArg.Term'
 
+abbrev x0 : Term sig (Nat.succ n) := ABT.var Fin2.fz
+
+infixr:67 "∷" => argsCons
+notation:67 "∅" => argsNil
+infixr:67 "∷" => termListCons
+notation:67 "∅" => termListNil
+-- infixr:67 "∷" => termVecCons
+-- notation:67 "∅" => termVecNil
+-- infixr:67 "∷" => teleArgCons
+-- notation:67 "∅" => teleArgNil
 
 -- Generic traversal structure for substitution, renaming, etc.
 abbrev map {V : ℕ → Type u}
@@ -70,17 +82,18 @@ abbrev map {V : ℕ → Type u}
   (wk : ∀ {a} {b}, (Fin2 a → V b) → Fin2 (Nat.succ a) → V (Nat.succ b))
   (ρ : Fin2 n → V m) :
   ( ABT sig n tag) → ABT sig m tag
-| ABT.var x => (quote (ρ x))
-| ABT.op op args => ABT.op op (map quote wk ρ args)
-| ABT.nil => ABT.nil
-| ABT.cons h t => ABT.cons (map quote wk ρ h) (map quote wk ρ t)
-| ABT.termArg t => ABT.termArg (map quote wk ρ t)
-| ABT.teleArgNil => ABT.teleArgNil
-| ABT.teleArgCons ts t => ABT.teleArgCons (map quote wk ρ ts) (map quote wk ρ t)
-| ABT.termListNil  => ABT.termListNil
-| ABT.termListCons h t  => ABT.termListCons (map quote wk ρ h) (map quote wk ρ t)
-| ABT.termVecNil  => ABT.termVecNil
-| ABT.termVecCons h t  => ABT.termVecCons (map quote wk ρ h) (map quote wk ρ t)
-| ABT.bind t => ABT.bind (map quote wk (wk ρ ) t)
+| var x => (quote (ρ x))
+| op o args => op o (map quote wk ρ args)
+| argsNil => argsNil
+| argsCons h t => argsCons (map quote wk ρ h) (map quote wk ρ t)
+| termArg t => termArg (map quote wk ρ t)
+| teleArgNil => teleArgNil
+| teleArgCons ts t => teleArgCons (map quote wk ρ ts) (map quote wk ρ t)
+| termListNil  => termListNil
+| termListCons h t  => termListCons (map quote wk ρ h) (map quote wk ρ t)
+| termVecNil  => termVecNil
+| termVecCons h t  => termVecCons (map quote wk ρ h) (map quote wk ρ t)
+| ABT.bind t => bind (map quote wk (wk ρ ) t)
+
 
 end ABT
