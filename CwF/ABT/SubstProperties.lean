@@ -117,13 +117,6 @@ namespace Subst
 
 
 
-  theorem wk_def {θ : Subst sig a b} :
-    wk θ = ext (proj ⨟ θ) (ABT.var Fin2.fz)  := by
-    funext x
-    simp [wk, ext, proj, comp, Renaming.shift]
-    cases x <;> simp [substOfRenaming]
-
-
 
 
   --Category and CwF
@@ -131,7 +124,7 @@ namespace Subst
   --It turns out these make a terminating rewrite system
   @[simp]
   theorem sub_comp {t : ABT sig c tag} : ∀ {a} {b}, {θ : Subst sig a b} →  {θ2 : Subst sig b c} →
-    subst θ (subst θ2 t) = subst (θ ⨟ θ2) t := by
+    t⦇θ2⦈⦇θ⦈ = t⦇θ⨟θ2⦈ := by
     induction t with
       intros a b θ θ2
       <;> simp only [subst, Renaming.rename, Renaming.wk, wk, ofRenaming]
@@ -166,7 +159,26 @@ namespace Subst
   theorem z_shift : ext (n := n) (sig := sig) proj (ABT.var Fin2.fz) = id := by
     funext x
     simp [ext, proj, id]
-    cases x <;> simp <;> try aesop_cat
+    cases x <;> try aesop_cat
+
+  @[simp]
+  theorem sub_eta {θ : Subst sig m (Nat.succ n)} :
+    ext (θ ⨟ proj) (subst θ (ABT.var Fin2.fz)) = θ := by
+      funext x
+      cases x <;> simp [ext, subst, comp]
+
+  @[simp]
+  theorem wk_def {θ : Subst sig a b} :
+    wk θ = ext (proj ⨟ θ) (ABT.var Fin2.fz)  := by
+    funext x
+    simp [wk, ext, proj, comp, Renaming.shift]
+    cases x <;> simp [substOfRenaming]
+
+  @[simp]
+  theorem sub_tail {θ : Subst sig m n} {t : Term sig m} :
+      ext θ t ⨟ proj = θ := by
+      funext x
+      cases x <;> aesop_cat
 
 
 end Subst
