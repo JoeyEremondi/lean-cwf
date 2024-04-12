@@ -11,6 +11,8 @@ universe u v'
 inductive Sig : Type where
 | plain : Sig
 | tele : Sig
+| vec : ℕ → Sig
+| list : ℕ → Sig
 | bind : Sig → Sig
 
 notation "◾" => Sig.plain
@@ -43,11 +45,19 @@ section
 
     -- Arg for ◾ is just a term
     | termArg : ABT n Term' → ABT n (Arg ◾)
+    -- Arg for list is zero or more terms
+    | termListNil : ABT n (Arg list)
+    | termListCons : ABT n Term' → ABT n (Arg list) → ABT n (Arg list)
+    -- Arg for vec is exactly n terms, handy when we want parallel lists constrained
+    -- to have the same length
+    | termVecNil : ABT n (Arg (Sig.vec 0))
+    | termVecCons : ABT n Term' → ABT n (Arg (Sig.vec len)) → ABT n (Arg (Sig.vec (Nat.succ len)))
     -- Arg for tele is just a telescope
     -- Having this lets us have a single case for binding, makes the proofs easier
     | teleArg : ABT n Tele → ABT n (Arg tele)
     -- Arg for a binding is a term with one more free variable
     | bind : ABT (Nat.succ n) (Arg s) → ABT n (Arg (ν s))
+
 
     -- --Telescope for n is a list of n terms, where each term has one more variable than the last
     | teleNil : ABT n Tele
@@ -71,6 +81,10 @@ abbrev map {V : ℕ → Type u}
 | ABT.cons h t => ABT.cons (map quote wk ρ h) (map quote wk ρ t)
 | ABT.termArg t => ABT.termArg (map quote wk ρ t)
 | ABT.teleArg t => ABT.teleArg (map quote wk ρ t)
+| ABT.termListNil  => ABT.termListNil
+| ABT.termListCons h t  => ABT.termListCons (map quote wk ρ h) (map quote wk ρ t)
+| ABT.termVecNil  => ABT.termVecNil
+| ABT.termVecCons h t  => ABT.termVecCons (map quote wk ρ h) (map quote wk ρ t)
 | ABT.bind t => ABT.bind (map quote wk (wk ρ ) t)
 | ABT.teleNil => ABT.teleNil
 | ABT.teleCons ts t => ABT.teleCons (map quote wk ρ ts) (map quote wk ρ t)

@@ -22,13 +22,12 @@ namespace Subst
     simp [ofRenaming, Renaming.wk, wk, Renaming.shift, Renaming.rename]
     cases x <;> simp [Fin2.add]
 
-  -- @[simp]
   theorem substOfRenaming {t : ABT sig n a} : {m : ℕ} →  {ρ : Renaming m n}
       → Renaming.rename ρ t = subst (ofRenaming ρ) t := by
     induction t
       <;> intros m ρ
       <;> simp_all [subst, Renaming.rename, Renaming.wk, wk, ofRenaming ]
-      <;> aesop
+    aesop
 
   @[simp]
   theorem wk_id : wk (sig := sig) (n := n) id = id := by
@@ -77,7 +76,8 @@ namespace Subst
   @[simp]
   theorem sub_rename_fusionL {t : ABT sig c tag} : ∀ {a} {b} {ρ : Renaming b c} {θ : Subst sig a b},
     t⦇ ρ ⦈ᵣ⦇ θ ⦈ = t⦇  θ ⨟ ofRenaming ρ ⦈ := by
-   induction t <;> intros a b ρ θ <;> simp_all [subst, Renaming.rename] <;> try aesop_cat
+   induction t <;> intros a b ρ θ <;> simp_all [subst, Renaming.rename]
+   aesop
 
   @[simp]
   theorem sub_rename_fusionR {t : ABT sig c tag} : ∀ {a} {b} {ρ : Renaming a b} {θ : Subst sig b c},
@@ -88,19 +88,18 @@ namespace Subst
      simp [substOfRenaming]
 
 
-  theorem proj_wk : (wk θ⨟ proj) = (proj ⨟ θ) := by
+  lemma proj_wk : (wk θ⨟ proj) = (proj ⨟ θ) := by
       funext x
       dsimp only [comp, ofRenaming, subst, ABT.map]
       simp_all [<- substOfRenaming, Fin2.add, proj]
       simp_all [ wk, Renaming.shift, Fin2.add]
 
-  theorem wk_comp
+  lemma wk_comp
     {θ : Subst sig a b}  {θ2 : Subst sig b c}
     :  (wk θ ) ⨟ (wk θ2) = wk (θ ⨟ θ2) := by
     funext x
-
-
-    cases x with simp [wk, comp] <;> try aesop_cat
+    cases x with simp [wk, comp]
+    | fz => aesop
     | fs x =>
       let helper := proj_wk (θ := θ)
       rw [proj] at helper
@@ -182,6 +181,9 @@ namespace Subst
       funext x
       cases x <;> aesop_cat
 
+  -- We never want the user to have to think about renamings, generally
+  -- TODO undo this?
+  attribute [simp] substOfRenaming
 
 end Subst
 

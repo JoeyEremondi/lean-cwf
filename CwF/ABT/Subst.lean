@@ -29,7 +29,6 @@ namespace Subst
   | Fin2.fz => ABT.var Fin2.fz
   | Fin2.fs x => Renaming.shift (θ x)
 
-
   abbrev subst (θ : Subst sig m n) : ABT sig n a →  ABT sig m a :=
     ABT.map (fun x => x) wk θ
 
