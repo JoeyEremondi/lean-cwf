@@ -30,13 +30,8 @@ namespace Subst
   | Fin2.fs x => Renaming.shift (θ x)
 
 
-  abbrev subst (θ : Subst sig m n) : ABT sig n a →  ABT sig m a
-  | ABT.var x => θ x
-  | ABT.op op args => ABT.op op (subst θ args)
-  | ABT.nil => ABT.nil
-  | ABT.cons h t => ABT.cons (subst θ h) (subst θ t)
-  | ABT.plain t => ABT.plain (subst θ t)
-  | ABT.bind x => ABT.bind (subst θ.wk x)
+  abbrev subst (θ : Subst sig m n) : ABT sig n a →  ABT sig m a :=
+    ABT.map (fun x => x) wk θ
 
 
   def comp (θ : Subst sig a b) (θ' : Subst sig b c) : Subst sig a c := fun x =>

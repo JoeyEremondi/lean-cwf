@@ -25,13 +25,7 @@ namespace Renaming
   | Fin2.fs x => Fin2.fs (θ x)
 
 
-  def rename (θ : Renaming m n) : ABT sig n a →  ABT sig m a
-  | ABT.var x => ABT.var (θ x)
-  | ABT.op op args => ABT.op op (rename θ args)
-  | ABT.nil => ABT.nil
-  | ABT.cons h t => ABT.cons (rename θ h) (rename θ t)
-  | ABT.plain t => ABT.plain (rename θ t)
-  | ABT.bind t => ABT.bind (rename (wk θ ) t)
+  def rename (ρ : Renaming m n) : ABT sig n a →  ABT sig m a := ABT.map ABT.var wk ρ
 
   def shift  (t : ABT sig m ty) : ABT sig (Nat.succ m) ty :=
     rename Fin2.fs t
@@ -64,8 +58,7 @@ namespace Renaming
 
   @[simp]
   theorem rename_comp {t : ABT sig c tag} : ∀ {a} {b} {ρ1 : Renaming a b} {ρ2 : Renaming b c} ,  t⦇ρ2⦈ᵣ⦇ρ1⦈ᵣ = t⦇ρ1 ∘ ρ2⦈ᵣ := by
-    induction t <;> intros a b ρ1 ρ2 <;> simp [rename, wk_comp] <;> try aesop_cat
-
+    induction t <;> intros a b ρ1 ρ2 <;> simp_all [rename, ABT.map, wk_comp]
 
 
   @[simp]
