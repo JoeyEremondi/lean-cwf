@@ -10,9 +10,9 @@ universe u v'
 
 inductive Sig : Type where
 | plain : Sig
-| tele : Sig
-| vec : ℕ → Sig
-| list : ℕ → Sig
+| tele : Sig → Sig
+| vec : ℕ → Sig → Sig
+| list : Sig → Sig
 | bind : Sig → Sig
 
 notation "◾" => Sig.plain
@@ -26,7 +26,6 @@ inductive ABTArg : Type where
   | Arg : Sig → ABTArg
   -- | Vec : ℕ → ABTArg
   -- | List : ABTArg
-  | Tele : ABTArg
 
 
 section
@@ -46,22 +45,18 @@ section
     -- Arg for ◾ is just a term
     | termArg : ABT n Term' → ABT n (Arg ◾)
     -- Arg for list is zero or more terms
-    | termListNil : ABT n (Arg list)
-    | termListCons : ABT n Term' → ABT n (Arg list) → ABT n (Arg list)
+    | termListNil : ABT n (Arg (Sig.list s))
+    | termListCons : ABT n (Arg s) → ABT n (Arg (Sig.list s)) → ABT n (Arg (Sig.list s))
     -- Arg for vec is exactly n terms, handy when we want parallel lists constrained
     -- to have the same length
-    | termVecNil : ABT n (Arg (Sig.vec 0))
-    | termVecCons : ABT n Term' → ABT n (Arg (Sig.vec len)) → ABT n (Arg (Sig.vec (Nat.succ len)))
-    -- Arg for tele is just a telescope
-    -- Having this lets us have a single case for binding, makes the proofs easier
-    | teleArg : ABT n Tele → ABT n (Arg tele)
+    | termVecNil : ABT n (Arg (Sig.vec 0 s))
+    | termVecCons : ABT n (Arg s) → ABT n (Arg (Sig.vec len s)) → ABT n (Arg (Sig.vec (Nat.succ len) s))
+    -- Telescope is like a list, but we gain a binding for each element
+    | teleArgNil : ABT n (Arg (Sig.tele s))
+    | teleArgCons : ABT n Term' → ABT n (Arg (Sig.bind (Sig.tele s)) ) → ABT n (Arg (Sig.tele s))
     -- Arg for a binding is a term with one more free variable
     | bind : ABT (Nat.succ n) (Arg s) → ABT n (Arg (ν s))
 
-
-    -- --Telescope for n is a list of n terms, where each term has one more variable than the last
-    | teleNil : ABT n Tele
-    | teleCons : ABT n Term' → ABT n (Arg (Sig.bind Sig.tele) ) → ABT n Tele
 
 
 end
@@ -80,13 +75,12 @@ abbrev map {V : ℕ → Type u}
 | ABT.nil => ABT.nil
 | ABT.cons h t => ABT.cons (map quote wk ρ h) (map quote wk ρ t)
 | ABT.termArg t => ABT.termArg (map quote wk ρ t)
-| ABT.teleArg t => ABT.teleArg (map quote wk ρ t)
+| ABT.teleArgNil => ABT.teleArgNil
+| ABT.teleArgCons ts t => ABT.teleArgCons (map quote wk ρ ts) (map quote wk ρ t)
 | ABT.termListNil  => ABT.termListNil
 | ABT.termListCons h t  => ABT.termListCons (map quote wk ρ h) (map quote wk ρ t)
 | ABT.termVecNil  => ABT.termVecNil
 | ABT.termVecCons h t  => ABT.termVecCons (map quote wk ρ h) (map quote wk ρ t)
 | ABT.bind t => ABT.bind (map quote wk (wk ρ ) t)
-| ABT.teleNil => ABT.teleNil
-| ABT.teleCons ts t => ABT.teleCons (map quote wk ρ ts) (map quote wk ρ t)
 
 end ABT
