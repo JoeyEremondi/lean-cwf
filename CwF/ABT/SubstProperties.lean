@@ -23,7 +23,7 @@ namespace Subst
     cases x <;> simp [Fin2.add]
 
   theorem substOfRenaming {t : ABT sig n a} : {m : ℕ} →  {ρ : Renaming m n}
-      → Renaming.rename ρ t = subst (ofRenaming ρ) t := by
+      → t⦇ρ⦈ᵣ = t⦇ofRenaming ρ⦈ := by
     induction t
       <;> intros m ρ
       <;> simp_all [subst, Renaming.rename, Renaming.wk, wk, ofRenaming ]
@@ -152,12 +152,12 @@ namespace Subst
 
   @[simp]
   theorem sub_dist {t : Term sig c } {θ1 : Subst sig b c} {θ2 : Subst sig c a}
-    : (θ1 ⨟ (ext θ2 t)) = ext (θ1 ⨟ θ2) (subst θ1 t) := by
+    : θ1⨟⟪θ2 ● t⟫ = ⟪θ1 ⨟ θ2 ● t⦇θ1⦈⟫ := by
       funext x
       cases x <;> simp [comp, ext]
 
   @[simp]
-  theorem z_shift : ext (n := n) (sig := sig) proj (ABT.var Fin2.fz) = id := by
+  theorem z_shift : ext (n := n) (sig := sig) proj x0 = id := by
     funext x
     simp [ext, proj, id]
     cases x <;> try aesop_cat
@@ -181,9 +181,12 @@ namespace Subst
       funext x
       cases x <;> aesop_cat
 
+
   -- We never want the user to have to think about renamings, generally
   -- TODO undo this?
   attribute [simp] substOfRenaming
+  attribute [simp] subst
+  attribute [simp] ABT.map
 
 end Subst
 

@@ -31,16 +31,20 @@ namespace Subst
 
   abbrev subst (θ : Subst sig m n) : ABT sig n a →  ABT sig m a :=
     ABT.map (fun x => x) wk θ
+end Subst
 
-
+namespace Subst
   def comp (θ : Subst sig a b) (θ' : Subst sig b c) : Subst sig a c := fun x =>
     subst θ (θ' x)
 
-
 end Subst
 
-infixr:80  "⨟"  => Subst.comp
+infixr:80  " ⨟ "  => Subst.comp
 
 notation:max t "⦇" θ "⦈" => Subst.subst θ t
+
+notation:max t "[" s "/x]" => Subst.subst (Subst.ext Subst.id s) t
+
+notation:max  "⟪" θ " ● " t "⟫" => Subst.ext θ t
 
 end ABT

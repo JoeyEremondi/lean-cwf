@@ -43,15 +43,15 @@ notation "Σx∷" T ",," S =>
     ( ABT.argsCons (ABT.termArg T) (ABT.argsCons (ABT.bind (ABT.termArg S)) ABT.argsNil) )
 
 notation "⟨" s ",," t "⟩" =>
-  Head.Pair (ABT.argsCons (ABT.termArg s) (ABT.argsCons (ABT.termArg t) ABT.argsNil))
+  ABT.op Head.Pair (ABT.argsCons (ABT.termArg s) (ABT.argsCons (ABT.termArg t) ABT.argsNil))
 
 
 notation "π₁" s  =>
-  Head.Proj₁ (ABT.argsCons (ABT.termArg s) ABT.argsNil)
+  ABT.op Head.Proj₁ (ABT.argsCons (ABT.termArg s) ABT.argsNil)
 
 
 notation "π₂" s  =>
-  Head.Proj₂ (ABT.argsCons (ABT.termArg s) ABT.argsNil)
+  ABT.op Head.Proj₂ (ABT.argsCons (ABT.termArg s) ABT.argsNil)
 
 notation "True" => ABT.op Head.True ABT.argsNil
 
