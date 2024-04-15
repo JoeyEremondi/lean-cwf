@@ -26,22 +26,28 @@ inductive DefEq : (s t : Term n) → Prop where
 | Symm : DefEq s t → DefEq t s
 | Trans : DefEq s t → DefEq t u → DefEq s u
 
+attribute [simp] DefEq.Refl
+
 @[simp]
 theorem subst_rewrite {t : Term n} {θ : Subst sig m n}
   : map (fun {a} x => x) (fun {a b} => Subst.wk) θ t = t⦇θ⦈ := by simp
 
-theorem substPreserve {s t : Term n} (θ : Subst sig m n)
-  (eq : DefEq s t)
-  : ∀  (θ : Subst sig m n), DefEq s⦇θ⦈ t⦇θ⦈ := by
-  induction eq with intros θ <;> try (fconstructor <;> aesop_cat)
-  | @InContext s t C red =>
-        simp
-        let θeq := substPreserveRed red θ
-        let ret := DefEq.InContext (s := s⦇θ⦈) (t := t⦇θ⦈) (C := C⦇Subst.wk θ⦈) θeq
-        simp at ret
-        apply ret
-  | Trans _ _  IH1 IH2 =>
-    apply DefEq.Trans <;> aesop_cat
+namespace DefEq
+
+  @[aesop unsafe 90% apply]
+  theorem substPreserve {s t : Term n}   (eq : DefEq s t)
+    : ∀  (θ : Subst sig m n), DefEq s⦇θ⦈ t⦇θ⦈ := by
+    induction eq with intros θ <;> try (fconstructor <;> aesop_cat)
+    | @InContext s t C red =>
+          simp
+          let θeq := substPreserveRed red θ
+          let ret := DefEq.InContext (s := s⦇θ⦈) (t := t⦇θ⦈) (C := C⦇Subst.wk θ⦈) θeq
+          simp [Subst.wk_def] at ret
+          apply ret
+    | Trans _ _  IH1 IH2 =>
+      apply DefEq.Trans <;> aesop_cat
+
+end DefEq
 
 infix:10 "≡" => DefEq
 
@@ -64,7 +70,7 @@ namespace Value
        intros a b rel
        simp
        apply Quotient.sound
-       apply substPreserve θ rel
+       apply DefEq.substPreserve rel
     )
 
 end Value

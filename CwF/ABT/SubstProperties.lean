@@ -167,7 +167,10 @@ namespace Subst
       funext x
       cases x <;> simp [ext, subst, comp, ABT.map]
 
-  @[simp]
+  -- @[simp]
+  -- This lets us remove weakening from our calculus
+  -- But more often than not we want to remember that it's just a renaming,
+  -- so we don't declare this simp
   theorem wk_def {θ : Subst sig a b} :
     wk θ = ext (proj ⨟ θ) (ABT.var Fin2.fz)  := by
     funext x
