@@ -54,6 +54,7 @@ instance Termoid {n : ℕ} : Setoid  (Term n) where
       assumption
     . apply DefEq.Trans <;> assumption
 
+-- Values are equivalence classes of the transitive-symmetric closure of reduction
 def Value (n : ℕ) : Type := Quotient (Termoid (n := n))
 
 namespace Value
