@@ -296,28 +296,19 @@ instance wfWk (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n)
 
 set_option pp.notation true
 
-theorem subPreserveType  {Γ : PreCtx n} [Γwf : WfCtx Γ ]  (𝒥 : Judgment n)  (𝒟 : Γ ⊢ 𝒥)  :
-  ∀ {m : ℕ} {Δ : PreCtx m} [Δwf : WfCtx Δ] (θ : Subst sig m n ) [θwf : SubstWf Δ Γ θ],
+theorem subPreserveType  {Γ : PreCtx n}   (𝒥 : Judgment n)  (𝒟 : Γ ⊢ 𝒥)  :
+  ∀ {m : ℕ} {Δ : PreCtx m}  (θ : Subst sig m n ) [θwf : SubstWf Δ Γ θ],
   (Δ ⊢ JSub θ 𝒥 ) := by
   induction 𝒟 with
-    intros m Δ Δwf θ θwf
+    intros m Δ  θ θwf
     <;> simp_all [JSub]
-    <;> try (constructor <;>  aesop_cat)
-  | @VarSynth _ _ x  =>
-    apply synthEq
+    <;> (try (constructor <;>  aesop_cat))
+    <;> (try (apply synthEq <;> (try constructor) <;> (try aesop_cat) <;> simp [Subst.wk_def] <;> trivial))
+  | @VarSynth _ _ x =>
     let helper := θwf.varTyped (x := x)
-    constructor
-  | FunType tyS tyT IHS IHT =>
-    constructor <;> try aesop_cat
-    simp
-    apply IHT (Δwf := _)
-    apply wfCons
-    aesop_cat
-  | FunIntro tyS tyt IHS IHt =>
-    constructor <;> simp <;> try aesop_cat
-    apply IHt (Δwf := _)
-    apply wfCons
-    aesop_cat
+    apply synthEq <;> admit
+  --   apply synthEq <;> (try constructor) <;> (try aesop_cat) <;> simp [Subst.wk_def] <;> trivial
+
   -- | _ => admit
 
 
