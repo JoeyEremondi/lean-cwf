@@ -32,6 +32,11 @@ attribute [simp] DefEq.Refl
 theorem subst_rewrite {t : Term n} {θ : Subst sig m n}
   : map (fun {a} x => x) (fun {a b} => Subst.wk) θ t = t⦇θ⦈ := by simp
 
+
+@[simp]
+theorem ren_rewrite {m n : ℕ} {t : Term n} {ρ : Renaming m n}
+  : map (fun {a} x => ABT.var x) (fun {a b} => Renaming.wk) ρ t = t⦇ρ⦈ᵣ := by simp [Renaming.rename]
+
 namespace DefEq
 
   @[aesop unsafe 90% apply]

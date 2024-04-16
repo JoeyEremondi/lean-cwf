@@ -48,6 +48,14 @@ abbrev JSub (θ : Subst sig m n)
   | Judgment.SynthType t T => Judgment.SynthType t⦇θ⦈ T⦇θ⦈
   | Judgment.CheckType t T => Judgment.CheckType t⦇θ⦈ T⦇θ⦈
 
+
+abbrev JRen (ρ : Renaming m n)
+  : Judgment n → Judgment m
+  -- | Judgment.wfctx => Judgment.wfctx (n := m)
+  | Judgment.IsType T => Judgment.IsType T⦇ρ⦈ᵣ
+  | Judgment.SynthType t T => Judgment.SynthType t⦇ρ⦈ᵣ T⦇ρ⦈ᵣ
+  | Judgment.CheckType t T => Judgment.CheckType t⦇ρ⦈ᵣ T⦇ρ⦈ᵣ
+
 notation "𝒰∋" T  => Judgment.IsType T
 notation t " ∷∈ " T => Judgment.SynthType t T
 notation T  " ∋∷ " t => Judgment.CheckType t T
@@ -57,7 +65,7 @@ notation Γ " ⊢ " J => Entails Γ J
 
 
 
-inductive Entails : PreCtx n →  Judgment n → Prop where
+inductive Entails : {n : ℕ} → PreCtx n →  Judgment n → Prop where
   | WfTy :
     (Γ ⊢ T ∷∈ 𝒰 ℓ)
     → ---------------------------
@@ -73,7 +81,7 @@ inductive Entails : PreCtx n →  Judgment n → Prop where
   -----------------------------
   (Γ ⊢ ABT.var x ∷∈ Γ[x])
 
-  | FunType :
+  | FunType {n : ℕ} {Γ : PreCtx n} {S : Term n} {T : Term (Nat.succ n)} :
       (Γ ⊢ (𝒰 ℓ₁) ∋∷ S)
     → ((Γ▸S) ⊢ (𝒰 ℓ₂) ∋∷ T)
     → ---------------------------
@@ -129,24 +137,48 @@ abbrev SubstWf (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n) :=
   ∀ (x : Fin2 n), (Δ ⊢ Γ[x]⦇θ⦈ ∋∷ (θ x) )
 
 
-attribute [local simp] DefEq.substPreserve
-attribute [-simp] Subst.wkRenaming
+section
+  attribute [local simp] DefEq.substPreserve
+  attribute [-simp] Subst.wkRenaming
+  attribute [-simp] Subst.substOfRenaming
 
 
-abbrev RenameWf (Δ : PreCtx m) (Γ : PreCtx n) (ρ : Renaming m n) :=
-  ∀ (x : Fin2 n), Δ[ρ x] = (Γ[x])⦇Subst.ofRenaming ρ⦈
+  class RenameWf {m n : ℕ} (Δ : PreCtx m) (Γ : PreCtx n) (ρ : Renaming m n) where
+    changeCtx  (x : Fin2 n) : Δ[ρ x] = (Γ[x])⦇ρ⦈ᵣ
 
-@[aesop safe]
-lemma weakenWf (Γ : PreCtx n) (T : Term n) : RenameWf (Γ ▸ T) Γ (Fin2.fs) := by
-  intros x
-  cases x <;> simp [getElem, PreCtx.lookup, Renaming.shift, Subst.ofRenaming]
+  attribute [aesop safe] RenameWf.changeCtx
 
-@[aesop safe]
-lemma wkWf {Δ : PreCtx m} {Γ : PreCtx n} {T : Term n} {ρ : Renaming m n} (wf : RenameWf Δ Γ ρ )
-  : RenameWf (Δ ▸ (T⦇Subst.ofRenaming ρ⦈)) (Γ ▸ T) (Renaming.wk ρ)  :=
-  by
-    intros x
-    cases x <;> simp_all [RenameWf, getElem, PreCtx.lookup, Renaming.wk, Subst.ofRenaming, Renaming.shift] <;> try rfl
+  instance weakenWf (Γ : PreCtx n) (T : Term n) : RenameWf (Γ ▸ T) Γ (Fin2.fs) where
+    changeCtx x := by
+      cases x <;> simp [getElem, PreCtx.lookup, Renaming.shift]
+
+  instance wkWf
+    {Δ : PreCtx m} {Γ : PreCtx n} {T : Term n} {ρ : Renaming m n}
+    [wf : RenameWf Δ Γ ρ ]
+    : RenameWf (Δ ▸ (T⦇ρ⦈ᵣ)) (Γ ▸ T) (Renaming.wk ρ)  where
+    changeCtx x := by
+      cases x <;> simp [Renaming.wk, getElem, PreCtx.lookup]
+      apply congrArg Renaming.shift
+      apply wf.changeCtx
+
+  theorem renamePreseveType  {n : ℕ} {Γ : PreCtx n}   (J : Judgment n)  (D : Γ ⊢ J)  :
+    {m : ℕ} → {Δ : PreCtx m}  → {ρ : Renaming m n } → [wf : (RenameWf Δ Γ ρ) ] → (Δ ⊢ JRen ρ J) := by
+      induction D with
+        intros m Δ ρ wf
+        <;> let lem := wf.changeCtx
+        <;> simp_all [JRen]
+        <;> unfold Renaming.rename
+        <;> (try simp)
+        <;> try (constructor <;> simp <;> aesop_cat)
+      | FunElim tty sty IHt IHs =>
+        let lem := FunElim IHt (@IHs _ Δ ρ _)
+        simp at lem
+        apply lem
+      | _ => admit
+
+end
+     -- simp_all [RenameWf, getElem, PreCtx.lookup, Renaming.wk, Renaming.shift] <;> try rfl
+     -- apply RenameWf.changeCtx
 
 --Lemmas simplifying what it means for a substitution to be well formed
 -- @[simp]
@@ -168,40 +200,10 @@ lemma wkWf {Δ : PreCtx m} {Γ : PreCtx n} {T : Term n} {ρ : Renaming m n} (wf 
 --   let lem2 := wf2 x
 
 
-theorem renamePreseveType  {Γ : PreCtx n}   (J : Judgment n)  (D : Γ ⊢ J)  :
-  {m : ℕ} → (Δ : PreCtx m)  → (ρ : Renaming m n ) → (wf : (RenameWf Δ Γ ρ) ) → (Δ ⊢ JSub (Subst.ofRenaming ρ) J) := by
-    induction D with intros m Δ ρ wf   <;>  simp_all [JSub, Subst.ofRenaming] <;> try (constructor <;> (try simp [<- wf]) <;> (try rw [<- wkRenaming])  <;> aesop_cat)
     -- | WfTy D IH =>
     --   constructor
     --   apply IH
     --   aesop
-    | FunType STy TTy IHS IHT =>
-      constructor
-      . apply IHS
-        assumption
-      . simp
-        rw [<- Subst.wkRenaming]
-        apply IHT
-        apply wkWf
-        assumption
-    | FunIntro tty IH =>
-      constructor
-      simp
-      rw [<- Subst.wkRenaming]
-      apply IH
-      apply wkWf
-      assumption
-    | FunElim tty sty IHt IHs =>
-      let lem := FunElim (IHt _ _ wf) (IHs _ _ wf)
-      simp at lem
-      rw [Subst.subst]
-      simp
-      apply lem
-      rw [<- Subst.wkRenaming]
-      apply IH
-      apply wkWf
-      assumption
-    | _ => admit
 
 -- theorem subPreseveType  {Γ : PreCtx n} (Γwf : WfCtx Γ )  (𝒥 : Judgment n)  (𝒟 : Γ ⊢ 𝒥)  :
 --   ∀ {m : ℕ} {Δ : PreCtx m} (Δwf : WfCtx Δ) (θ : Subst sig m n ) (θwf : SubstWf Δ Γ θ),
