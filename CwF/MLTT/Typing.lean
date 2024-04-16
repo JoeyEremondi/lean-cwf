@@ -102,6 +102,15 @@ inductive Entails : {n : ℕ} → PreCtx n →  Judgment n → Prop where
 
 open Entails
 
+-- Take advantage of the fact that synthesis is directed on the syntax of terms
+-- So in tactics, we can apply this to synthesize a type for any term
+@[aesop unsafe]
+lemma synthEq {Γ : PreCtx n} {t : Term n} {S T : Term n}
+  (synthed : (Γ ⊢ t ∷∈ S) := by constructor)
+  (eq : S = T := by aesop_cat)
+  : Γ ⊢ t ∷∈ T := by aesop_cat
+
+
 -- attribute [simp] tyConv
 -- attribute [simp] wfTy
 -- attribute [simp] varSynth
@@ -168,11 +177,11 @@ section
         <;> let lem := wf.changeCtx
         <;> simp_all [JRen]
         <;> (try (constructor <;> (try simp) <;> aesop_cat))
-      | FunElim tty sty IHt IHs =>
-        let lem := FunElim IHt (@IHs _ Δ ρ _)
-        simp [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming]
-        simp [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming] at lem
-        apply lem
+        -- Special tactic for synthesizing a type then seeing if it's equal to the goal type
+        <;> (try
+              (apply synthEq <;> (try constructor <;> aesop_cat)
+               simp [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming]
+               constructor))
       | VarSynth =>
         unfold Renaming.rename
         simp [<- lem]
@@ -213,17 +222,15 @@ end
     --   apply IH
     --   aesop
 
--- theorem subPreseveType  {Γ : PreCtx n} (Γwf : WfCtx Γ )  (𝒥 : Judgment n)  (𝒟 : Γ ⊢ 𝒥)  :
---   ∀ {m : ℕ} {Δ : PreCtx m} (Δwf : WfCtx Δ) (θ : Subst sig m n ) (θwf : SubstWf Δ Γ θ),
---   (Δ ⊢ JSub θ 𝒥 ) := by
---   induction 𝒟 with intros m Δ Δwf θ <;> simp_all [JSub] <;> try (constructor <;>  aesop_cat)
---   | tyConv 𝒟 eq IH => admit
---   | FunType Sty Tty IHs IHt =>
---     constructor <;> simp
---     . apply IHs
---       assumption
---     . apply IHt
---   | _ => admit
+theorem subPreseveType  {Γ : PreCtx n} (Γwf : WfCtx Γ )  (𝒥 : Judgment n)  (𝒟 : Γ ⊢ 𝒥)  :
+  ∀ {m : ℕ} {Δ : PreCtx m} (Δwf : WfCtx Δ) (θ : Subst sig m n ) (θwf : SubstWf Δ Γ θ),
+  (Δ ⊢ JSub θ 𝒥 ) := by
+  induction 𝒟 with
+    intros m Δ Δwf θ θwf
+    <;> simp_all [JSub]
+    <;> try (constructor <;>  aesop_cat)
+  | FunType tyS tyT IHS IHT => simp
+  | _ => admit
 
 
 
