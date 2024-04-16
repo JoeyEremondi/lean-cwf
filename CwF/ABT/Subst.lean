@@ -23,7 +23,7 @@ namespace Subst
   def ofRenaming (ρ : Renaming m n) : Subst sig m n := fun x =>
     ABT.var (ρ x)
 
-  def proj : Subst sig (Nat.succ m) m  := ofRenaming Fin2.fs
+  abbrev proj : Subst sig (Nat.succ m) m  := ofRenaming Fin2.fs
 
   def wk (θ : Subst sig m n)  : Subst sig (Nat.succ m) (Nat.succ n)
   | Fin2.fz => ABT.var Fin2.fz

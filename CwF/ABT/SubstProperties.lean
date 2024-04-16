@@ -177,7 +177,7 @@ namespace Subst
       cases x <;> simp [ext, subst, comp, ABT.map]
 
 
-  @[simp]
+  -- @[simp]
   theorem wk_def {θ : Subst sig a b} :
     wk θ = ext (proj ⨟ θ) (ABT.var Fin2.fz)  := by
     funext x

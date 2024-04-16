@@ -66,6 +66,6 @@ notation "exfalso" T t => ABT.op Head.exfalso
  ((ABT.termArg T) (ABT.argsCons (ABT.termArg t) ABT.argsNil))
 
 
-notation:50 "𝒰" ℓ => ABT.op (Head.Tipe ℓ) ABT.argsNil
+notation:50 " 𝒰 " ℓ => ABT.op (Head.Tipe ℓ) ABT.argsNil
 
 end MLTT
