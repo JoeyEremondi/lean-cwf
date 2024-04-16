@@ -61,46 +61,49 @@ notation t " ∷∈ " T => Judgment.SynthType t T
 notation T  " ∋∷ " t => Judgment.CheckType t T
 
 set_option hygiene false
-notation Γ " ⊢ " J => Entails Γ J
 
 
 
-inductive Entails : {n : ℕ} → PreCtx n →  Judgment n → Prop where
-  | WfTy :
-    (Γ ⊢ T ∷∈ 𝒰 ℓ)
-    → ---------------------------
-    (Γ ⊢ 𝒰∋ T)
+section
+  local notation Γ " ⊢ " J => Entails Γ J
+  inductive Entails : {n : ℕ} → PreCtx n →  Judgment n → Prop where
+    | WfTy :
+      (Γ ⊢ T ∷∈ 𝒰 ℓ)
+      → ---------------------------
+      (Γ ⊢ 𝒰∋ T)
 
-  | TyConv :
-      (Γ ⊢ t ∷∈ S)
-    → (S ≡ T)
-    → -----------------------------
-      (Γ ⊢ T ∋∷ t)
+    | TyConv :
+        (Γ ⊢ t ∷∈ S)
+      → (S ≡ T)
+      → -----------------------------
+        (Γ ⊢ T ∋∷ t)
 
-  | VarSynth  :
-  -----------------------------
-  (Γ ⊢ ABT.var x ∷∈ Γ[x])
+    | VarSynth  :
+    -----------------------------
+    (Γ ⊢ ABT.var x ∷∈ Γ[x])
 
-  | FunType {n : ℕ} {Γ : PreCtx n} {S : Term n} {T : Term (Nat.succ n)} :
-      (Γ ⊢ (𝒰 ℓ₁) ∋∷ S)
-    → ((Γ▸S) ⊢ (𝒰 ℓ₂) ∋∷ T)
-    → ---------------------------
-      (Γ ⊢ (Πx∷ S ,, T) ∷∈ (𝒰 (max ℓ₁ ℓ₂)))
+    | FunType {n : ℕ} {Γ : PreCtx n} {S : Term n} {T : Term (Nat.succ n)} :
+        (Γ ⊢ (𝒰 ℓ₁) ∋∷ S)
+      → ((Γ▸S) ⊢ (𝒰 ℓ₂) ∋∷ T)
+      → ---------------------------
+        (Γ ⊢ (Πx∷ S ,, T) ∷∈ (𝒰 (max ℓ₁ ℓ₂)))
 
-  | FunIntro :
-      ((Γ▸S) ⊢ t ∋∷ T)
-    → ---------------------------
-      (Γ ⊢ (λx∷ S ,, t) ∷∈ Πx∷S ,, T)
+    | FunIntro :
+        ((Γ▸S) ⊢ t ∋∷ T)
+      → ---------------------------
+        (Γ ⊢ (λx∷ S ,, t) ∷∈ Πx∷S ,, T)
 
 
-  | FunElim :
-      (Γ ⊢ t ∷∈ Πx∷S ,, T)
-    → (Γ ⊢ S ∋∷ s)
-    → ---------------------------
-      (Γ ⊢ (t $ s) ∷∈ T[s /x])
-
+    | FunElim :
+        (Γ ⊢ t ∷∈ Πx∷S ,, T)
+      → (Γ ⊢ S ∋∷ s)
+      → ---------------------------
+        (Γ ⊢ (t $ s) ∷∈ T[s /x])
+end
 
 open Entails
+
+notation Γ " ⊢ " J => Entails Γ J
 
 -- Take advantage of the fact that synthesis is directed on the syntax of terms
 -- So in tactics, we can apply this to synthesize a type for any term
@@ -111,16 +114,13 @@ lemma synthEq {Γ : PreCtx n} {t : Term n} {S T : Term n}
   : Γ ⊢ t ∷∈ T := by aesop_cat
 
 
--- attribute [simp] tyConv
--- attribute [simp] wfTy
--- attribute [simp] varSynth
--- attribute [simp] FunType
--- attribute [simp] FunIntro
--- attribute [simp] FunElim
+-- attribute [aesop safe] TyConv
+attribute [aesop safe] WfTy
+-- attribute [aesop safe] VarSynth
+-- attribute [aesop safe] FunType
+-- attribute [aesop safe] FunIntro
+-- attribute [aesop safe] FunElim
 
-abbrev WfCtx : (Γ : PreCtx n) → Prop
-| PreCtx.ctxNil => True
-| (PreCtx.ctxCons Γ T) => (Γ ⊢ 𝒰∋ T) ∧ WfCtx Γ
 
 
 --Stronger than we need, but can't define the "naive" way
@@ -141,9 +141,6 @@ abbrev WfCtx : (Γ : PreCtx n) → Prop
 --     | CompWf wf1 wf2 IH1 IH2 =>
 --       simp
 --     | _ => simp
-
-abbrev SubstWf (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n) :=
-  ∀ (x : Fin2 n), (Δ ⊢ Γ[x]⦇θ⦈ ∋∷ (θ x) )
 
 
 section
@@ -170,7 +167,12 @@ section
       apply congrArg Renaming.shift
       apply wf.changeCtx
 
-  theorem renamePreseveType  {n : ℕ} {Γ : PreCtx n}   (J : Judgment n)  (D : Γ ⊢ J)  :
+  instance wkShift : RenameWf (Γ▸T) Γ Fin2.fs where
+    changeCtx x := by
+      cases x <;> simp [PreCtx.lookup, getElem, Renaming.shift]
+
+  @[aesop safe]
+  theorem renamePreserveType  {n : ℕ} {Γ : PreCtx n}   {J : Judgment n}  (D : Γ ⊢ J)  :
     {m : ℕ} → {Δ : PreCtx m}  → {ρ : Renaming m n } → [wf : (RenameWf Δ Γ ρ) ] → (Δ ⊢ JRen ρ J) := by
       induction D with
         intros m Δ ρ wf
@@ -192,8 +194,44 @@ section
                  apply DefEq.substPreserve
                  assumption
 
+  @[aesop safe]
+  theorem shiftPreserveType  {n : ℕ} {Γ : PreCtx n}  {J : Judgment n}  (D : Γ ⊢ J)
+    {T : Term n} (Tty: Γ ⊢ 𝒰∋ T)
+    : ((Γ▸T) ⊢ JRen (Fin2.fs) J) := by
+      simp [Renaming.shift, JRen]
+      apply renamePreserveType D
+
+
+  class WfCtx (Γ : PreCtx n) : Prop where
+    lookupTyped : ∀ {x : Fin2 n}, Γ ⊢ 𝒰∋ Γ[x]
+
+  attribute [aesop safe] WfCtx.lookupTyped
+
+  instance : WfCtx ⬝ where
+    lookupTyped {x} := by cases x
+
+
+  instance {Γ : PreCtx n} [wf : WfCtx Γ] {T : Term n} (ty : Γ ⊢ 𝒰∋ T := by aesop_cat) : WfCtx (Γ ▸ T)  where
+    lookupTyped {x} := by
+      cases x with simp [Renaming.shift, getElem, PreCtx.lookup] <;> try aesop_cat
+      | fz =>
+        let D := shiftPreserveType ty ty
+        simp [JRen] at D
+        assumption
+      | fs x =>
+        let D := shiftPreserveType (wf.lookupTyped (x := x)) ty
+        simp [JRen] at D
+        assumption
+
 
 end
+
+
+class SubstWf (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n) : Prop where
+  varTyped : ∀ {x : Fin2 n}, (Δ ⊢ Γ[x]⦇θ⦈ ∋∷ (θ x) )
+
+attribute [aesop safe] SubstWf.varTyped
+
      -- simp_all [RenameWf, getElem, PreCtx.lookup, Renaming.wk, Renaming.shift] <;> try rfl
      -- apply RenameWf.changeCtx
 
@@ -222,14 +260,23 @@ end
     --   apply IH
     --   aesop
 
-theorem subPreseveType  {Γ : PreCtx n} (Γwf : WfCtx Γ )  (𝒥 : Judgment n)  (𝒟 : Γ ⊢ 𝒥)  :
-  ∀ {m : ℕ} {Δ : PreCtx m} (Δwf : WfCtx Δ) (θ : Subst sig m n ) (θwf : SubstWf Δ Γ θ),
+set_option pp.notation true
+
+theorem subPreserveType  {Γ : PreCtx n} [Γwf : WfCtx Γ ]  (𝒥 : Judgment n)  (𝒟 : Γ ⊢ 𝒥)  :
+  ∀ {m : ℕ} {Δ : PreCtx m} [Δwf : WfCtx Δ] (θ : Subst sig m n ) [θwf : SubstWf Δ Γ θ],
   (Δ ⊢ JSub θ 𝒥 ) := by
   induction 𝒟 with
     intros m Δ Δwf θ θwf
     <;> simp_all [JSub]
     <;> try (constructor <;>  aesop_cat)
-  | FunType tyS tyT IHS IHT => simp
+  | FunType tyS tyT IHS IHT =>
+    apply synthEq
+    . constructor
+      . apply IHS
+      . simp
+        apply IHT (Δwf := _) (θwf := _)
+    constructor
+    simp
   | _ => admit
 
 

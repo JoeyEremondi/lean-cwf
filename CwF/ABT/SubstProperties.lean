@@ -13,9 +13,8 @@ universe u v'
 namespace ABT
 
 --Namespace we open when we want to treat all renamings as substitutions
-namespace RenameAsSubst
-  open Subst
 
+namespace Subst
   @[simp ]
   theorem wkRenaming (ρ : Renaming m n)
     : ofRenaming (sig := sig) (ρ.wk) = (ofRenaming ρ).wk := by
@@ -23,16 +22,14 @@ namespace RenameAsSubst
     simp [ofRenaming, Renaming.wk, wk, Renaming.shift, Renaming.rename]
     cases x <;> simp [Fin2.add]
 
-  @[simp]
+  -- @[simp]
   theorem substOfRenaming {t : ABT sig n a} : {m : ℕ} →  {ρ : Renaming m n}
       → t⦇ρ⦈ᵣ = t⦇ofRenaming ρ⦈ := by
     induction t
       <;> intros m ρ
       <;> simp_all [ABT.map, Renaming.rename, Renaming.wk, wk, ofRenaming ]
-end RenameAsSubst
 
 
-namespace Subst
 
 
   @[simp]
@@ -74,9 +71,9 @@ namespace Subst
      funext x
      cases x <;> try aesop_cat
      simp [comp, wk, ABT.map]
-     rw [<- RenameAsSubst.substOfRenaming]
-     rw [<- RenameAsSubst.wkRenaming]
-     rw [<- RenameAsSubst.substOfRenaming]
+     rw [<- substOfRenaming]
+     rw [<- wkRenaming]
+     rw [<- substOfRenaming]
      simp only [Renaming.weaken_wk]
 
   @[simp]
@@ -89,47 +86,31 @@ namespace Subst
       funext x
       dsimp only [comp, ofRenaming]
       simp [wk, proj]
-      rw [<- RenameAsSubst.substOfRenaming, ofRenaming]
+      rw [<- substOfRenaming, ofRenaming]
       simp [subst, ABT.map, wk, Renaming.shift]
 
-  section
-    open RenameAsSubst
-    @[simp]
-    theorem sub_rename_fusionR {t : ABT sig c tag} : ∀ {a} {b} {ρ : Renaming a b} {θ : Subst sig b c},
-      t⦇ θ ⦈⦇ ρ ⦈ᵣ = t⦇  ofRenaming ρ ⨟ θ ⦈ := by
-    induction t <;> intros a b ρ θ <;> try (simp_all [ABT.map, ABT.map, Renaming.rename] <;> aesop_cat)
-    . simp [ABT.map, ABT.map]
-      unfold comp
-      simp
-
-    end
-
-    attribute [simp] sub_rename_fusionR
+  @[simp]
+  theorem sub_rename_fusionR {t : ABT sig c tag} : ∀ {a} {b} {ρ : Renaming a b} {θ : Subst sig b c},
+    t⦇ θ ⦈⦇ ρ ⦈ᵣ = t⦇  ofRenaming ρ ⨟ θ ⦈ := by
+  induction t <;> intros a b ρ θ <;> try (simp_all [ABT.map, ABT.map, Renaming.rename] <;> aesop_cat)
+  . simp [ABT.map, ABT.map]
+    unfold comp
+    simp [substOfRenaming]
 
 
-    lemma wk_comp
-      {θ : Subst sig a b}  {θ2 : Subst sig b c}
-      :  (wk θ ) ⨟ (wk θ2) = wk (θ ⨟ θ2) := by
-      funext x
-      cases x with simp [wk, comp]
-      | fz => aesop
-      | fs x =>
-        let helper := proj_wk (θ := θ)
-        simp_all [Renaming.shift, proj, RenameAsSubst.wkRenaming]
-        rw [<- RenameAsSubst.substOfRenaming]
-        dsimp only [proj] at helper
-        dsimp only [Renaming.shift]
-        rw [sub_rename_fusionL]
-        rw [helper]
-        unfold comp
-        unfold comp at helper
-        let eq := congrArg (fun y => subst y (θ2 x)) helper
-        simp at eq
-        rw [Renaming.shift, RenameAsSubst.substOfRenaming]
-        simp [Renaming.shift, helper, proj]
-        rw [helper]
-        simp [proj_wk]
+  attribute [simp] sub_rename_fusionR
 
+
+  lemma wk_comp
+    {θ : Subst sig a b}  {θ2 : Subst sig b c}
+    :  (wk θ ) ⨟ (wk θ2) = wk (θ ⨟ θ2) := by
+    funext x
+    cases x with simp [wk, comp]
+    | fz => aesop
+    | fs x =>
+      let helper := proj_wk (θ := θ)
+      rw [proj] at helper
+      simp [Renaming.shift, helper, proj]
 
 
 
