@@ -167,13 +167,11 @@ section
         intros m Δ ρ wf
         <;> let lem := wf.changeCtx
         <;> simp_all [JRen]
-        -- <;> unfold Renaming.rename
-        <;> (try simp)
-        <;> try (constructor <;> simp <;> aesop_cat)
+        <;> (try (constructor <;> (try simp) <;> aesop_cat))
       | FunElim tty sty IHt IHs =>
         let lem := FunElim IHt (@IHs _ Δ ρ _)
-        simp [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming] at lem
         simp [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming]
+        simp [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming] at lem
         apply lem
       | VarSynth =>
         unfold Renaming.rename
@@ -184,8 +182,6 @@ section
                . simp [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming]
                  apply DefEq.substPreserve
                  assumption
-      | WfTy D IH =>
-        constructor <;> apply IH
 
 
 end
