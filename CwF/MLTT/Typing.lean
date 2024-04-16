@@ -89,7 +89,8 @@ section
         (Γ ⊢ (Πx∷ S ,, T) ∷∈ (𝒰 (max ℓ₁ ℓ₂)))
 
     | FunIntro :
-        ((Γ▸S) ⊢ t ∋∷ T)
+         (Γ ⊢ 𝒰∋ S)
+      →  ((Γ▸S) ⊢ t ∋∷ T)
       → ---------------------------
         (Γ ⊢ (λx∷ S ,, t) ∷∈ Πx∷S ,, T)
 
@@ -211,7 +212,7 @@ section
     lookupTyped {x} := by cases x
 
 
-  instance wfCons {Γ : PreCtx n} [wf : WfCtx Γ] {T : Term n} (ty : Γ ⊢ 𝒰∋ T := by aesop_cat) : WfCtx (Γ ▸ T)  where
+  instance wfCons {Γ : PreCtx n} [wf : WfCtx Γ] {T : Term n} (ty : Γ ⊢ 𝒰∋ T := by aesop) : WfCtx (Γ ▸ T)  where
     lookupTyped {x} := by
       cases x with simp [Renaming.shift, getElem, PreCtx.lookup] <;> try aesop_cat
       | fz =>
@@ -302,19 +303,22 @@ theorem subPreserveType  {Γ : PreCtx n} [Γwf : WfCtx Γ ]  (𝒥 : Judgment n)
     intros m Δ Δwf θ θwf
     <;> simp_all [JSub]
     <;> try (constructor <;>  aesop_cat)
-  | FunType tyS tyT IHS IHT =>
+  | @VarSynth _ _ x  =>
     apply synthEq
-    . constructor
-      . apply IHS
-      . simp
-        apply IHT (Δwf := _)
-        . apply wfCons
-          apply WfTy
-          apply IHS
-        . apply
+    let helper := θwf.varTyped (x := x)
     constructor
+  | FunType tyS tyT IHS IHT =>
+    constructor <;> try aesop_cat
     simp
-  | _ => admit
+    apply IHT (Δwf := _)
+    apply wfCons
+    aesop_cat
+  | FunIntro tyS tyt IHS IHt =>
+    constructor <;> simp <;> try aesop_cat
+    apply IHt (Δwf := _)
+    apply wfCons
+    aesop_cat
+  -- | _ => admit
 
 
 
