@@ -21,11 +21,11 @@ set_option maxHeartbeats 3000000
 
 -- Helpful lemma for managning conversion and the checking/synthesis switch
 lemma allSynthSub {Γ : PreCtx m} {t : Term n} {S : Term m} {T : Term n} (θ : Subst sig m n)
+  (eq : (T⦇θ⦈ ≡ S) )
   (checked : (Γ ⊢ T⦇θ⦈ ∋∷ t⦇θ⦈) := by assumption)
-  (eq : (T⦇θ⦈ ≡ S) := by assumption)
-  : (Γ ⊢ S ∋∷ t⦇θ⦈) := by
+  : ∃ S', (Γ ⊢ t⦇θ⦈ ∷∈ S') ∧ (S' ≡ S) := by
   cases checked
-  constructor <;> try assumption
+  (repeat constructor) <;> try assumption
   apply DefEq.Trans <;> assumption
 
 theorem subPreserveType  {Γ : PreCtx n}   (𝒥 : Judgment n)  (𝒟 : Γ ⊢ 𝒥)  :
@@ -40,12 +40,12 @@ theorem subPreserveType  {Γ : PreCtx n}   (𝒥 : Judgment n)  (𝒟 : Γ ⊢ �
                 <;> aesop_cat
                 <;> done )
           -- Tactic for solving all the conversion goals
-          |  (constructor <;> (try aesop_cat)
-              simp [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming]
-              let renEq := DefEq.substPreserve (by assumption) (Subst.ofRenaming ρ)
-              simp at renEq
-              assumption
-              done)
+          |(rename_i IH
+            let subEq := DefEq.substPreserve (by assumption) θ
+            unfold Subst.subst at subEq
+            simp at subEq
+            let ⟨S, ty, eq⟩ := allSynthSub (Γ := Δ) θ subEq (IH)
+            constructor <;> try assumption)
           -- Cases where we can just apply the IH to the subgoals
           -- We need to apply constructor twice because even if we had a synthesis judgment as input,
           -- we're producing a checking one as output, so there's an extra Conversion to apply
@@ -67,24 +67,3 @@ theorem subPreserveType  {Γ : PreCtx n}   (𝒥 : Judgment n)  (𝒟 : Γ ⊢ �
   | @VarSynth _ _ x =>
     let helper := θwf.varTyped (x := x)
     apply helper
-  | HeadConv D eq IH =>
-      let subEq := DefEq.substPreserve (by assumption) θ
-      unfold Subst.subst at subEq
-      simp at subEq
-      let ⟨S, Sty, eq2⟩ := allSynth (Γ := Δ) (IH (θ := θ) )
-      constructor <;> try assumption
-      apply DefEq.Trans eq2 subEq
-  | TyConv D eq IH =>
-      let subEq := DefEq.substPreserve (by assumption) θ
-      unfold Subst.subst at subEq
-      simp at subEq
-      let ⟨S, Sty, eq2⟩ := allSynth (Γ := Δ) (IH  (θ := θ) )
-      constructor <;> try assumption
-      apply DefEq.Trans eq2 subEq
-  | WfTyLevel D eq IH =>
-      let subEq := DefEq.substPreserve (by assumption) θ
-      unfold Subst.subst at subEq
-      simp at subEq
-      let ⟨S, Sty, eq2⟩ := allSynth (Γ := Δ) (IH  (θ := θ) )
-      constructor <;> try assumption
-      apply DefEq.Trans eq2 subEq
