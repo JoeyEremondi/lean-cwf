@@ -29,7 +29,7 @@ inductive DefEq : (s t : Term n) → Prop where
 attribute [simp] DefEq.Refl
 
 @[simp]
-theorem subst_rewrite {t : Term n} {θ : Subst sig m n}
+theorem subst_rewrite {t : ABT sig n tag} {θ : Subst sig m n}
   : map (fun {a} x => x) (fun {a b} => Subst.wk) θ t = t⦇θ⦈ := by simp
 
 

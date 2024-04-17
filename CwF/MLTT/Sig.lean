@@ -29,6 +29,10 @@ def Term (n : ℕ) :  Type :=
   ABT sig n ABTArg.Term'
 -- set_option maxRecDepth 1000
 
+
+notation:50 "x∷" T ",," S =>
+    ( ABT.argsCons (ABT.termArg T) (ABT.argsCons (ABT.bind (ABT.termArg S)) ABT.argsNil) )
+
 notation:50 "Πx∷" T ",," S =>
   ABT.op Head.Pi
     ( ABT.argsCons (ABT.termArg T) (ABT.argsCons (ABT.bind (ABT.termArg S)) ABT.argsNil) )
