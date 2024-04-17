@@ -197,12 +197,12 @@ namespace Subst
 
   -- Useful when dealing with renamings
   theorem singleSubRename {s : Term sig (Nat.succ n)} {t : Term sig n} {ρ : Renaming m n}
-    : s[ t /x]⦇ρ⦈ᵣ = (s⦇Renaming.wk ρ⦈ᵣ)[t⦇ρ⦈ᵣ /x] := by
+    : s/[ t /x]⦇ρ⦈ᵣ = (s⦇Renaming.wk ρ⦈ᵣ)/[t⦇ρ⦈ᵣ /x] := by
       simp [wkRenaming, wk_def, substOfRenaming, Subst.subst, ABT.map]
 
   @[simp]
   theorem singleSubSub {s : Term sig (Nat.succ n)} {t : Term sig n} {θ : Subst sig m n}
-    : s[ t /x]⦇θ⦈ = (s⦇wk θ⦈)[t⦇θ⦈ /x] := by simp [wk_def, Subst.subst, ABT.map]
+    : s/[ t /x]⦇θ⦈ = (s⦇wk θ⦈)/[t⦇θ⦈ /x] := by simp [wk_def, Subst.subst, ABT.map]
 
 
   -- We never want the user to have to think about renamings, generally

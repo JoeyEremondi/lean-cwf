@@ -53,7 +53,7 @@ end Subst
 infixr:80  " ⨟ "  => Subst.comp
 
 
-notation:max t "[" s "/x]" => t⦇Subst.ext Subst.id s⦈
+notation:max t "/[" s "/x]" => t⦇Subst.ext Subst.id s⦈
 
 notation:max  "⟪" θ " ● " t "⟫" => Subst.ext θ t
 

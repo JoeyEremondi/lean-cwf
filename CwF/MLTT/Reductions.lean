@@ -21,7 +21,7 @@ theorem substPreserveRed {s t : Term n}
 
 inductive DefEq : (s t : Term n) → Prop where
 | InContext  : {s t : Term n} → {C : Term (Nat.succ n)}
-  → Reduces s t → DefEq (C[s /x]) (C[ t /x])
+  → Reduces s t → DefEq (C/[s /x]) (C/[ t /x])
 | Refl : DefEq s s
 | Symm : DefEq s t → DefEq t s
 | Trans : DefEq s t → DefEq t u → DefEq s u
@@ -56,26 +56,3 @@ end DefEq
 
 infix:10 "≡" => DefEq
 
-instance Termoid {n : ℕ} : Setoid  (Term n) where
-  r := DefEq
-  iseqv := by
-    fconstructor <;> intros
-    . apply DefEq.Refl
-    . apply DefEq.Symm
-      assumption
-    . apply DefEq.Trans <;> assumption
-
--- Values are equivalence classes of the transitive-symmetric closure of reduction
-def Value (n : ℕ) : Type := Quotient (Termoid (n := n))
-
-namespace Value
-  def subst (θ : Subst sig m n) : Value n → Value m :=
-    Quotient.lift (fun (t : Term n) => Quotient.mk Termoid (Subst.subst θ t) )
-    (by
-       intros a b rel
-       simp
-       apply Quotient.sound
-       apply DefEq.substPreserve rel
-    )
-
-end Value

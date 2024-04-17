@@ -7,7 +7,6 @@ import CwF.MLTT.Sig
 import CwF.MLTT.Reductions
 import CwF.MLTT.Typing.Defs
 import CwF.MLTT.Typing.Renaming
-import CwF.MLTT.Typing.WellFormed
 
 
 namespace MLTT
@@ -18,6 +17,49 @@ set_option pp.notation true
 
 
 set_option maxHeartbeats 3000000
+
+
+class SubstWf (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n) : Prop where
+  varTyped : ∀ {x : Fin2 n}, (Δ ⊢ Γ[x]⦇θ⦈ ∋∷ (θ x) )
+
+attribute [aesop safe] SubstWf.varTyped
+
+instance wfId  (Γ : PreCtx n)  : SubstWf Γ Γ Subst.id where
+  varTyped {x} := by
+    constructor
+    . constructor
+    . simp
+
+instance wfExt (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n)
+  [wf : SubstWf Δ Γ θ]
+  {t : Term m}
+  {T : Term n}
+  (D : Δ ⊢ T⦇θ⦈ ∋∷ t)
+  : SubstWf Δ (Γ▸T) (Subst.ext θ t) where
+  varTyped {x} := by
+    cases x <;> simp [getElem, PreCtx.lookup, Renaming.shift, Subst.sub_tail] <;> try aesop_cat
+    simp [Subst.ext]
+    apply wf.varTyped
+
+instance wfWk (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n)
+  [wf : SubstWf Δ Γ θ]
+  {T : Term n}
+  : SubstWf (Δ▸T⦇θ⦈) (Γ▸T) (Subst.wk θ) where
+  varTyped {x} := by
+    cases x with simp [Subst.wk, getElem, PreCtx.lookup, Renaming.shift, Subst.sub_tail]
+    | fz =>
+      constructor
+      . constructor
+      . simp [getElem, PreCtx.lookup, Renaming.shift, Subst.wk_def]
+    | fs x =>
+      simp [Subst.wk_def]
+      simp [Subst.proj]
+      -- rw [<- Subst.sub_comp]
+      -- simp only [<- Subst.substOfRenaming]
+      let ty := wf.varTyped (x := x)
+      let helper := renamePreserveType ty (ρ := Fin2.fs) (wf := weakenWf (T := T⦇θ⦈))
+      simp [JRen] at helper
+      assumption
 
 -- Helpful lemma for managning conversion and the checking/synthesis switch
 lemma allSynthSub {Γ : PreCtx m} {t : Term n} {S : Term m} {T : Term n} (θ : Subst sig m n)
@@ -48,7 +90,7 @@ theorem subPreserveType  {Γ : PreCtx n}   (𝒥 : Judgment n)  (𝒟 : Γ ⊢ �
             constructor <;> try assumption)
           -- Cases where we can just apply the IH to the subgoals
           -- We need to apply constructor twice because even if we had a synthesis judgment as input,
-          -- we're producing a checking one as output, so there's an extra Conversion to apply
+          -- we're producing a checking one as output, so there's an extra Conversion rule to apply
           | (constructor
               <;> constructor
               <;> (try simp)

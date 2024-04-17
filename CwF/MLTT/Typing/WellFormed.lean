@@ -5,7 +5,7 @@ import CwF.ABT.SubstProperties
 import CwF.MLTT.Sig
 import CwF.MLTT.Reductions
 import CwF.MLTT.Typing.Defs
-import CwF.MLTT.Typing.Renaming
+import CwF.MLTT.Typing.Subst
 
 
 namespace MLTT
@@ -13,6 +13,7 @@ open ABT
 
 class WfCtx (Γ : PreCtx n) : Prop where
   lookupTyped : ∀ {x : Fin2 n}, Γ ⊢ 𝒰∋ Γ[x]
+
 
 attribute [aesop safe] WfCtx.lookupTyped
 
@@ -35,38 +36,41 @@ instance wfCons {Γ : PreCtx n} [wf : WfCtx Γ] {T : Term n} (ty : Γ ⊢ 𝒰�
 
 
 
-class SubstWf (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n) : Prop where
-  varTyped : ∀ {x : Fin2 n}, (Δ ⊢ Γ[x]⦇θ⦈ ∋∷ (θ x) )
 
-attribute [aesop safe] SubstWf.varTyped
 
-instance wfExt (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n)
-  [wf : SubstWf Δ Γ θ]
-  {t : Term m}
-  {T : Term n}
-  (D : Δ ⊢ T⦇θ⦈ ∋∷ t)
-  : SubstWf Δ (Γ▸T) (Subst.ext θ t) where
-  varTyped {x} := by
-    cases x <;> simp [getElem, PreCtx.lookup, Renaming.shift, Subst.sub_tail] <;> try aesop_cat
-    simp [Subst.ext]
-    apply wf.varTyped
+-- The category of contexts
+structure Ctx : Type where
+  {len : ℕ}
+  pre : PreCtx len
+  [ wf : WfCtx pre ]
 
-instance wfWk (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n)
-  [wf : SubstWf Δ Γ θ]
-  {T : Term n}
-  : SubstWf (Δ▸T⦇θ⦈) (Γ▸T) (Subst.wk θ) where
-  varTyped {x} := by
-    cases x with simp [Subst.wk, getElem, PreCtx.lookup, Renaming.shift, Subst.sub_tail]
-    | fz =>
-      constructor
-      . constructor
-      . simp [getElem, PreCtx.lookup, Renaming.shift, Subst.wk_def]
-    | fs x =>
-      simp [Subst.wk_def]
-      simp [Subst.proj]
-      -- rw [<- Subst.sub_comp]
-      -- simp only [<- Subst.substOfRenaming]
-      let ty := wf.varTyped (x := x)
-      let helper := renamePreserveType ty (ρ := Fin2.fs) (wf := weakenWf (T := T⦇θ⦈))
-      simp [JRen] at helper
+structure CtxMorphism (Δ Γ : Ctx) : Type where
+  sub : Subst sig Δ.len Γ.len
+  [ wf : SubstWf Δ.pre Γ.pre sub]
+
+def ctxId : CtxMorphism Γ Γ where
+  sub := Subst.id
+
+instance Termoid {n : ℕ} : Setoid  (Term n) where
+  r := DefEq
+  iseqv := by
+    fconstructor <;> intros
+    . apply DefEq.Refl
+    . apply DefEq.Symm
       assumption
+    . apply DefEq.Trans <;> assumption
+
+-- Values are equivalence classes of the transitive-symmetric closure of reduction
+def Value (n : ℕ) : Type := Quotient (Termoid (n := n))
+
+namespace Value
+  def subst (θ : Subst sig m n) : Value n → Value m :=
+    Quotient.lift (fun (t : Term n) => Quotient.mk Termoid (Subst.subst θ t) )
+    (by
+       intros a b rel
+       simp
+       apply Quotient.sound
+       apply DefEq.substPreserve rel
+    )
+
+end Value
