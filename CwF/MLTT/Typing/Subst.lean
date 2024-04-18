@@ -109,3 +109,15 @@ theorem subPreserveType  {Γ : PreCtx n}   (𝒥 : Judgment n)  (𝒟 : Γ ⊢ �
   | @VarSynth _ _ x =>
     let helper := θwf.varTyped (x := x)
     apply helper
+  | PairIntro tys tyT tyt IHs IHT IHt =>
+    let ⟨S, ty, eq⟩ := allSynthSub (Γ := Δ) θ DefEq.Refl (IHs)
+    (try unfold Subst.subst ; simp_all [Subst.wk_def, Subst.singleSubSub] )
+    let seq := DefEq.InContext (C := Σx∷ x0,, T)
+    apply Entails.TyConv _ eq
+    constructor
+      <;> constructor <;> (try simp)
+      <;> (try aesop_cat)
+      <;> (try unfold Subst.subst ; simp_all [Subst.wk_def, Subst.singleSubSub] )
+      <;> (try trivial)
+      <;> (try aesop_cat)
+    

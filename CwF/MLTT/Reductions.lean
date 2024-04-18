@@ -11,17 +11,18 @@ open ABT
 
 inductive Reduces : (s t : Term n) → Type where
 | Reducesβ : Reduces ((λx∷ T ,, t) $ s) s
-| Reducesπ1 : Reduces (π₁ ⟨s ,, t⟩ ) s
-| Reducesπ2 : Reduces (π₂ ⟨s ,, t⟩ ) t
+| Reducesπ1 : Reduces (π₁ ⟨x↦ s ,, t ∷x,, T ⟩ ) s
+| Reducesπ2 : Reduces (π₂ ⟨x↦ s ,, t ∷x,, T ⟩ ) t
 
 theorem substPreserveRed {s t : Term n}
-  (eq : Reduces s t) : ∀ (θ : Subst sig m n), Reduces s⦇θ⦈ t⦇θ⦈ := by
+  (red : Reduces s t) : ∀ (θ : Subst sig m n), Reduces s⦇θ⦈ t⦇θ⦈ := by
   intros θ
-  cases eq <;> simp [Subst.subst] <;> fconstructor
+  cases red <;> simp [Subst.subst] <;> fconstructor
 
 inductive DefEq : (s t : Term n) → Prop where
+| ApplyRed  : Reduces s t → DefEq s t
 | InContext  : {s t : Term n} → {C : Term (Nat.succ n)}
-  → Reduces s t → DefEq (C/[s /x]) (C/[ t /x])
+  → DefEq s t → DefEq (C/[s /x]) (C/[ t /x])
 | Refl : DefEq s s
 | Symm : DefEq s t → DefEq t s
 | Trans : DefEq s t → DefEq t u → DefEq s u
@@ -42,15 +43,17 @@ namespace DefEq
   @[aesop unsafe 90% apply]
   theorem substPreserve {s t : Term n}   (eq : DefEq s t)
     : ∀  (θ : Subst sig m n), DefEq s⦇θ⦈ t⦇θ⦈ := by
-    induction eq with intros θ <;> try (fconstructor <;> aesop_cat)
-    | @InContext s t C red =>
-          simp
-          let θeq := substPreserveRed red θ
-          let ret := DefEq.InContext (s := s⦇θ⦈) (t := t⦇θ⦈) (C := C⦇Subst.wk θ⦈) θeq
-          simp [Subst.wk_def] at ret
-          apply ret
+    induction eq with intros θ <;> try (constructor <;> aesop_cat)
+    | Refl => apply Refl
+    | Symm x IH => apply Symm <;> aesop_cat
+    | @InContext s' t' C eq IH =>
+      let ic := @InContext _ s'⦇θ⦈ t'⦇θ⦈ (C⦇Subst.wk θ⦈) (IH θ)
+      simp [Subst.singleSubSub, Subst.wk_def] at ic
+      simp
+      apply ic
     | Trans _ _  IH1 IH2 =>
       apply DefEq.Trans <;> aesop_cat
+    | ApplyRed red => constructor ; apply substPreserveRed red θ
 
 end DefEq
 

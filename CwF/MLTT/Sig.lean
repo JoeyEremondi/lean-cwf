@@ -16,7 +16,7 @@ def sig : Head → List Sig
 | Head.Lam => [◾, ν ◾ ]
 | Head.App => [◾, ◾]
 | Head.Sigma => [◾, ν ◾ ]
-| Head.Pair => [◾, ◾]
+| Head.Pair => [◾, ◾, ν ◾]
 | Head.Proj₁ => [◾]
 | Head.Proj₂ => [◾]
 | Head.True => []
@@ -48,8 +48,10 @@ notation "Σx∷" T ",," S =>
   ABT.op Head.Sigma
     ( ABT.argsCons (ABT.termArg T) (ABT.argsCons (ABT.bind (ABT.termArg S)) ABT.argsNil) )
 
-notation "⟨" s ",," t "⟩" =>
-  ABT.op Head.Pair (ABT.argsCons (ABT.termArg s) (ABT.argsCons (ABT.termArg t) ABT.argsNil))
+notation "⟨x↦" s ",," t "∷x,," T "⟩" =>
+  ABT.op Head.Pair (ABT.argsCons (ABT.termArg s)
+                   (ABT.argsCons (ABT.termArg t)
+                   (ABT.argsCons (ABT.bind (ABT.termArg T)) ABT.argsNil)))
 
 
 notation "π₁" s  =>
