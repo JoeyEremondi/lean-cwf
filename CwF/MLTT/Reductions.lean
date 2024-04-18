@@ -9,7 +9,7 @@ namespace MLTT
 open ABT
 
 
-inductive Reduces : (s t : Term n) → Type where
+inductive Reduces : (s t : Term n) → Prop where
 | Reducesβ : Reduces ((λx∷ T ,, t) $ s) s
 | Reducesπ1 : Reduces (π₁ ⟨x↦ s ,, t ∷x,, T ⟩ ) s
 | Reducesπ2 : Reduces (π₂ ⟨x↦ s ,, t ∷x,, T ⟩ ) t
@@ -18,6 +18,27 @@ theorem substPreserveRed {s t : Term n}
   (red : Reduces s t) : ∀ (θ : Subst sig m n), Reduces s⦇θ⦈ t⦇θ⦈ := by
   intros θ
   cases red <;> simp [Subst.subst] <;> fconstructor
+
+-- instance {n : ℕ} {t : Term n} : Decidable (∃x, Reduces t x) := by
+--   cases t with
+--   | var x =>
+--       apply isFalse
+--       intros s
+--       cases s
+--       contradiction
+--   | op h args =>
+--     cases h with
+--       try (rcases args <;> (try apply isFalse <;> intros s <;> cases s <;> contradiction ) <;> done)
+--     | App =>
+--       simp [sig] at args
+--       rcases args
+--       rename_i t
+--       rename_i f
+--       cases f <;> (try apply isFalse <;> intros s <;> cases s <;> contradiction )
+--       apply isTrue
+--     | Proj₁ => simp
+--     | Proj₂ => simp
+
 
 inductive DefEq : (s t : Term n) → Prop where
 | ApplyRed  : Reduces s t → DefEq s t
