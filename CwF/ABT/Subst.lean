@@ -58,6 +58,12 @@ notation:max t "/[" s "/x]" => t⦇Subst.ext Subst.id s⦈
 notation:max  "⟪" θ " ● " t "⟫" => Subst.ext θ t
 
 
+-- Tactic for unrolling the recursion of subst one level
+theorem subst_rewrite {t : ABT sig n tag} {θ : Subst sig m n}
+  : map (fun {a} x => x) (fun {a b} => Subst.wk) θ t = t⦇θ⦈ := by simp
+
+macro "unfold_subst" : tactic => `(tactic| (unfold Subst.subst ; try simp [subst_rewrite]))
+macro "unfold_subst_at" hyp:Lean.Parser.Tactic.locationHyp : tactic => `(tactic| (unfold Subst.subst at $hyp ; try simp [subst_rewrite] at $hyp))
 
 
 

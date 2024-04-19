@@ -11,16 +11,6 @@ namespace MLTT
 open ABT
 
 
-abbrev JRen (ρ : Renaming m n)
-  : Judgment n → Judgment m
-  -- | Judgment.wfctx => Judgment.wfctx (n := m)
-  | Judgment.IsType T => Judgment.IsType T⦇ρ⦈ᵣ
-  | Judgment.SynthType t T => Judgment.SynthType t⦇ρ⦈ᵣ T⦇ρ⦈ᵣ
-  | Judgment.CheckType t T => Judgment.CheckType t⦇ρ⦈ᵣ T⦇ρ⦈ᵣ
-  | Judgment.CheckHead h t Ts => Judgment.CheckHead h t⦇ρ⦈ᵣ Ts⦇ρ⦈ᵣ
-  | Judgment.SynthLevel T ℓ => Judgment.SynthLevel T⦇ρ⦈ᵣ ℓ
-
-
 
 section
   attribute [local simp] DefEq.substPreserve
@@ -50,18 +40,24 @@ section
     changeCtx x := by
       cases x <;> simp [PreCtx.lookup, getElem, Renaming.shift]
 
-  set_option maxHeartbeats 1000000
+  -- set_option maxHeartbeats 20000
+  set_option pp.notation true
 
   @[aesop safe]
-  theorem renamePreserveType  {n : ℕ} {Γ : PreCtx n}   {J : Judgment n}  (D : Γ ⊢ J)  :
-    {m : ℕ} → {Δ : PreCtx m}  → {ρ : Renaming m n } → [wf : (RenameWf Δ Γ ρ) ] → (Δ ⊢ JRen ρ J) := by
-      induction D <;>
-        ( intros m Δ ρ wf
-          simp_all [JRen]
-          (first
+  theorem renamePreserveType  {n : ℕ} {Γ : PreCtx n}  {md : Mode} {i : Inputs n md} {o : Outputs n md}
+    (D : Derivation Γ md i o)  :
+    {m : ℕ} → {Δ : PreCtx m}  → {ρ : Renaming m n }
+    → [wf : (RenameWf Δ Γ ρ) ]
+    → (Derivation Δ md i⦇ρ⦈ᵣ o⦇ρ⦈ᵣ ) := by
+      induction D with
+      intros m Δ ρ wf
+      <;> unfold_rename
+      <;> unfold_rename_all
+      <;> (first
               |  ( constructor
-                   <;> (try simp)
-                   <;> aesop_cat
+                   <;> (try unfold_rename)
+                   <;> (try aesop_cat)
+                   <;> (try simp [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming])
                    <;> done )
               -- Tactic for solving all the conversion goals
               |  (constructor <;> (try aesop_cat)
@@ -70,24 +66,35 @@ section
                   simp at renEq
                   assumption
                   done)
-              -- Cases where we can just apply the IH to the subgoals
+              -- -- Cases where we can just apply the IH to the subgoals
               | (constructor
                   <;> (try simp)
                   <;> (try aesop_cat)
-                  <;> (try unfold Renaming.rename ; simp_all [Subst.singleSubRename])
+                  <;> (try unfold_rename; simp_all [Subst.singleSubRename])
                   <;> (try trivial)
                   <;> (try aesop_cat)
                   <;> done)
-              -- Cases where we need to prove a substitition equality before we can apply IH, the synthEq lemma helps us here
+              -- -- Cases where we need to prove a substitition equality before we can apply IH, the synthEq lemma helps us here
               | apply synthEq
                   <;> (try constructor <;> aesop_cat)
-                  <;> (try unfold Renaming.rename ; simp_all [Subst.singleSubRename] ; (first | trivial | aesop_cat) )
+                  <;> (try unfold_rename ; simp_all [Subst.singleSubRename] ; (first | trivial | aesop_cat) )
                   <;> done
-              | skip))
+              | skip)
+      | @VarSynth _ _ x =>
+        let eq := wf.changeCtx x
+        simp [<- eq]
+        constructor
 
-  @[aesop safe]
-  theorem shiftPreserveType  {n : ℕ} {Γ : PreCtx n}  {J : Judgment n}  (D : Γ ⊢ J)
-    {T : Term n} (Tty: Γ ⊢ 𝒰∋ T)
-    : ((Γ▸T) ⊢ JRen (Fin2.fs) J) := by
-      simp [Renaming.shift, JRen]
-      apply renamePreserveType D
+      -- <;>
+      --   ( intros m Δ ρ wf
+      --     -- unfold_rename
+
+
+  -- @[aesop safe]
+  -- theorem shiftPreserveType
+  --   {n : ℕ} {Γ : PreCtx n} {md : Mode} {i : Inputs n md} {o : Outputs n md}
+  --   (D : Γ ⊢ i ↪[md] o)
+  --   {T : Term n} (Tty : Γ ⊢ 𝒰∋ T)
+  --   : ((Γ▸T) ⊢ (Renaming.shift i) ↪[ md ] (Renaming.shift o)) := by
+  --     simp [Renaming.shift]
+  --     apply renamePreserveType D

@@ -3,7 +3,7 @@
 import Mathlib.Data.Fin.Fin2
 import Mathlib.Logic.Unique
 import Mathlib.CategoryTheory.Category.Basic
-
+import Init.Tactics
 
 import CwF.ABT.Defs
 import CwF.Util
@@ -65,6 +65,12 @@ namespace Renaming
   theorem weaken_wk {t : ABT sig n tag} : ∀ {ρ : Renaming m n }, (shift t)⦇Renaming.wk ρ⦈ᵣ = shift t⦇ρ⦈ᵣ := by
    induction t <;> intros ρ  <;> simp [shift] <;> aesop_cat
 
+  -- Macro for unrolling the recursion one level
+  theorem ren_rewrite {m n : ℕ} {t : ABT sig n tag} {ρ : Renaming m n}
+    : map (fun {a} x => ABT.var x) (fun {a b} => Renaming.wk) ρ t = t⦇ρ⦈ᵣ := by simp [Renaming.rename]
+  macro "unfold_rename" : tactic => `(tactic| (unfold Renaming.rename ; try simp [ren_rewrite]))
+  macro "unfold_rename_at" hyp:Lean.Parser.Tactic.locationHyp : tactic => `(tactic| (unfold Renaming.rename at $hyp ; try simp [ren_rewrite] at $hyp))
+  macro "unfold_rename_all"  : tactic => `(tactic| (unfold Renaming.rename at * ; try simp [ren_rewrite] at *))
 
 
 end Renaming

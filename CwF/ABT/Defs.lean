@@ -14,6 +14,8 @@ inductive Sig : Type where
 | vec : ℕ → Sig → Sig
 | list : Sig → Sig
 | bind : Sig → Sig
+| numLit : Sig
+-- | empty : Sig
 
 notation "◾" => Sig.plain
 notation "ν" x => Sig.bind x
@@ -37,6 +39,7 @@ section
     -- Terms: variables, or an operation applied to some arguments
     | var : Fin2 n → ABT n Term'
     | op : (op : Op) → ABT n (Args (sig op)) → ABT n Term'
+    | numLit : ℕ → ABT n (ABTArg.Arg (Sig.numLit))
 
     -- Args consist of an arg for each inductive in the signature
     | argsNil : ABT n (Args [])
@@ -82,6 +85,7 @@ abbrev map {V : ℕ → Type u}
   (wk : ∀ {a} {b}, (Fin2 a → V b) → Fin2 (Nat.succ a) → V (Nat.succ b))
   (ρ : Fin2 n → V m) :
   ( ABT sig n tag) → ABT sig m tag
+| numLit x => numLit x
 | var x => (quote (ρ x))
 | op o args => op o (map quote wk ρ args)
 | argsNil => argsNil
@@ -95,5 +99,39 @@ abbrev map {V : ℕ → Type u}
 | termVecCons h t  => termVecCons (map quote wk ρ h) (map quote wk ρ t)
 | ABT.bind t => bind (map quote wk (wk ρ ) t)
 
+
+-- --nothing combined with list gives us a hacky way of encoding numbers
+-- def emptyListToNat : ABT sig n (ABTArg.Arg (Sig.list Sig.empty)) → ℕ
+-- | termListNil => 0
+-- | termListCons _ t => Nat.succ (emptyListToNat t)
+
+-- def emptyListFromNat : ℕ → ABT sig n (ABTArg.Arg (Sig.list Sig.empty))
+-- | Nat.zero => termListNil
+-- | (Nat.succ x) => termListCons nothing (emptyListFromNat x)
+
+-- theorem toFromNat : ∀ (x : ABT sig n (ABTArg.Arg (Sig.list Sig.empty))),
+--   emptyListFromNat (emptyListToNat x) = x
+-- | termListNil => by simp [emptyListToNat, emptyListFromNat]
+-- | termListCons h t => by
+--   simp [emptyListToNat, emptyListFromNat]
+--   cases h
+--   simp
+--   apply toFromNat
+
+
+-- def emptyListEquiv : ABT sig n (ABTArg.Arg (Sig.list Sig.empty)) ≃ ℕ where
+--   toFun := emptyListToNat
+--   invFun := emptyListFromNat
+--   right_inv x := by
+--     induction x <;> simp [emptyListToNat, emptyListFromNat] <;> assumption
+--   left_inv := toFromNat
+
+-- Helpers for encoding, easier notation, etc
+abbrev pair (s t : ABT sig n ABTArg.Term') : ABT sig n (ABTArg.Args [◾, ◾]) :=
+  argsCons (termArg s) (argsCons (termArg t) argsNil)
+abbrev singleton (s : ABT sig n ABTArg.Term') : ABT sig n (ABTArg.Args [◾]) :=
+  argsCons (termArg s) argsNil
+abbrev fromNat (x : ℕ) : ABT sig n (ABTArg.Args [Sig.numLit]) :=
+  argsCons (numLit x) argsNil
 
 end ABT

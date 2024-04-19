@@ -30,123 +30,131 @@ instance {n : ℕ} : GetElem (PreCtx n) (Fin2 n) (Term n) (fun _ _ => True) wher
 
 -- lemma rename_lookup {m n : ℕ} {Δ : PreCtx m} {Γ : PreCtx n}
 
--- We use a BCIC-style bidirectional system (https://arxiv.org/pdf/2102.06513.pdf)
--- so all terms synthesize, but the synthesis-checking switch determines where
--- conversion checks happen
-inductive Judgment : (n : ℕ) → Type where
-  -- Synthesize a type for a term
-  | SynthType : (t : Term n) → (T : Term n) → Judgment n
-  -- Check a term against a given type
-  | CheckType : (t : Term n) → (T : Term n) → Judgment n
-  -- Check that a term's type has the given head, then synthesize the full type
-  | CheckHead : (h : Head) → (t : Term n) → (Ts : ABT sig n Args) → Judgment n
-  -- Check that a term is a Type, then synthesize its universe level
-  | SynthLevel : (T : Term n) → (ℓ : ℕ) → Judgment n
-  -- Check that a term is a Type at any level
-  | IsType : (T : Term n) → Judgment n
-
-open Judgment
-
--- Since substitition only preserves checking, not synthesis,
--- applying a substitution to a synthesis judgment produces a checking one
-def JSub (θ : Subst sig m n)
-  : Judgment n → Judgment m
-  | Judgment.IsType T => Judgment.IsType T⦇θ⦈
-  | Judgment.SynthType t T => Judgment.CheckType t⦇θ⦈ T⦇θ⦈
-  | Judgment.CheckType t T => Judgment.CheckType t⦇θ⦈ T⦇θ⦈
-  | Judgment.CheckHead h t Ts => Judgment.CheckHead h t⦇θ⦈ Ts⦇θ⦈
-  | Judgment.SynthLevel T ℓ => Judgment.SynthLevel T⦇θ⦈ ℓ
+inductive Mode :=
+  | Synth | Check | CheckType | SynthLevel | CheckHead (h : Head)
 
 
+def inputs : Mode → Head
+| Mode.Synth => Head.RawSingle
+| Mode.Check => Head.RawPair
+| Mode.CheckType => Head.RawSingle
+| Mode.CheckHead _ => Head.RawSingle
+| Mode.SynthLevel => Head.RawSingle
 
-notation t " ∷∈ " T => Judgment.SynthType t T
-notation T  " ∋∷ " t => Judgment.CheckType t T
-notation  t "∷[" h "]∈" Ts => Judgment.CheckHead h t Ts
-notation "𝒰∋" T  => Judgment.IsType T
-notation T "∈𝒰" ℓ  => Judgment.SynthLevel T ℓ
+@[inline, reducible]
+abbrev Inputs (n : ℕ) (md : Mode) : Type :=
+  ABT sig n (ABTArg.Args (sig (inputs md)))
 
-set_option hygiene false
+def outputs : Mode → Head
+| Mode.Synth => Head.RawSingle
+| Mode.Check => Head.Nothing
+| Mode.CheckType => Head.Nothing
+| Mode.CheckHead h => h
+| Mode.SynthLevel => Head.RawLevel
+
+abbrev Outputs (n : ℕ) (md : Mode) : Type :=
+  ABT sig n (ABTArg.Args (sig (outputs md)))
+
 
 
 
 section
-  local notation Γ " ⊢ " J => Entails Γ J
-  inductive Entails : {n : ℕ} → PreCtx n →  Judgment n → Prop where
-    | WfTy :
-      (Γ ⊢ T ∈𝒰 ℓ)
-      → ---------------------------
-      (Γ ⊢ 𝒰∋ T)
+  set_option hygiene false
+  local notation Γ " ⊢ " t " ∷∈ " T => Derivation Γ Mode.Synth (ABT.singleton t) (ABT.singleton T)
+  local notation Γ " ⊢ " T  " ∋∷ " t => Derivation Γ Mode.Check (ABT.pair t T) ABT.argsNil
+  local notation Γ " ⊢ "  t "∷[" h "]∈" Ts => Derivation Γ (Mode.CheckHead h) (ABT.singleton t) Ts
+  local notation Γ " ⊢ " "𝒰∋" T  => Derivation Γ (Mode.CheckType) (ABT.singleton T) ABT.argsNil
+  local notation Γ " ⊢ " T "∈𝒰" ℓ  => Derivation Γ (Mode.SynthLevel) (ABT.singleton T) (ABT.fromNat ℓ)
+  class inductive Derivation :
+    {n : ℕ}
+    → PreCtx n
+    → (md : Mode)
+    → (ins : Inputs n md)
+    → (outs : Outputs n md)
+    → Prop where
+  | WfTy :
+    (Γ ⊢ T ∈𝒰 ℓ)
+    → ---------------------------
+    (Γ ⊢ 𝒰∋ T)
 
-    | WfTyLevel :
-        (Γ ⊢ T ∷∈ S)
-      → (S ≡ 𝒰 ℓ)
-      → ---------------------------
-      (Γ ⊢ T ∈𝒰 ℓ )
+  | WfTyLevel :
+      (Γ ⊢ T ∷∈ S)
+    → (S ≡ 𝒰 ℓ)
+    → ---------------------------
+    (Γ ⊢ T ∈𝒰 ℓ )
 
-    | HeadConv :
-        (Γ ⊢ t ∷∈ T)
-      → (T ≡ ABT.op h Ts)
-      → ---------------------------
-      (Γ ⊢ t ∷[ h ]∈ Ts)
+  | HeadConv :
+      (Γ ⊢ t ∷∈ T)
+    → (T ≡ ABT.op h Ts)
+    → ---------------------------
+    (Γ ⊢ t ∷[ h ]∈ Ts)
 
-    | TyConv :
-        (Γ ⊢ t ∷∈ S)
-      → (S ≡ T)
-      → -----------------------------
-        (Γ ⊢ T ∋∷ t)
+  | TyConv :
+      (Γ ⊢ t ∷∈ S)
+    → (S ≡ T)
+    → -----------------------------
+      (Γ ⊢ T ∋∷ t)
 
-    | VarSynth  :
-    -----------------------------
-    (Γ ⊢ ABT.var x ∷∈ Γ[x])
+  | VarSynth  :
+  -----------------------------
+  (Γ ⊢ ABT.var x ∷∈ Γ[x])
 
-    | FunType {n : ℕ} {Γ : PreCtx n} {S : Term n} {T : Term (Nat.succ n)} :
-        (Γ ⊢ S ∈𝒰 ℓ₁)
-      → ((Γ▸S) ⊢ T ∈𝒰 ℓ₂)
-      → ---------------------------
-        (Γ ⊢ (Πx∷ S ,, T) ∷∈ (𝒰 (max ℓ₁ ℓ₂)))
+  | FunType {n : ℕ} {Γ : PreCtx n} {S : Term n} {T : Term (Nat.succ n)} :
+      (Γ ⊢ S ∈𝒰 ℓ₁)
+    → ((Γ▸S) ⊢ T ∈𝒰 ℓ₂)
+    → ---------------------------
+      (Γ ⊢ (Πx∷ S ,, T) ∷∈ (𝒰 (max ℓ₁ ℓ₂)))
 
-    | FunIntro :
-         (Γ ⊢ 𝒰∋ S)
-      →  ((Γ▸S) ⊢ t ∋∷ T)
-      → ---------------------------
-        (Γ ⊢ (λx∷ S ,, t) ∷∈ Πx∷S ,, T)
-
-
-    | FunElim :
-        (Γ ⊢ t ∷[Head.Pi]∈ (x∷ S ,, T))
-      → (Γ ⊢ S ∋∷ s)
-      → ---------------------------
-        (Γ ⊢ (t $ s) ∷∈ T/[s /x])
-
-    | PairType {n : ℕ} {Γ : PreCtx n} {S : Term n} {T : Term (Nat.succ n)} :
-        (Γ ⊢ S ∈𝒰 ℓ₁)
-      → ((Γ▸S) ⊢ T ∈𝒰 ℓ₂)
-      → ---------------------------
-        (Γ ⊢ (Σx∷ S ,, T) ∷∈ (𝒰 (max ℓ₁ ℓ₂)))
-
-    | PairIntro :
-        (Γ ⊢ s ∷∈ S)
-      → ((Γ▸S) ⊢ 𝒰∋ T)
-      → (Γ ⊢ T/[s /x] ∋∷ t)
-      →-----------------------------
-      (Γ ⊢ ⟨x↦ s,,t ∷x,,T⟩ ∷∈ (Σx∷S ,, T) )
-
-    | PairElim1 :
-      (Γ ⊢ t ∷[ Head.Sigma ]∈ (x∷ S ,, T))
-      →-----------------------------
-      (Γ ⊢ (π₁ t) ∷∈ S )
+  | FunIntro :
+        (Γ ⊢ 𝒰∋ S)
+    →  ((Γ▸S) ⊢ t ∋∷ T)
+    → ---------------------------
+      (Γ ⊢ (λx∷ S ,, t) ∷∈ Πx∷S ,, T)
 
 
-    | PairElim2 :
-      (Γ ⊢ t ∷[ Head.Sigma ]∈ (x∷ S ,, T))
-      →-----------------------------
-      (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
+  | FunElim :
+      (Γ ⊢ t ∷[Head.Pi]∈ (x∷ S ,, T))
+    → (Γ ⊢ S ∋∷ s)
+    → ---------------------------
+      (Γ ⊢ (t $ s) ∷∈ T/[s /x])
+
+  | PairType {n : ℕ} {Γ : PreCtx n} {S : Term n} {T : Term (Nat.succ n)} :
+      (Γ ⊢ S ∈𝒰 ℓ₁)
+    → ((Γ▸S) ⊢ T ∈𝒰 ℓ₂)
+    → ---------------------------
+      (Γ ⊢ (Σx∷ S ,, T) ∷∈ (𝒰 (max ℓ₁ ℓ₂)))
+
+  | PairIntro :
+      (Γ ⊢ s ∷∈ S)
+    → ((Γ▸S) ⊢ 𝒰∋ T)
+    → (Γ ⊢ T/[s /x] ∋∷ t)
+    →-----------------------------
+    (Γ ⊢ ⟨x↦ s,,t ∷x,,T⟩ ∷∈ (Σx∷S ,, T) )
+
+  | PairElim1 :
+    (Γ ⊢ t ∷[ Head.Sigma ]∈ (x∷ S ,, T))
+    →-----------------------------
+    (Γ ⊢ (π₁ t) ∷∈ S )
+
+
+  | PairElim2 :
+    (Γ ⊢ t ∷[ Head.Sigma ]∈ (x∷ S ,, T))
+    →-----------------------------
+    (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
 
 end
 
-open Entails
+-- Hygenic version of the notation
+set_option hygiene true
+notation Γ " ⊢ " t " ∷∈ " T => Derivation Γ Mode.Synth (ABT.singleton t) (ABT.singleton T)
+notation Γ " ⊢ " T  " ∋∷ " t => Derivation Γ Mode.Check (ABT.pair t T) ABT.argsNil
+notation Γ " ⊢ "  t "∷[" h "]∈" Ts => Derivation Γ (Mode.CheckHead h) (ABT.singleton t) Ts
+notation Γ " ⊢ " "𝒰∋" T  => Derivation Γ (Mode.CheckType) (ABT.singleton T) ABT.argsNil
+notation Γ " ⊢ " T "∈𝒰" ℓ  => Derivation Γ (Mode.SynthLevel) (ABT.singleton T) (ABT.numLit ℓ)
 
-notation Γ " ⊢ " J => Entails Γ J
+-- notation Γ " ⊢ " i " ↪[" md "] " o  => Derivation Γ md i o
+
+
 
 -- Take advantage of the fact that synthesis is directed on the syntax of terms
 -- So in tactics, we can apply this to synthesize a type for any term
@@ -173,9 +181,3 @@ lemma allSynth {Γ : PreCtx n} {t : Term n} {T : Term n}
   cases checked
   aesop
 
--- attribute [aesop safe] TyConv
-attribute [aesop safe] WfTy
--- attribute [aesop safe] VarSynth
--- attribute [aesop safe] FunType
--- attribute [aesop safe] FunIntro
--- attribute [aesop safe] FunElim
