@@ -40,7 +40,7 @@ section
 
     -- Args consist of an arg for each inductive in the signature
     | argsNil : ABT n (Args [])
-    | argsCons :  ABT n (Arg g) →  ABT n (Args t) → ABT n (Args (h :: t))
+    | argsCons :  ABT n (Arg h) →  ABT n (Args t) → ABT n (Args (h :: t))
 
     -- Arg for ◾ is just a term
     | termArg : ABT n Term' → ABT n (Arg ◾)
@@ -67,10 +67,10 @@ abbrev Term (sig : Op → List Sig) (n : ℕ) := ABT sig n ABTArg.Term'
 
 abbrev x0 : Term sig (Nat.succ n) := ABT.var Fin2.fz
 
-infixr:67 "∷" => argsCons
-notation:67 "∅" => argsNil
-infixr:67 "∷" => termListCons
-notation:67 "∅" => termListNil
+-- infixr:67 "∷" => argsCons
+-- notation:67 "∅" => argsNil
+-- infixr:67 "∷" => termListCons
+-- notation:67 "∅" => termListNil
 -- infixr:67 "∷" => termVecCons
 -- notation:67 "∅" => termVecNil
 -- infixr:67 "∷" => teleArgCons
