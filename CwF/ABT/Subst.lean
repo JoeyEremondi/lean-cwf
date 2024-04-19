@@ -57,4 +57,8 @@ notation:max t "/[" s "/x]" => t⦇Subst.ext Subst.id s⦈
 
 notation:max  "⟪" θ " ● " t "⟫" => Subst.ext θ t
 
+
+
+
+
 end ABT

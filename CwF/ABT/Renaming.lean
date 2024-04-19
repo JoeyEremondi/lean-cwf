@@ -66,6 +66,7 @@ namespace Renaming
    induction t <;> intros ρ  <;> simp [shift] <;> aesop_cat
 
 
+
 end Renaming
 
 end ABT

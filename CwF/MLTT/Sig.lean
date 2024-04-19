@@ -1,5 +1,6 @@
 
 import CwF.ABT.Defs
+import CwF.ABT.Subst
 
 namespace MLTT
 open ABT
@@ -73,5 +74,7 @@ notation "exfalso" T t => ABT.op Head.exfalso
 
 
 notation:50 " 𝒰 " ℓ => ABT.op (Head.Tipe ℓ) ABT.argsNil
+
+
 
 end MLTT
