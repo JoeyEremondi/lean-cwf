@@ -65,18 +65,27 @@ infix:10 "≡" => DefEq
 
 -- Instances to automate deducing definitional equality
 -- When terms have the same head, we try reducing the parts in parallel
-instance {ss ts : ABT.ABT sig n (ABTArg.Args (sig h))} [eq : ss ≡ ts]
+instance instCongrHead {ss ts : ABT.ABT sig n (ABTArg.Args (sig h))} [eq : ss ≡ ts]
   : (ABT.op h ss) ≡ (ABT.op h ts) := by
     apply DefEq.CongrHead <;> assumption
-instance   [eq : DefEq s t ] [eqs : DefEq ss ts]
+instance  instContrCons [eq : DefEq s t ] [eqs : DefEq ss ts]
   : DefEq (ABT.argsCons s ss) (ABT.argsCons t ts) := by
     apply DefEq.CongrCons <;> assumption
-instance  [eq : DefEq s t] :  DefEq (ABT.bind s) (ABT.bind t) := by
+instance instCongrBind [eq : DefEq s t] :  DefEq (ABT.bind s) (ABT.bind t) := by
   constructor ; assumption
-instance  [eq : DefEq s t] :  DefEq (ABT.termArg s) (ABT.termArg t) := by
+instance instCongrTerm [eq : DefEq s t] :  DefEq (ABT.termArg s) (ABT.termArg t) := by
   constructor ; assumption
 
-attribute [instance] DefEq.Refl
+-- @[default_instance]
+-- instance byEq {s t : ABT sig n tag} [eq : Fact (s = t)] : s ≡ t := by
+--   simp [eq.out]
+--   apply DefEq.Refl
+
+attribute [instance, simp] DefEq.Refl
+attribute [simp] DefEq.CongrHead
+attribute [simp] DefEq.CongrCons
+attribute [simp] DefEq.CongrBind
+attribute [simp] DefEq.CongrTerm
 
 
 
@@ -96,11 +105,8 @@ instance stepRight {n : ℕ} {s t' t : Term n} [Reduces t t'] [DefEq s t'] : Def
     assumption
 
 
-
 namespace DefEq
-
-  @[aesop unsafe 90% apply]
-  theorem substPreserve {s t : ABT sig n tag}   (eq : DefEq s t)
+theorem substPreserve {s t : ABT sig n tag}   (eq : DefEq s t)
     : ∀  {m : ℕ} (θ : Subst sig m n), DefEq s⦇θ⦈ t⦇θ⦈ := by
     induction eq with intros m θ
       <;> (try (unfold Subst.subst) <;> simp)
@@ -108,11 +114,7 @@ namespace DefEq
     | Trans _ _  IH1 IH2 =>
       apply DefEq.Trans <;> aesop_cat
     | ApplyRed red => constructor ; apply substPreserveRed red θ
-    | CongrHead eq eqs =>
-      apply CongrHead
-      apply eqs
     | Symm eq IH =>
-      apply Symm
+      apply DefEq.Symm
       apply IH
-
 end DefEq

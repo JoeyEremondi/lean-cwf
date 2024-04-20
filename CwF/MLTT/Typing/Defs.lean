@@ -79,19 +79,19 @@ section
 
   | WfTyLevel :
       (Γ ⊢ T ∷∈ S)
-    → (S ≡ 𝒰 ℓ)
+    → (S ≡ 𝒰 ℓ )
     → ---------------------------
     (Γ ⊢ T ∈𝒰 ℓ )
 
   | HeadConv :
       (Γ ⊢ t ∷∈ T)
-    → (T ≡ ABT.op h Ts)
+    → (eq : T ≡ ABT.op h Ts)
     → ---------------------------
     (Γ ⊢ t ∷[ h ]∈ Ts)
 
   | TyConv :
       (Γ ⊢ t ∷∈ S)
-    → (S ≡ T)
+    → (eq : S ≡ T)
     → -----------------------------
       (Γ ⊢ T ∋∷ t)
 
@@ -169,10 +169,8 @@ lemma checkEq {Γ : PreCtx n} {t : Term n} {S T : Term n}
   (synthed : (Γ ⊢ t ∷∈ S) := by constructor)
   (eq : S = T := by aesop_cat)
   : Γ ⊢ T ∋∷ t  := by
-    constructor
-    . apply synthed
-    . cases eq
-      apply DefEq.Refl
+    cases eq
+    apply Derivation.TyConv <;> aesop_cat
 
 -- @[aesop unsafe]
 lemma allSynth {Γ : PreCtx n} {t : Term n} {T : Term n}

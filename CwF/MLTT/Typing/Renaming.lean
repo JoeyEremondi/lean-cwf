@@ -13,7 +13,6 @@ open ABT
 
 
 section
-  attribute [local simp] DefEq.substPreserve
   attribute [-simp] Subst.wkRenaming
   attribute [-simp] Subst.substOfRenaming
 
