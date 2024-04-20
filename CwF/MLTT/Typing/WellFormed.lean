@@ -54,7 +54,7 @@ def ctxId : CtxMorphism Γ Γ where
 instance Termoid {n : ℕ} : Setoid  (Term n) where
   r := DefEq
   iseqv := by
-    fconstructor <;> intros
+    fconstructor <;> intros <;> try aesop_cat
     . apply DefEq.Refl
     . apply DefEq.Symm
       assumption
