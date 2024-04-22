@@ -1,19 +1,29 @@
 
 import Mathlib.Data.Fin.Fin2
+import Mathlib.Data.Vector3
 import Mathlib.Logic.Unique
 import Mathlib.CategoryTheory.Category.Basic
 
 
 universe u v'
 
+namespace Vector3
+def toFun {A : Type u} (v : Vector3 A n) : (Fin2 n → A) := by
+  simp [Vector3] at v
+  apply v
+
+end Vector3
+
 -- Loosely based off of Jeremy Siek's agda ABTs
 
 inductive Sig : Type where
 | plain : Sig
 | tele : Sig → Sig
-| vec : ℕ → Sig → Sig
+| depVec : (len : ℕ) → (Fin2 len → Sig) → Sig
 | list : Sig → Sig
 | bind : Sig → Sig
+| nClosed : ℕ → Sig → Sig
+-- | lhsRhs : Sig → Sig →Sig
 | numLit : Sig
 -- | empty : Sig
 
@@ -47,18 +57,38 @@ section
 
     -- Arg for ◾ is just a term
     | termArg : ABT n Term' → ABT n (Arg ◾)
+    -- Arg for lhsRhs is just two terms with the given signatures
+    -- Useful when we want to define binidings on two things in parallel.
+    -- e.g. for defining pattern matching
+    -- | argLhsRhs : ABT n (Arg lhs) → ABT n (Arg rhs) → ABT n (Arg (Sig.lhsRhs lhs rhs))
     -- Arg for list is zero or more terms
     | termListNil : ABT n (Arg (Sig.list s))
     | termListCons : ABT n (Arg s) → ABT n (Arg (Sig.list s)) → ABT n (Arg (Sig.list s))
     -- Arg for vec is exactly n terms, handy when we want parallel lists constrained
-    -- to have the same length
-    | termVecNil : ABT n (Arg (Sig.vec 0 s))
-    | termVecCons : ABT n (Arg s) → ABT n (Arg (Sig.vec len s)) → ABT n (Arg (Sig.vec (Nat.succ len) s))
+    -- to have the same length.
+    -- We allow the signature to depend on the index of the vector
+    | termVecNil : ABT n (Arg (Sig.depVec 0 Vector3.nil.toFun))
+    | termVecCons : ABT n (Arg s) → ABT n (Arg (Sig.depVec len ss))
+      → ABT n (Arg (Sig.depVec (Nat.succ len) (Vector3.cons s ss).toFun))
     -- Telescope is like a list, but we gain a binding for each element
     | teleArgNil : ABT n (Arg (Sig.tele s))
     | teleArgCons : ABT n Term' → ABT n (Arg (Sig.bind (Sig.tele s)) ) → ABT n (Arg (Sig.tele s))
     -- Arg for a binding is a term with one more free variable
     | bind : ABT (Nat.succ n) (Arg s) → ABT n (Arg (ν s))
+    -- nClosed is a "top level" binding with n parameters. Substitutions do not
+    -- propagate into nClosed. The only way to substitute in them is to
+    -- explicitly decompose them.
+    -- This models e.g. branches of a top-level pattern match
+    | nClosed : ABT (num) (Arg s) → ABT n (Arg (Sig.nClosed num s))
+
+abbrev abtVecLookup {sig : Op → List Sig} :
+  ABT sig n (Arg (Sig.depVec len tags))
+  → (i : Fin2 len)
+  → ABT sig n (Arg (tags i))
+| ABT.termVecNil, i => by cases i
+| ABT.termVecCons h t, Fin2.fz => h
+| ABT.termVecCons _ t, Fin2.fs i => abtVecLookup t i
+
 
 
 
@@ -90,6 +120,7 @@ abbrev map {V : ℕ → Type u}
 | op o args => op o (map quote wk ρ args)
 | argsNil => argsNil
 | argsCons h t => argsCons (map quote wk ρ h) (map quote wk ρ t)
+-- | argLhsRhs lhs rhs => argLhsRhs (map quote wk ρ lhs) (map quote wk ρ rhs)
 | termArg t => termArg (map quote wk ρ t)
 | teleArgNil => teleArgNil
 | teleArgCons ts t => teleArgCons (map quote wk ρ ts) (map quote wk ρ t)
@@ -98,6 +129,7 @@ abbrev map {V : ℕ → Type u}
 | termVecNil  => termVecNil
 | termVecCons h t  => termVecCons (map quote wk ρ h) (map quote wk ρ t)
 | ABT.bind t => bind (map quote wk (wk ρ ) t)
+| ABT.nClosed t => ABT.nClosed t
 
 
 -- --nothing combined with list gives us a hacky way of encoding numbers

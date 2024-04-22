@@ -11,6 +11,7 @@ inductive Head where
   | True | tt
   | False | exfalso
   | Tipe (ℓ : ℕ)
+  | Match (numBranch : ℕ)
   -- Not used for expressions, but to pass substitutions through pairs
   -- when defining e.g. preservation of substitution
   | RawSingle
@@ -31,6 +32,8 @@ def sig : Head → List Sig
 | Head.False => []
 | Head.exfalso => [◾, ◾]
 | Head.Tipe _ => []
+| Head.Match numBranch => [Sig.vec numBranch (Sig.bind ◾), Sig.vec numBranch (Sig.bind ◾)]
+
 | Head.RawSingle => [◾]
 | Head.RawPair => [◾, ◾]
 | Head.RawLevel => [Sig.numLit]
