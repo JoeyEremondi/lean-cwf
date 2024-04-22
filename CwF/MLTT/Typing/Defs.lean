@@ -143,6 +143,7 @@ section
     (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
 
 end
+open Derivation
 
 -- Hygenic version of the notation
 set_option hygiene true

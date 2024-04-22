@@ -18,6 +18,26 @@ set_option pp.notation true
 
 set_option maxHeartbeats 3000000
 
+-- Helpful lemma for managning conversion and the checking/synthesis switch
+lemma allSynthSub {Γ : PreCtx m} {t : Term n} {S : Term m} {T : Term n} (θ : Subst sig m n)
+  (eq : (T⦇θ⦈ ≡ S) )
+  (checked : (Γ ⊢ T⦇θ⦈ ∋∷ t⦇θ⦈) := by assumption)
+  : ∃ S', (Γ ⊢ t⦇θ⦈ ∷∈ S') ∧ (S' ≡ S) := by
+  cases checked
+  (repeat constructor) <;> try assumption
+  apply DefEq.Trans <;> assumption
+
+
+lemma checkConv {Γ : PreCtx n}  {S T t : Term n}
+  [eq : (S ≡ T) ]
+  (checked : Γ ⊢ T ∋∷ t)
+  : Γ ⊢ S ∋∷ t := by
+    cases checked
+    constructor <;> try assumption
+    apply DefEq.Trans (by assumption)
+    apply DefEq.Symm
+    assumption
+
 
 class SubstWf (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n) : Prop where
   varTyped : ∀ {x : Fin2 n}, (Δ ⊢ Γ[x]⦇θ⦈ ∋∷ (θ x) )
@@ -43,33 +63,33 @@ instance wfExt (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n)
 
 instance wfWk (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n)
   [wf : SubstWf Δ Γ θ]
+  {S : Term m}
   {T : Term n}
-  : SubstWf (Δ▸T⦇θ⦈) (Γ▸T) (Subst.wk θ) where
+  [eq : S ≡ T⦇θ⦈]
+  : SubstWf (Δ▸S) (Γ▸T) (Subst.wk θ) where
   varTyped {x} := by
     cases x with simp [Subst.wk, getElem, PreCtx.lookup, Renaming.shift, Subst.sub_tail]
       <;> unfold_subst
     | fz =>
       constructor
       . constructor
-      . simp [getElem, PreCtx.lookup, Renaming.shift, Subst.wk_def]
+      . let eqθ := DefEq.substPreserve eq Subst.proj
+        simp [getElem, PreCtx.lookup, Renaming.shift, Subst.wk_def]
+        simp at eqθ
+        assumption
     | fs x =>
       simp [Subst.wk_def]
       simp [Subst.proj]
       -- rw [<- Subst.sub_comp]
       -- simp only [<- Subst.substOfRenaming]
       let ty := wf.varTyped (x := x)
-      let helper := renamePreserveType ty (ρ := Fin2.fs) (wf := weakenWf (T := T⦇θ⦈))
+      let helper := renamePreserveType ty (ρ := Fin2.fs) (wf := weakenWf (T := S))
       unfold_rename_at helper
-      assumption
+      -- unfold_subst
+      -- simp [getElem] at helper
+      -- simp [pair]
+      apply helper
 
--- Helpful lemma for managning conversion and the checking/synthesis switch
-lemma allSynthSub {Γ : PreCtx m} {t : Term n} {S : Term m} {T : Term n} (θ : Subst sig m n)
-  (eq : (T⦇θ⦈ ≡ S) )
-  (checked : (Γ ⊢ T⦇θ⦈ ∋∷ t⦇θ⦈) := by assumption)
-  : ∃ S', (Γ ⊢ t⦇θ⦈ ∷∈ S') ∧ (S' ≡ S) := by
-  cases checked
-  (repeat constructor) <;> try assumption
-  apply DefEq.Trans <;> assumption
 
 -- Substitution preserves checking but not synthesis
 def subMode : Mode → Mode
@@ -140,7 +160,10 @@ theorem subPreserveType  {Γ : PreCtx n} {md : Mode} {i : Inputs n md} {o : Outp
     constructor <;> try aesop_cat
     constructor <;> try assumption
     . apply IHT
-    . apply tyS'
+    . unfold_subst_at IHt
+      simp [Subst.wk_def]
+      let tytθ := IHt (Δ := Δ) (θ := θ)
+      apply tytθ
     -- (try unfold_subst ; simp_all [Subst.wk_def, Subst.singleSubSub] )
     -- let seq := DefEq.InContext (s := S⦇θ⦈) (t := S') (C := Σx∷ x0,, (Renaming.shift T⦇θ⦈)) (DefEq.Symm eq)
     -- apply Entails.TyConv _ seq
