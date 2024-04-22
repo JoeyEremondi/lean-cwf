@@ -19,7 +19,7 @@ end Vector3
 inductive Sig : Type where
 | plain : Sig
 | tele : Sig → Sig
-| depVec : (len : ℕ) → (Fin2 len → Sig) → Sig
+| depVec : {len : ℕ} → (Fin2 len → Sig) → Sig
 | list : Sig → Sig
 | bind : Sig → Sig
 | nClosed : ℕ → Sig → Sig
@@ -67,9 +67,11 @@ section
     -- Arg for vec is exactly n terms, handy when we want parallel lists constrained
     -- to have the same length.
     -- We allow the signature to depend on the index of the vector
-    | termVecNil : ABT n (Arg (Sig.depVec 0 Vector3.nil.toFun))
-    | termVecCons : ABT n (Arg s) → ABT n (Arg (Sig.depVec len ss))
-      → ABT n (Arg (Sig.depVec (Nat.succ len) (Vector3.cons s ss).toFun))
+    | termVec : ((i : Fin2 len) → ABT n (Arg (ss i)))
+      → ABT n (Arg (Sig.depVec ss))
+    -- | termVecNil : ABT n (Arg (Sig.depVec Vector3.nil.toFun))
+    -- | termVecCons : ABT n (Arg s) → ABT n (Arg (Sig.depVec ss))
+    --   → ABT n (Arg (Sig.depVec  (Vector3.cons s ss).toFun))
     -- Telescope is like a list, but we gain a binding for each element
     | teleArgNil : ABT n (Arg (Sig.tele s))
     | teleArgCons : ABT n Term' → ABT n (Arg (Sig.bind (Sig.tele s)) ) → ABT n (Arg (Sig.tele s))
@@ -81,13 +83,13 @@ section
     -- This models e.g. branches of a top-level pattern match
     | nClosed : ABT (num) (Arg s) → ABT n (Arg (Sig.nClosed num s))
 
-abbrev abtVecLookup {sig : Op → List Sig} :
-  ABT sig n (Arg (Sig.depVec len tags))
+abbrev abtVecLookup {sig : Op → List Sig} {tags : Fin2 len → Sig} :
+  ABT sig n (Arg (Sig.depVec tags))
   → (i : Fin2 len)
-  → ABT sig n (Arg (tags i))
-| ABT.termVecNil, i => by cases i
-| ABT.termVecCons h t, Fin2.fz => h
-| ABT.termVecCons _ t, Fin2.fs i => abtVecLookup t i
+  → ABT sig n (Arg (tags i)) := by
+  intros v i
+  cases v
+  aesop
 
 
 
@@ -126,8 +128,7 @@ abbrev map {V : ℕ → Type u}
 | teleArgCons ts t => teleArgCons (map quote wk ρ ts) (map quote wk ρ t)
 | termListNil  => termListNil
 | termListCons h t  => termListCons (map quote wk ρ h) (map quote wk ρ t)
-| termVecNil  => termVecNil
-| termVecCons h t  => termVecCons (map quote wk ρ h) (map quote wk ρ t)
+| termVec f  => termVec (fun x => map quote wk ρ (f x) )
 | ABT.bind t => bind (map quote wk (wk ρ ) t)
 | ABT.nClosed t => ABT.nClosed t
 
