@@ -19,7 +19,6 @@ end Vector3
 
 inductive Sig : Type where
 | plain : Sig
-| tele : (len : ℕ) → Sig → Sig
 | depVec : {len : ℕ} → (Fin2 len → Sig) → Sig
 | list : Sig → Sig
 | bind : Sig → Sig
@@ -78,8 +77,8 @@ section
     -- | termVecCons : ABT n (Arg s) → ABT n (Arg (Sig.depVec ss))
     --   → ABT n (Arg (Sig.depVec  (Vector3.cons s ss).toFun))
     -- Telescope is like a list, but we gain a binding for each element
-    | teleArgNil : ABT n (Arg (Sig.tele 0 s))
-    | teleArgCons : ABT n Term' → ABT n (Arg (Sig.bind (Sig.tele len s)) ) → ABT n (Arg (Sig.tele (Nat.succ len) s))
+    -- | teleArgNil : ABT n (Arg (Sig.tele 0 s))
+    -- | teleArgCons : ABT n Term' → ABT n (Arg (Sig.bind (Sig.tele len s)) ) → ABT n (Arg (Sig.tele (Nat.succ len) s))
     -- Arg for a binding is a term with one more free variable
     | bind : ABT (Nat.succ n) (Arg s) → ABT n (Arg (ν s))
     -- nClosed is a "top level" binding with n parameters. Substitutions do not
@@ -113,6 +112,11 @@ abbrev x0 : Term sig (Nat.succ n) := ABT.var Fin2.fz
 
 notation "◾vec" n => (Sig.depVec (len := n) (fun _ => ◾))
 
+abbrev bindN : (i : Fin2 n) → Sig → Sig
+| Fin2.fz, s => s
+| Fin2.fs n, s => Sig.bind (bindN n s)
+notation "◾tele" n => (Sig.depVec (len := n) (fun i => bindN i ◾))
+
 
 
 
@@ -139,8 +143,6 @@ abbrev map {V : ℕ → Type u}
 | argsCons h t => argsCons (map quote wk ρ h) (map quote wk ρ t)
 -- | argLhsRhs lhs rhs => argLhsRhs (map quote wk ρ lhs) (map quote wk ρ rhs)
 | termArg t => termArg (map quote wk ρ t)
-| teleArgNil => teleArgNil
-| teleArgCons ts t => teleArgCons (map quote wk ρ ts) (map quote wk ρ t)
 | termListNil  => termListNil
 | termListCons h t  => termListCons (map quote wk ρ h) (map quote wk ρ t)
 | termVec f  => termVec (fun x => map quote wk ρ (f x) )

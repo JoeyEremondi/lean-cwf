@@ -23,6 +23,23 @@ namespace PreCtx
 def lookup :  (Γ : PreCtx n) → Fin2 n → Term n
 |  (ctxCons _ T), Fin2.fz => Renaming.shift T
 |  (ctxCons Γ _), (Fin2.fs x) => Renaming.shift (lookup Γ x)
+
+-- A closed telescope can be reversed to make a context
+def snocTele {len : ℕ} : {m : ℕ} → (Γ : PreCtx m) →  (Ts : ABT sig m (ABTArg.Arg (◾tele len)))  → PreCtx (m+len) := by
+  induction len with intros m Γ Ts
+  | zero => apply Γ
+  | succ len IH =>
+      simp [Nat.add_succ, <- Nat.succ_add]
+      simp [Nat.add_succ, <- Nat.succ_add] at IH
+      apply IH
+      . apply ctxCons Γ
+        cases ABT.abtVecLookup Ts Fin2.fz
+        assumption
+      . apply ABT.termVec
+        intros i
+        cases ABT.abtVecLookup Ts (Fin2.fs i)
+        assumption
+
 end PreCtx
 
 instance {n : ℕ} : GetElem (PreCtx n) (Fin2 n) (Term n) (fun _ _ => True) where
@@ -31,7 +48,7 @@ instance {n : ℕ} : GetElem (PreCtx n) (Fin2 n) (Term n) (fun _ _ => True) wher
 -- lemma rename_lookup {m n : ℕ} {Δ : PreCtx m} {Γ : PreCtx n}
 
 inductive Mode :=
-  | Synth | Check | CheckType | SynthLevel | CheckHead (h : Head)
+  | Synth | Check | CheckType | SynthLevel | CheckHead (h : Head) | SynthTele (n : ℕ)
 
 
 def inputs : Mode → Head
@@ -40,6 +57,7 @@ def inputs : Mode → Head
 | Mode.CheckType => Head.RawSingle
 | Mode.CheckHead _ => Head.RawSingle
 | Mode.SynthLevel => Head.RawSingle
+| Mode.SynthTele n => Head.RawVec n
 
 @[inline, reducible]
 abbrev Inputs (n : ℕ) (md : Mode) : Type :=
@@ -51,6 +69,7 @@ def outputs : Mode → Head
 | Mode.CheckType => Head.Nothing
 | Mode.CheckHead h => h
 | Mode.SynthLevel => Head.RawLevel
+| Mode.SynthTele n => Head.RawTele n
 
 abbrev Outputs (n : ℕ) (md : Mode) : Type :=
   ABT sig n (ABTArg.Args (sig (outputs md)))
@@ -72,33 +91,41 @@ section
     → (ins : Inputs n md)
     → (outs : Outputs n md)
     → Prop where
+  -- A type is well formed if it synthesizes a universe level
   | WfTy :
     (Γ ⊢ T ∈𝒰 ℓ)
     → ---------------------------
     (Γ ⊢ 𝒰∋ T)
 
+  -- A type synthesizes a universe level if it synthesizes a type
+  -- that is equal to a universe at some level
   | WfTyLevel :
       (Γ ⊢ T ∷∈ S)
     → (S ≡ 𝒰 ℓ )
     → ---------------------------
     (Γ ⊢ T ∈𝒰 ℓ )
 
+  -- Check a term against the given syntactic former, synthesizing its arguments
   | HeadConv :
       (Γ ⊢ t ∷∈ T)
     → (eq : T ≡ ABT.op h Ts)
     → ---------------------------
     (Γ ⊢ t ∷[ h ]∈ Ts)
 
+  -- If a term synthesizes a type, it checks against any definitionally equal type
   | TyConv :
       (Γ ⊢ t ∷∈ S)
     → (eq : S ≡ T)
     → -----------------------------
       (Γ ⊢ T ∋∷ t)
 
+  -- Variables synthesize their types from the context
   | VarSynth  :
   -----------------------------
   (Γ ⊢ ABT.var x ∷∈ Γ[x])
 
+
+  -- Functions: standard
   | FunType {n : ℕ} {Γ : PreCtx n} {S : Term n} {T : Term (Nat.succ n)} :
       (Γ ⊢ S ∈𝒰 ℓ₁)
     → ((Γ▸S) ⊢ T ∈𝒰 ℓ₂)
@@ -118,6 +145,7 @@ section
     → ---------------------------
       (Γ ⊢ (t $ s) ∷∈ T/[s /x])
 
+  -- Pairs: standard
   | PairType {n : ℕ} {Γ : PreCtx n} {S : Term n} {T : Term (Nat.succ n)} :
       (Γ ⊢ S ∈𝒰 ℓ₁)
     → ((Γ▸S) ⊢ T ∈𝒰 ℓ₂)
@@ -141,6 +169,12 @@ section
     (Γ ⊢ t ∷[ Head.Sigma ]∈ (x∷ S ,, T))
     →-----------------------------
     (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
+
+  --
+  -- | CaseSplit
+  -- ----------------------------------
+  -- (Γ ⊢ casesplit ts )
+
 
 end
 open Derivation

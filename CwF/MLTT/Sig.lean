@@ -19,6 +19,8 @@ inductive Head where
   | RawPair
   | RawLevel
   | Nothing
+  | RawTele (len : ℕ)
+  | RawVec (len : ℕ)
 
 def preCtxSig (n : ℕ) := Sig.depVec (fun (i : Fin2 n) => Sig.nClosed i.toNat ◾)
 
@@ -52,6 +54,8 @@ def sig : Head → List Sig
 | Head.RawSingle => [◾]
 | Head.RawPair => [◾, ◾]
 | Head.RawLevel => [Sig.numLit]
+| Head.RawTele len => [ ◾tele len ]
+| Head.RawVec len => [ ◾vec  len]
 | Head.Nothing => []
 
 abbrev Term (n : ℕ) :  Type :=
