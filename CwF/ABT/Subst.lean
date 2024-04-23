@@ -72,7 +72,7 @@ macro "unfold_subst_at" hyp:Lean.Parser.Tactic.locationHyp : tactic => `(tactic|
 
 
 
-
+namespace Subst
 -- Syntactic substitutions are equivalent to substitutions as functions
 def syntacticEquiv : Subst.Syntactic sig m n ≃ Subst sig m n where
     toFun θ i :=
@@ -103,6 +103,6 @@ theorem syntaxSubComp {θ1 : Subst sig a b} {θ2 : Subst.Syntactic sig b c}
   generalize eq : f i = fi
   cases fi
   simp
-
+end Subst
 
 end ABT

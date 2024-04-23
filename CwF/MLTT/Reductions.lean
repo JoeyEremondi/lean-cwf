@@ -14,14 +14,14 @@ class inductive Reduces : (s : Term n) → (t : outParam (Term n)) → Prop wher
 | Reducesβ : Reduces ((λx∷ T ,, t) $ s) t /[ s /x]
 | Reducesπ1 : Reduces (π₁ ⟨x↦ s ,, t ∷x,, T ⟩ ) s
 | Reducesπ2 : Reduces (π₂ ⟨x↦ s ,, t ∷x,, T ⟩ ) t
-| ReducesMatch {vars : Vector3 ℕ numBranch} {i : Fin2 numBranch}
-
-  {xs :  ((i : Fin2 numBranch) → PatCtx )}
-  {lhss : ((i : Fin2 numBranch) → (Vector3 (Term (xs i).fst) numScrut ))}
-  {rhss : ( (i : Fin2 numBranch) → Term (xs i).fst)}
+| ReducesMatch
   {θ : Subst sig n (xs i).fst}
-  : Reduces (casesplit (ABT.termVec (by simp)) to T [[xs ,, lhss ↦ rhss]]) (rhss i)⦇θ⦈
+  : Reduces (casesplit (lhss i)⦇θ⦈ to T [[xs ,, lhss ↦ rhss]]) (rhss i)⦇θ⦈
   deriving Decidable
+
+--Useful tool for proving properties about reuductions
+lemma reduces_eq {s t t' : Term n} [Reduces s t] (eq : t = t')
+  : Reduces s t' := by simp [<- eq] ; assumption
 
 attribute [instance] Reduces.Reducesβ Reduces.Reducesπ1 Reduces.Reducesπ2
 
@@ -29,7 +29,13 @@ attribute [instance] Reduces.Reducesβ Reduces.Reducesπ1 Reduces.Reducesπ2
 theorem substPreserveRed {s t : Term n}
   (red : Reduces s t) : ∀ (θ : Subst sig m n), Reduces s⦇θ⦈ t⦇θ⦈ := by
   intros θ
-  cases red <;> simp [Subst.subst] <;> fconstructor
+  cases red <;>
+    (try  unfold_subst
+    <;> simp [Subst.wk_def]
+    <;>  (try constructor ; done)
+    <;> (try apply reduces_eq <;> aesop_cat)
+    <;> done)
+
 
 -- instance {n : ℕ} {t : Term n} : Decidable (∃x, Reduces t x) := by
 --   cases t with

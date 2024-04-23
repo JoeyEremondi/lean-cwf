@@ -4,6 +4,7 @@ import Mathlib.Data.Vector3
 import Mathlib.Logic.Unique
 import Mathlib.CategoryTheory.Category.Basic
 
+import Lean.Elab.Deriving.DecEq
 
 universe u v'
 
@@ -42,39 +43,10 @@ inductive ABTArg : Type where
 
 section
     open ABTArg
-    variable {Op : Type u} (sig : Op → List Sig)
+    variable {Op : Type u} [dec : DecidableEq Op] (sig : Op → List Sig)
 
     --TODO move this elsewhere
-    instance [dec : DecidableEq A] : DecidableEq (Fin2 n → A) := by
-      induction n with intros f g
-      | zero =>
-        apply isTrue
-        funext
-        contradiction
-      | succ n IH =>
-        cases dec (f Fin2.fz) (g Fin2.fz) with
-        | isFalse npf =>
-          apply isFalse
-          intros pf
-          have eq := congrFun pf (Fin2.fz)
-          apply npf eq
-        | isTrue hpf =>
-          let ftail (x : Fin2 n) : A := f (Fin2.fs x)
-          let gtail (x : Fin2 n) : A := g (Fin2.fs x)
-          cases IH ftail gtail with
-          | isTrue tpf =>
-            simp [ftail, gtail] at hpf
-            apply isTrue
-            funext x
-            cases x <;> try assumption
-            apply congrFun tpf _
-          | isFalse npf =>
-            simp [ftail, gtail] at npf
-            apply isFalse
-            intros pf
-            apply npf
-            funext
-            apply congrFun pf _
+
 
 
 
@@ -115,7 +87,10 @@ section
     -- explicitly decompose them.
     -- This models e.g. branches of a top-level pattern match
     | nClosed : ABT (num) (Arg s) → ABT n (Arg (Sig.nClosed num s))
-    deriving DecidableEq
+
+
+
+
 
 
   abbrev abtVecLookup {sig : Op → List Sig} {tags : Fin2 len → Sig} :
@@ -129,6 +104,8 @@ section
 end
 
 open ABT
+
+
 
 abbrev Term (sig : Op → List Sig) (n : ℕ) := ABT sig n ABTArg.Term'
 

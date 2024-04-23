@@ -118,7 +118,7 @@ structure CaseSplit (n : ℕ) : Type where
   ts : Subst.Syntactic sig n numScrut
   T : Term (Nat.succ n)
   xs :  ((i : Fin2 numBranch) → PatCtx )
-  lhss : ((i : Fin2 numBranch) → (Vector3 (Term (xs i).fst) numScrut ))
+  lhss : ((i : Fin2 numBranch) → (Subst.Syntactic sig (xs i).fst numScrut))
   rhss : ( (i : Fin2 numBranch) → Term (xs i).fst)
 
 
@@ -129,7 +129,7 @@ abbrev mkCases (cs : CaseSplit n) : Term n := by
     apply ABT.argsCons cs.ts
     apply ABT.argsCons (ABT.bind (ABT.termArg cs.T))
     apply ABT.argsCons (ABT.termVec _)
-    apply ABT.argsCons (ABT.termVec (fun branch => ABT.nClosed (ABT.termVec (ABT.termArg ∘ cs.lhss branch))))
+    apply ABT.argsCons (ABT.termVec (fun branch => ABT.nClosed (ABT.termVec (ABT.termArg ∘ (Subst.syntacticEquiv.toFun (cs.lhss branch))))))
     apply ABT.argsCons (ABT.termVec (fun branch => ABT.nClosed (ABT.termArg (cs.rhss branch))))
     apply ABT.argsNil
     intros i
