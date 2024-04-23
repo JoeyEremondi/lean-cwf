@@ -83,16 +83,14 @@ section
     -- This models e.g. branches of a top-level pattern match
     | nClosed : ABT (num) (Arg s) → ABT n (Arg (Sig.nClosed num s))
 
-abbrev abtVecLookup {sig : Op → List Sig} {tags : Fin2 len → Sig} :
-  ABT sig n (Arg (Sig.depVec tags))
-  → (i : Fin2 len)
-  → ABT sig n (Arg (tags i)) := by
-  intros v i
-  cases v
-  aesop
 
-
-
+  abbrev abtVecLookup {sig : Op → List Sig} {tags : Fin2 len → Sig} :
+    ABT sig n (Arg (Sig.depVec tags))
+    → (i : Fin2 len)
+    → ABT sig n (Arg (tags i)) := by
+    intros v i
+    cases v
+    aesop
 
 end
 
@@ -101,6 +99,12 @@ open ABT
 abbrev Term (sig : Op → List Sig) (n : ℕ) := ABT sig n ABTArg.Term'
 
 abbrev x0 : Term sig (Nat.succ n) := ABT.var Fin2.fz
+
+notation "◾vec" n => (Sig.depVec (len := n) (fun _ => ◾))
+
+
+
+
 
 -- infixr:67 "∷" => argsCons
 -- notation:67 "∅" => argsNil

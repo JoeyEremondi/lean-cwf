@@ -66,5 +66,41 @@ macro "unfold_subst" : tactic => `(tactic| (unfold Subst.subst ; try simp [subst
 macro "unfold_subst_at" hyp:Lean.Parser.Tactic.locationHyp : tactic => `(tactic| (unfold Subst.subst at $hyp ; try simp [subst_rewrite] at $hyp))
 
 
+--A substitution is just a length-n vector of terms with m variables
+--So we can internalize this into our ABT
+abbrev Syntactic (sig : Op → List Sig) (m n : ℕ) := ABT sig m (ABTArg.Arg (◾vec n))
+
+
+-- Syntactic substitutions are equivalent to substitutions as functions
+def syntacticEquiv : Syntactic sig m n ≃ Subst sig m n where
+    toFun θ i :=
+      match abtVecLookup θ i with
+      | ABT.termArg t => t
+    invFun f := ABT.termVec (fun i => ABT.termArg (f i))
+    left_inv θ := by
+      cases θ with
+      | termVec f =>
+        simp
+        funext i
+        generalize eq :  abtVecLookup (ABT.termVec f) i = x
+        cases x
+        simp
+        simp [abtVecLookup] at eq
+        apply eq.symm
+    right_inv f := by
+      funext i
+      simp
+
+-- Composition of syntactic substitutions is just applying one substitution to the other
+theorem syntaxSubComp {θ1 : Subst sig a b} {θ2 : Syntactic sig b c}
+  : θ1 ⨟ (syntacticEquiv.toFun θ2) = syntacticEquiv.toFun (θ2⦇θ1⦈) := by
+  funext i
+  let (ABT.termVec f) := θ2
+  unfold_subst
+  simp [syntacticEquiv, Subst.comp, abtVecLookup]
+  generalize eq : f i = fi
+  cases fi
+  simp
+
 
 end ABT

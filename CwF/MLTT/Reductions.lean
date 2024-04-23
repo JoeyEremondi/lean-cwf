@@ -4,6 +4,7 @@ import CwF.ABT.Defs
 import CwF.ABT.Subst
 import CwF.ABT.SubstProperties
 import CwF.MLTT.Sig
+import Mathlib.Data.Vector3
 
 namespace MLTT
 open ABT
@@ -13,6 +14,9 @@ class inductive Reduces : (s : Term n) → (t : outParam (Term n)) → Prop wher
 | Reducesβ : Reduces ((λx∷ T ,, t) $ s) s
 | Reducesπ1 : Reduces (π₁ ⟨x↦ s ,, t ∷x,, T ⟩ ) s
 | Reducesπ2 : Reduces (π₂ ⟨x↦ s ,, t ∷x,, T ⟩ ) t
+| ReducesMatch {vars : Vector3 ℕ numParams} {i : Fin2 numParams}
+  {θ : Subst sig n (Vector3.nth i vars)}
+  : Reduces (mkMatch (n := n) (vars := vars) t T xs lhss rhss) (by simp)
   deriving Decidable
 
 attribute [instance] Reduces.Reducesβ Reduces.Reducesπ1 Reduces.Reducesπ2

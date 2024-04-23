@@ -43,8 +43,8 @@ def sig : Head → List Sig
 -- that's closed except for the (vars i) pattern variables.
 -- The rhs is a closed term except for the (vars i) pattern variables
 | Head.Match  vars
-  => [◾
-      , ν ◾
+  => [Sig.tele ◾
+      , ν (Sig.tele ◾)
       , Sig.depVec (fun i => Sig.nClosed 0 (preCtxSig (Vector3.nth i vars)) )
       , Sig.depVec (fun i => Sig.nClosed (Vector3.nth i vars) (Sig.tele ◾))
       , Sig.depVec (fun i => Sig.nClosed (Vector3.nth i vars) ◾)]
@@ -113,8 +113,8 @@ def Branch (n : ℕ) (numVars : ℕ) : Type :=
 
 abbrev mkMatch {numBranch : ℕ} {vars : Vector3 ℕ numBranch} (t : Term n) (T : Term (Nat.succ n))
   (Ctxs : (i : Fin2 numBranch) → PatCtx (Vector3.nth i vars) )
-  (lhss : (i : Fin2 numBranch) → ABT sig n (ABTArg.Arg (Sig.nClosed (Vector3.nth i vars) (Sig.tele ◾))))
-  (rhss : (i : Fin2 numBranch) → ABT sig n (ABTArg.Arg (Sig.nClosed (Vector3.nth i vars) ◾)))
+  (lhss : (i : Fin2 numBranch) → ABT sig (Vector3.nth i vars) (ABTArg.Arg (Sig.tele ◾)))
+  (rhss : (i : Fin2 numBranch) → ABT sig (Vector3.nth i vars) (ABTArg.Arg ◾))
   : Term n := by
     apply ABT.op (Head.Match vars)
     apply ABT.argsCons (ABT.termArg t)
@@ -130,8 +130,6 @@ abbrev mkMatch {numBranch : ℕ} {vars : Vector3 ℕ numBranch} (t : Term n) (T 
 
 notation "match" t " to " T "[[" Ξ ",," lhss "↦" rhss "]]"  => mkMatch t T Ξ lhss rhss
 
-def foo  : _ → _ → _ → Term 0 := fun Δ lhs rhs =>
-  match tt to ⊤ [[Δ ,, lhs ↦ rhs]]
 
 
 end MLTT
