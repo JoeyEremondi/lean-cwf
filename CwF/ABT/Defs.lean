@@ -18,7 +18,7 @@ end Vector3
 
 inductive Sig : Type where
 | plain : Sig
-| tele : Sig → Sig
+| tele : (len : ℕ) → Sig → Sig
 | depVec : {len : ℕ} → (Fin2 len → Sig) → Sig
 | list : Sig → Sig
 | bind : Sig → Sig
@@ -43,6 +43,39 @@ inductive ABTArg : Type where
 section
     open ABTArg
     variable {Op : Type u} (sig : Op → List Sig)
+
+    --TODO move this elsewhere
+    instance [dec : DecidableEq A] : DecidableEq (Fin2 n → A) := by
+      induction n with intros f g
+      | zero =>
+        apply isTrue
+        funext
+        contradiction
+      | succ n IH =>
+        cases dec (f Fin2.fz) (g Fin2.fz) with
+        | isFalse npf =>
+          apply isFalse
+          intros pf
+          have eq := congrFun pf (Fin2.fz)
+          apply npf eq
+        | isTrue hpf =>
+          let ftail (x : Fin2 n) : A := f (Fin2.fs x)
+          let gtail (x : Fin2 n) : A := g (Fin2.fs x)
+          cases IH ftail gtail with
+          | isTrue tpf =>
+            simp [ftail, gtail] at hpf
+            apply isTrue
+            funext x
+            cases x <;> try assumption
+            apply congrFun tpf _
+          | isFalse npf =>
+            simp [ftail, gtail] at npf
+            apply isFalse
+            intros pf
+            apply npf
+            funext
+            apply congrFun pf _
+
 
 
     inductive ABT : Nat → ABTArg → Type u where
@@ -73,8 +106,8 @@ section
     -- | termVecCons : ABT n (Arg s) → ABT n (Arg (Sig.depVec ss))
     --   → ABT n (Arg (Sig.depVec  (Vector3.cons s ss).toFun))
     -- Telescope is like a list, but we gain a binding for each element
-    | teleArgNil : ABT n (Arg (Sig.tele s))
-    | teleArgCons : ABT n Term' → ABT n (Arg (Sig.bind (Sig.tele s)) ) → ABT n (Arg (Sig.tele s))
+    | teleArgNil : ABT n (Arg (Sig.tele 0 s))
+    | teleArgCons : ABT n Term' → ABT n (Arg (Sig.bind (Sig.tele len s)) ) → ABT n (Arg (Sig.tele (Nat.succ len) s))
     -- Arg for a binding is a term with one more free variable
     | bind : ABT (Nat.succ n) (Arg s) → ABT n (Arg (ν s))
     -- nClosed is a "top level" binding with n parameters. Substitutions do not
@@ -82,6 +115,7 @@ section
     -- explicitly decompose them.
     -- This models e.g. branches of a top-level pattern match
     | nClosed : ABT (num) (Arg s) → ABT n (Arg (Sig.nClosed num s))
+    deriving DecidableEq
 
 
   abbrev abtVecLookup {sig : Op → List Sig} {tags : Fin2 len → Sig} :

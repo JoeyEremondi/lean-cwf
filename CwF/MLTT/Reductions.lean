@@ -11,12 +11,16 @@ open ABT
 
 
 class inductive Reduces : (s : Term n) → (t : outParam (Term n)) → Prop where
-| Reducesβ : Reduces ((λx∷ T ,, t) $ s) s
+| Reducesβ : Reduces ((λx∷ T ,, t) $ s) t /[ s /x]
 | Reducesπ1 : Reduces (π₁ ⟨x↦ s ,, t ∷x,, T ⟩ ) s
 | Reducesπ2 : Reduces (π₂ ⟨x↦ s ,, t ∷x,, T ⟩ ) t
-| ReducesMatch {vars : Vector3 ℕ numParams} {i : Fin2 numParams}
-  {θ : Subst sig n (Vector3.nth i vars)}
-  : Reduces (mkMatch (n := n) (vars := vars) t T xs lhss rhss) (by simp)
+| ReducesMatch {vars : Vector3 ℕ numBranch} {i : Fin2 numBranch}
+
+  {xs :  ((i : Fin2 numBranch) → PatCtx )}
+  {lhss : ((i : Fin2 numBranch) → (Vector3 (Term (xs i).fst) numScrut ))}
+  {rhss : ( (i : Fin2 numBranch) → Term (xs i).fst)}
+  {θ : Subst sig n (xs i).fst}
+  : Reduces (casesplit (ABT.termVec (by simp)) to T [[xs ,, lhss ↦ rhss]]) (rhss i)⦇θ⦈
   deriving Decidable
 
 attribute [instance] Reduces.Reducesβ Reduces.Reducesπ1 Reduces.Reducesπ2

@@ -12,7 +12,7 @@ inductive Head where
   | True | tt
   | False | exfalso
   | Tipe (ℓ : ℕ)
-  | Match {numBranch : ℕ} (vars : Vector3 ℕ numBranch)
+  | CaseSplit {numBranch : ℕ} (vars : Vector3 ℕ numBranch) (numScrut : ℕ)
   -- Not used for expressions, but to pass substitutions through pairs
   -- when defining e.g. preservation of substitution
   | RawSingle
@@ -42,11 +42,11 @@ def sig : Head → List Sig
 -- Then ith lhs is a telescope of patterns (terms)
 -- that's closed except for the (vars i) pattern variables.
 -- The rhs is a closed term except for the (vars i) pattern variables
-| Head.Match  vars
-  => [Sig.tele ◾
-      , ν (Sig.tele ◾)
+| Head.CaseSplit vars numScrut
+  => [◾vec numScrut
+      , ν ◾
       , Sig.depVec (fun i => Sig.nClosed 0 (preCtxSig (Vector3.nth i vars)) )
-      , Sig.depVec (fun i => Sig.nClosed (Vector3.nth i vars) (Sig.tele ◾))
+      , Sig.depVec (fun i => Sig.nClosed (Vector3.nth i vars) (◾vec numScrut))
       , Sig.depVec (fun i => Sig.nClosed (Vector3.nth i vars) ◾)]
 
 | Head.RawSingle => [◾]
@@ -57,8 +57,9 @@ def sig : Head → List Sig
 abbrev Term (n : ℕ) :  Type :=
   ABT sig n ABTArg.Term'
 
-abbrev PatCtx n :=
-  ABT sig 0 (ABTArg.Arg (preCtxSig n))
+abbrev PatCtx :=
+  (n : ℕ) × ABT sig 0 (ABTArg.Arg (preCtxSig n))
+
 -- set_option maxRecDepth 1000
 
 
@@ -106,30 +107,44 @@ notation "exfalso" T t => ABT.op Head.exfalso
 
 notation:50 " 𝒰 " ℓ => ABT.op (Head.Tipe ℓ) ABT.argsNil
 
-def Branch (n : ℕ) (numVars : ℕ) : Type :=
-  PatCtx numVars
-  × ABT sig n (ABTArg.Arg (Sig.nClosed numVars (Sig.tele ◾)))
-  × ABT sig n (ABTArg.Arg (Sig.nClosed numVars ◾))
+-- def Branch (n : ℕ) (numVars : ℕ) : Type :=
+--   PatCtx numVars
+--   × ABT sig n (ABTArg.Arg (Sig.nClosed numVars (Sig.tele ◾)))
+--   × ABT sig n (ABTArg.Arg (Sig.nClosed numVars ◾))
 
-abbrev mkMatch {numBranch : ℕ} {vars : Vector3 ℕ numBranch} (t : Term n) (T : Term (Nat.succ n))
-  (Ctxs : (i : Fin2 numBranch) → PatCtx (Vector3.nth i vars) )
-  (lhss : (i : Fin2 numBranch) → ABT sig (Vector3.nth i vars) (ABTArg.Arg (Sig.tele ◾)))
-  (rhss : (i : Fin2 numBranch) → ABT sig (Vector3.nth i vars) (ABTArg.Arg ◾))
-  : Term n := by
-    apply ABT.op (Head.Match vars)
-    apply ABT.argsCons (ABT.termArg t)
-    apply ABT.argsCons (ABT.bind (ABT.termArg T))
+structure CaseSplit (n : ℕ) : Type where
+  {numBranch : ℕ}
+  {numScrut : ℕ}
+  ts : Subst.Syntactic sig n numScrut
+  T : Term (Nat.succ n)
+  xs :  ((i : Fin2 numBranch) → PatCtx )
+  lhss : ((i : Fin2 numBranch) → (Vector3 (Term (xs i).fst) numScrut ))
+  rhss : ( (i : Fin2 numBranch) → Term (xs i).fst)
+
+
+
+abbrev mkCases (cs : CaseSplit n) : Term n := by
+    let vars := fun i => (cs.xs i).fst
+    apply ABT.op (Head.CaseSplit vars cs.numScrut)
+    apply ABT.argsCons cs.ts
+    apply ABT.argsCons (ABT.bind (ABT.termArg cs.T))
     apply ABT.argsCons (ABT.termVec _)
-    apply ABT.argsCons (ABT.termVec lhss)
-    apply ABT.argsCons (ABT.termVec rhss)
+    apply ABT.argsCons (ABT.termVec (fun branch => ABT.nClosed (ABT.termVec (ABT.termArg ∘ cs.lhss branch))))
+    apply ABT.argsCons (ABT.termVec (fun branch => ABT.nClosed (ABT.termArg (cs.rhss branch))))
     apply ABT.argsNil
     intros i
     constructor
-    apply Ctxs
+    apply (fun branch => (cs.xs branch).snd)
 
+--TODO prove that this is equivalent
 
-notation "match" t " to " T "[[" Ξ ",," lhss "↦" rhss "]]"  => mkMatch t T Ξ lhss rhss
+-- We use "casesplit" to avoid conflicts with "case" or "match" in lean
+notation "casesplit" ts " to " T "[[" xs ",," lhss "↦" rhss "]]"  => mkCases ⟨ts, T, xs, lhss, rhss⟩
 
+-- Substitutions never propogate into the branches of top level matches
+@[simp]
+theorem mkMatchSubst : (casesplit ts to T [[xs ,, lhss ↦ rhss]])⦇θ⦈ = casesplit ts⦇θ⦈ to T⦇θ.wk⦈ [[xs ,, lhss ↦ rhss]] := by
+  simp [mkCases]
 
 
 end MLTT

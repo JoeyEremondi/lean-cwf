@@ -58,7 +58,7 @@ namespace Subst
 
   @[local simp]
   theorem sub_rename_extL {ρ : Renaming b c} {θ : Subst sig a b} :
-    (wk θ) ⨟ (wk (ofRenaming ρ))  = wk (θ ⨟ ofRenaming ρ) := by
+    θ.wk ⨟ (ofRenaming ρ).wk  = (θ ⨟ ofRenaming ρ).wk := by
      funext x
      cases x <;> aesop_cat
      -- | fs x =>
@@ -69,7 +69,7 @@ namespace Subst
 
   @[local simp]
   theorem sub_rename_extR {ρ : Renaming a b} {θ : Subst sig b c} :
-   (wk (ofRenaming ρ)) ⨟ (wk θ) = wk (ofRenaming ρ ⨟  θ) := by
+   (ofRenaming ρ).wk ⨟ θ.wk = wk (ofRenaming ρ ⨟  θ) := by
      funext x
      cases x <;> try aesop_cat
      simp [comp, wk, ABT.map]
@@ -84,7 +84,7 @@ namespace Subst
    induction t <;> intros a b ρ θ <;> simp_all [ABT.map, Renaming.rename]
    aesop
 
-  lemma proj_wk : (wk θ⨟ proj) = (proj ⨟ θ) := by
+  lemma proj_wk : (θ.wk⨟ proj) = (proj ⨟ θ) := by
       funext x
       dsimp only [comp, ofRenaming]
       simp [wk, proj]
@@ -104,7 +104,7 @@ namespace Subst
 
   lemma wk_comp
     {θ : Subst sig a b}  {θ2 : Subst sig b c}
-    :  (wk θ ) ⨟ (wk θ2) = wk (θ ⨟ θ2) := by
+    :  θ.wk ⨟ θ2.wk = (θ ⨟ θ2).wk := by
     funext x
     cases x with simp [wk, comp]
     | fz => aesop
@@ -180,7 +180,7 @@ namespace Subst
 
   -- @[simp]
   theorem wk_def {θ : Subst sig a b} :
-    wk θ = ext (proj ⨟ θ) (ABT.var Fin2.fz)  := by
+    θ.wk = ext (proj ⨟ θ) (ABT.var Fin2.fz)  := by
     funext x
     simp [wk, ext, proj, comp, Renaming.shift]
     cases x <;> simp [substOfRenaming]
@@ -202,7 +202,7 @@ namespace Subst
 
   @[simp]
   theorem singleSubSub {s : Term sig (Nat.succ n)} {t : Term sig n} {θ : Subst sig m n}
-    : s/[ t /x]⦇θ⦈ = (s⦇wk θ⦈)/[t⦇θ⦈ /x] := by simp [wk_def, Subst.subst, ABT.map]
+    : s/[ t /x]⦇θ⦈ = (s⦇θ.wk⦈)/[t⦇θ⦈ /x] := by simp [wk_def, Subst.subst, ABT.map]
 
 
   -- We never want the user to have to think about renamings, generally
