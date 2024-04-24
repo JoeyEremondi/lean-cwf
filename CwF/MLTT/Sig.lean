@@ -22,7 +22,6 @@ inductive Head where
   | RawTele (len : ℕ)
   | RawVec (len : ℕ)
 
-def preCtxSig (n : ℕ) := Sig.depVec (fun (i : Fin2 n) => Sig.nClosed i.toNat ◾)
 
 def sig : Head → List Sig
 | Head.Pi => [◾, ν ◾ ]
@@ -46,10 +45,11 @@ def sig : Head → List Sig
 -- The rhs is a closed term except for the (vars i) pattern variables
 | Head.CaseSplit vars numScrut
   => [◾vec numScrut
-      , ν ◾
-      , Sig.depVec (fun i => Sig.nClosed 0 (preCtxSig (Vector3.nth i vars)) )
-      , Sig.depVec (fun i => Sig.nClosed (Vector3.nth i vars) (◾vec numScrut))
-      , Sig.depVec (fun i => Sig.nClosed (Vector3.nth i vars) ◾)]
+      , Sig.nClosed 0 (◾tele numScrut)
+      , Sig.nClosed numScrut ◾
+      , Sig.depVec _ (fun i => Sig.nClosed 0 (◾tele (Vector3.nth i vars)) )
+      , Sig.depVec _ (fun i => Sig.nClosed (Vector3.nth i vars) (◾vec numScrut))
+      , Sig.depVec _ (fun i => Sig.nClosed (Vector3.nth i vars) ◾)]
 
 | Head.RawSingle => [◾]
 | Head.RawPair x y => sig x ++  sig y
@@ -62,7 +62,7 @@ abbrev Term (n : ℕ) :  Type :=
   ABT sig n ABTArg.Term'
 
 abbrev PatCtx :=
-  (n : ℕ) × ABT sig 0 (ABTArg.Arg (preCtxSig n))
+  (n : ℕ) × ABT sig 0 (ABTArg.Arg (◾tele n))
 
 -- set_option maxRecDepth 1000
 
@@ -120,10 +120,11 @@ notation:50 " 𝒰 " ℓ => ABT.op (Head.Tipe ℓ) ABT.argsNil
 structure CaseSplit (n : ℕ) : Type where
   {numBranch : ℕ}
   {numScrut : ℕ}
-  ts : Subst.Syntactic sig n numScrut
-  T : Term (Nat.succ n)
+  ts : TermVec sig n numScrut
+  Ts : TermTele sig 0 numScrut
+  Tmotive : Term numScrut
   xs :  ((i : Fin2 numBranch) → PatCtx )
-  lhss : ((i : Fin2 numBranch) → (Subst.Syntactic sig (xs i).fst numScrut))
+  lhss : ((i : Fin2 numBranch) → (TermVec sig (xs i).fst numScrut))
   rhss : ( (i : Fin2 numBranch) → Term (xs i).fst)
 
 
@@ -132,7 +133,8 @@ abbrev mkCases (cs : CaseSplit n) : Term n := by
     let vars := fun i => (cs.xs i).fst
     apply ABT.op (Head.CaseSplit vars cs.numScrut)
     apply ABT.argsCons cs.ts
-    apply ABT.argsCons (ABT.bind (ABT.termArg cs.T))
+    apply ABT.argsCons (ABT.nClosed cs.Ts)
+    apply ABT.argsCons (ABT.nClosed (ABT.termArg cs.Tmotive))
     apply ABT.argsCons (ABT.termVec _)
     apply ABT.argsCons (ABT.termVec (fun branch => ABT.nClosed (ABT.termVec (ABT.termArg ∘ (Subst.syntacticEquiv.toFun (cs.lhss branch))))))
     apply ABT.argsCons (ABT.termVec (fun branch => ABT.nClosed (ABT.termArg (cs.rhss branch))))
@@ -144,11 +146,12 @@ abbrev mkCases (cs : CaseSplit n) : Term n := by
 --TODO prove that this is equivalent
 
 -- We use "casesplit" to avoid conflicts with "case" or "match" in lean
-notation "casesplit" ts " to " T "[[" xs ",," lhss "↦" rhss "]]"  => mkCases ⟨ts, T, xs, lhss, rhss⟩
+notation "casesplit" ts "∷" Ts " to " Tmotive "[[" xs ",," lhss "↦" rhss "]]"  => mkCases ⟨ts, Ts, Tmotive, xs, lhss, rhss⟩
 
 -- Substitutions never propogate into the branches of top level matches
 @[simp]
-theorem mkMatchSubst : (casesplit ts to T [[xs ,, lhss ↦ rhss]])⦇θ⦈ = casesplit ts⦇θ⦈ to T⦇θ.wk⦈ [[xs ,, lhss ↦ rhss]] := by
+theorem mkMatchSubst : (casesplit ts ∷ Ts to T [[xs ,, lhss ↦ rhss]])⦇θ⦈ = casesplit ts⦇θ⦈ ∷ Ts to T [[xs ,, lhss ↦ rhss]]
+  := by
   simp [mkCases]
 
 

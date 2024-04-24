@@ -10,6 +10,12 @@ import CwF.MLTT.Reductions
 namespace MLTT
 open ABT
 
+-- We leave this completely unspecified. We'll refine what it means later
+class IsCover {numBranch} {numScrut}
+  (Ts : TermTele sig 0 numScrut) (xs : ((i : Fin2 numBranch) → PatCtx ))
+  (lhss : (i : Fin2 numBranch) → (TermVec sig (xs i).fst numScrut)) where
+
+
 --A context over n variables is a list of n variables, where each can depend on the last
 inductive PreCtx : ℕ → Type where
   | ctxNil : PreCtx 0
@@ -40,7 +46,13 @@ def snocTele {len : ℕ} : {m : ℕ} → (Γ : PreCtx m) →  (Ts : ABT sig m (A
         cases ABT.abtVecLookup Ts (Fin2.fs i)
         assumption
 
+def ofTele {len : ℕ} (Ts : TermTele sig 0 len) : PreCtx len := by
+  let ret := snocTele ⬝ Ts
+  simp at ret
+  apply ret
+
 end PreCtx
+infixr:80 "<>" => PreCtx.snocTele
 
 instance {n : ℕ} : GetElem (PreCtx n) (Fin2 n) (Term n) (fun _ _ => True) where
   getElem Γ x _ := PreCtx.lookup Γ x
@@ -202,6 +214,13 @@ section
     (Γ ⊢ t ∷[ Head.Sigma ]∈ (x∷ S ,, T))
     →-----------------------------
     (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
+
+  | MatchTy {Γ : PreCtx n} {Ts : TermTele sig 0 numScrut} :
+      [IsCover Ts xs lhss]
+    → (Γ ⊢ (Renaming.fromClosed Ts) ∋∷[ numScrut ] ts)
+    → (∀ i, (PreCtx.ofTele (xs i).snd) ⊢ T⦇Subst.syntacticEquiv.toFun (lhss i)⦈ ∋∷ (rhss i) )
+    →-------------------------------
+    (Γ ⊢ casesplit ts ∷ Ts to Tmotive [[xs ,, lhss ↦ rhss  ]] ∷∈ Tmotive⦇Subst.syntacticEquiv.toFun ts⦈)
 
 
   --

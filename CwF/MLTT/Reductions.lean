@@ -15,8 +15,8 @@ class inductive Reduces : (s : Term n) → (t : outParam (Term n)) → Prop wher
 | Reducesπ1 : Reduces (π₁ ⟨x↦ s ,, t ∷x,, T ⟩ ) s
 | Reducesπ2 : Reduces (π₂ ⟨x↦ s ,, t ∷x,, T ⟩ ) t
 | ReducesMatch
-  {θ : Subst sig n (xs i).fst}
-  : Reduces (casesplit (lhss i)⦇θ⦈ to T [[xs ,, lhss ↦ rhss]]) (rhss i)⦇θ⦈
+  {θmatch : Subst sig n (xs i).fst}
+  : Reduces (casesplit (lhss i)⦇θmatch⦈ ∷ Ts to T [[xs ,, lhss ↦ rhss]]) (rhss i)⦇θmatch⦈
   deriving Decidable
 
 --Useful tool for proving properties about reuductions
@@ -29,12 +29,18 @@ attribute [instance] Reduces.Reducesβ Reduces.Reducesπ1 Reduces.Reducesπ2
 theorem substPreserveRed {s t : Term n}
   (red : Reduces s t) : ∀ (θ : Subst sig m n), Reduces s⦇θ⦈ t⦇θ⦈ := by
   intros θ
-  cases red <;>
+  cases red with
     (try  unfold_subst
     <;> simp [Subst.wk_def]
     <;>  (try constructor ; done)
     <;> (try apply reduces_eq <;> aesop_cat)
     <;> done)
+  | @ReducesMatch numBranch xs numScrut lhss T rhss i θmatch  =>
+    simp [mkMatchSubst]
+    rw [mkMatchSubst]
+    simp
+    constructor
+
 
 
 -- instance {n : ℕ} {t : Term n} : Decidable (∃x, Reduces t x) := by
@@ -70,6 +76,7 @@ class inductive DefEq : ∀ {n : ℕ} {tag : ABTArg}, (s t : ABT.ABT sig n tag) 
   → DefEq (n := n) s t → DefEq (n := n) ss ts → DefEq (ABT.argsCons (h := tag) (t := as) s ss) (ABT.argsCons t ts)
 | CongrBind : DefEq s t →  DefEq (ABT.bind s) (ABT.bind t)
 | CongrTerm : DefEq s t →  DefEq (ABT.termArg s) (ABT.termArg t)
+| CongrVec : (∀ {i}, DefEq (f i) (g i)) →  DefEq (ABT.termVec f) (ABT.termVec g)
 | Refl : DefEq s s
 | Symm : {s t : Term n} → DefEq s t → DefEq t s
 | Trans : {s t : Term n} → DefEq s t → DefEq t u → DefEq s u

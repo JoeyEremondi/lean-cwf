@@ -19,7 +19,7 @@ end Vector3
 
 inductive Sig : Type where
 | plain : Sig
-| depVec : {len : ℕ} → (Fin2 len → Sig) → Sig
+| depVec : (len : ℕ) → (Fin2 len → Sig) → Sig
 | list : Sig → Sig
 | bind : Sig → Sig
 | nClosed : ℕ → Sig → Sig
@@ -72,7 +72,7 @@ section
     -- to have the same length.
     -- We allow the signature to depend on the index of the vector
     | termVec : ((i : Fin2 len) → ABT n (Arg (ss i)))
-      → ABT n (Arg (Sig.depVec ss))
+      → ABT n (Arg (Sig.depVec _ ss))
     -- | termVecNil : ABT n (Arg (Sig.depVec Vector3.nil.toFun))
     -- | termVecCons : ABT n (Arg s) → ABT n (Arg (Sig.depVec ss))
     --   → ABT n (Arg (Sig.depVec  (Vector3.cons s ss).toFun))
@@ -90,7 +90,7 @@ section
 
 
   abbrev abtVecLookup {sig : Op → List Sig} {tags : Fin2 len → Sig} :
-    ABT sig n (Arg (Sig.depVec tags))
+    ABT sig n (Arg (Sig.depVec _ tags))
     → (i : Fin2 len)
     → ABT sig n (Arg (tags i)) := by
     intros v i
@@ -102,7 +102,7 @@ end
 open ABT
 
 def vecEquiv {ss : Fin2 len → Sig} :
-  ABT sig n (ABTArg.Arg (Sig.depVec ss))
+  ABT sig n (ABTArg.Arg (Sig.depVec _ ss))
   ≃ ((i : Fin2 len) → ABT sig n (ABTArg.Arg (ss i))) where
   toFun ts := by
     cases ts
@@ -131,11 +131,18 @@ def vecNil : TermVec sig n 0 := depVecNil
 def vecCons (h : Term sig n) : (ts : TermVec sig n len) → TermVec sig n (Nat.succ len)
 | termVec ts => termVec (Fin2.cases' (termArg h) ts)
 
-abbrev bindN : (i : Fin2 n) → Sig → Sig
-| Fin2.fz, s => s
-| Fin2.fs n, s => Sig.bind (bindN n s)
-notation "◾tele" n => (Sig.depVec (len := n) (fun i => bindN i ◾))
+abbrev nBinds : (i : ℕ) → Sig → Sig
+| Nat.zero, s => s
+| Nat.succ n, s => Sig.bind (nBinds n s)
+notation "◾tele" n => (Sig.depVec (len := n) (fun i => nBinds (Fin2.toNat i) ◾))
 
+abbrev bindN : (i : ℕ) → ABT sig (n + i) (ABTArg.Arg s) → ABT sig n (ABTArg.Arg (nBinds i s))
+| Nat.zero, t => t
+| Nat.succ i, t => ABT.bind (bindN i (by
+        rw [Nat.add_succ] at t
+        rw [Nat.succ_add]
+        apply t
+  ))
 
 def TermTele (sig : Op → List Sig) (n len : ℕ) := ABT sig n (ABTArg.Arg (◾tele len))
 

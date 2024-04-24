@@ -51,7 +51,8 @@ namespace Subst
 
 --A substitution is just a length-n vector of terms with m variables
 --So we can internalize this into our ABT
-abbrev Syntactic (sig : Op → List Sig) (m n : ℕ) := ABT sig m (ABTArg.Arg (◾vec n))
+--TODO avoid duplicate names?
+-- abbrev Syntactic (sig : Op → List Sig) (m n : ℕ) := TermVec sig m n
 
 end Subst
 
@@ -74,7 +75,7 @@ macro "unfold_subst_at" hyp:Lean.Parser.Tactic.locationHyp : tactic => `(tactic|
 
 namespace Subst
 -- Syntactic substitutions are equivalent to substitutions as functions
-def syntacticEquiv : Subst.Syntactic sig m n ≃ Subst sig m n where
+def syntacticEquiv : TermVec sig m n ≃ Subst sig m n where
     toFun θ i :=
       match abtVecLookup θ i with
       | ABT.termArg t => t
@@ -94,7 +95,7 @@ def syntacticEquiv : Subst.Syntactic sig m n ≃ Subst sig m n where
       simp
 
 -- Composition of syntactic substitutions is just applying one substitution to the other
-theorem syntaxSubComp {θ1 : Subst sig a b} {θ2 : Subst.Syntactic sig b c}
+theorem syntaxSubComp {θ1 : Subst sig a b} {θ2 : TermVec sig b c}
   : θ1 ⨟ (syntacticEquiv.toFun θ2) = syntacticEquiv.toFun (θ2⦇θ1⦈) := by
   funext i
   let (ABT.termVec f) := θ2

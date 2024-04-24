@@ -29,6 +29,9 @@ namespace Renaming
 
   def shift  (t : ABT sig m ty) : ABT sig (Nat.succ m) ty :=
     rename Fin2.fs t
+
+  def fromClosed (t : ABT sig 0 ty) : ABT sig n ty := by
+    induction n <;> (try apply shift) <;> assumption
 end Renaming
 
 notation:max t "⦇" ρ "⦈ᵣ" => Renaming.rename ρ t
