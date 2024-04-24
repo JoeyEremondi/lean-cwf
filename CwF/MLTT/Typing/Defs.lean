@@ -48,16 +48,19 @@ instance {n : ℕ} : GetElem (PreCtx n) (Fin2 n) (Term n) (fun _ _ => True) wher
 -- lemma rename_lookup {m n : ℕ} {Δ : PreCtx m} {Γ : PreCtx n}
 
 inductive Mode :=
-  | Synth | Check | CheckType | SynthLevel | CheckHead (h : Head) | SynthTele (n : ℕ)
+  | Synth | Check | CheckType | SynthLevel | CheckHead (h : Head)
+  | CheckTele (n : ℕ)
+  | IsTele (n : ℕ)
 
 
 def inputs : Mode → Head
 | Mode.Synth => Head.RawSingle
-| Mode.Check => Head.RawPair
+| Mode.Check => Head.RawPair Head.RawSingle Head.RawSingle
 | Mode.CheckType => Head.RawSingle
 | Mode.CheckHead _ => Head.RawSingle
 | Mode.SynthLevel => Head.RawSingle
-| Mode.SynthTele n => Head.RawVec n
+| Mode.CheckTele n => Head.RawPair (Head.RawVec n) (Head.RawTele n)
+| Mode.IsTele n => Head.RawTele n
 
 @[inline, reducible]
 abbrev Inputs (n : ℕ) (md : Mode) : Type :=
@@ -69,7 +72,8 @@ def outputs : Mode → Head
 | Mode.CheckType => Head.Nothing
 | Mode.CheckHead h => h
 | Mode.SynthLevel => Head.RawLevel
-| Mode.SynthTele n => Head.RawTele n
+| Mode.CheckTele n => Head.Nothing
+| Mode.IsTele n => Head.Nothing
 
 abbrev Outputs (n : ℕ) (md : Mode) : Type :=
   ABT sig n (ABTArg.Args (sig (outputs md)))
@@ -84,6 +88,9 @@ section
   local notation Γ " ⊢ "  t "∷[" h "]∈" Ts => Derivation Γ (Mode.CheckHead h) (ABT.singleton t) Ts
   local notation Γ " ⊢ " "𝒰∋" T  => Derivation Γ (Mode.CheckType) (ABT.singleton T) ABT.argsNil
   local notation Γ " ⊢ " T "∈𝒰" ℓ  => Derivation Γ (Mode.SynthLevel) (ABT.singleton T) (ABT.fromNat ℓ)
+  local notation Γ " ⊢ " Ts "∋∷[" n "] " ts
+    => Derivation Γ (Mode.CheckTele n) (ABT.argsCons ts (ABT.argsCons Ts argsNothing)) ABT.argsNil
+  local notation Γ " ⊢ " "𝒰∋[" n "]" T  => Derivation Γ (Mode.IsTele n) (ABT.argsCons T ABT.argsNil) ABT.argsNil
   class inductive Derivation :
     {n : ℕ}
     → PreCtx n
@@ -118,6 +125,32 @@ section
     → (eq : S ≡ T)
     → -----------------------------
       (Γ ⊢ T ∋∷ t)
+
+  -- The empty telescope is well typed
+  | IsTeleNil {Γ : PreCtx n} :
+  ---------------------
+    (Γ ⊢ 𝒰∋[0] [[]] )
+
+  -- Well-formed types extend well-formed telescopes
+  | IsTeleCons :
+    (Γ ⊢ 𝒰∋ T)
+  → ((Γ▸T) ⊢ 𝒰∋[len] Ts)
+  →--------------------
+    (Γ ⊢ 𝒰∋[Nat.succ len] [[x∷ T,, Ts ]] )
+
+  -- Well formed environments (substitutions)
+  -- Empty env has empty telescope type
+  | EnvCheckNil {Γ : PreCtx n} :
+  ---------------------
+    (Γ ⊢ [[]] ∋∷[ 0 ] [[]] )
+
+  --Vector extension typed like a dependent pair
+  | EnvCheckCons {Γ : PreCtx n } :
+      (Γ ⊢ S ∋∷ s)
+    → ((Γ▸S) ⊢ 𝒰∋[len] Ts)
+    → (Γ ⊢ Ts/[s /x] ∋∷[ len ] ts )
+    →-----------------------------
+    (Γ ⊢  [[x∷ S,, Ts]] ∋∷[Nat.succ len] (s ∷v ts) )
 
   -- Variables synthesize their types from the context
   | VarSynth  :
@@ -170,6 +203,7 @@ section
     →-----------------------------
     (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
 
+
   --
   -- | CaseSplit
   -- ----------------------------------
@@ -186,6 +220,9 @@ notation Γ " ⊢ " T  " ∋∷ " t => Derivation Γ Mode.Check (ABT.pair t T) A
 notation Γ " ⊢ "  t "∷[" h "]∈" Ts => Derivation Γ (Mode.CheckHead h) (ABT.singleton t) Ts
 notation Γ " ⊢ " "𝒰∋" T  => Derivation Γ (Mode.CheckType) (ABT.singleton T) ABT.argsNil
 notation Γ " ⊢ " T "∈𝒰" ℓ  => Derivation Γ (Mode.SynthLevel) (ABT.singleton T) (ABT.numLit ℓ)
+notation Γ " ⊢ " Ts "∋∷[" n "] " ts
+  => Derivation Γ (Mode.CheckTele n) (ABT.argsCons ts (ABT.argsCons Ts ABT.argsNothing)) ABT.argsNil
+notation Γ " ⊢ " "𝒰∋[" n "]" T  => Derivation Γ (Mode.IsTele n) (ABT.argsCons T ABT.argsNil) ABT.argsNil
 
 -- notation Γ " ⊢ " i " ↪[" md "] " o  => Derivation Γ md i o
 

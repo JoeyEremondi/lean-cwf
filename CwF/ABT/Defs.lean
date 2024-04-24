@@ -89,9 +89,6 @@ section
 
 
 
-
-
-
   abbrev abtVecLookup {sig : Op → List Sig} {tags : Fin2 len → Sig} :
     ABT sig n (Arg (Sig.depVec tags))
     → (i : Fin2 len)
@@ -104,6 +101,18 @@ end
 
 open ABT
 
+def vecEquiv {ss : Fin2 len → Sig} :
+  ABT sig n (ABTArg.Arg (Sig.depVec ss))
+  ≃ ((i : Fin2 len) → ABT sig n (ABTArg.Arg (ss i))) where
+  toFun ts := by
+    cases ts
+    assumption
+  invFun := ABT.termVec
+  left_inv f := by
+    cases f
+    rfl
+  right_inv f := by rfl
+
 
 
 abbrev Term (sig : Op → List Sig) (n : ℕ) := ABT sig n ABTArg.Term'
@@ -112,14 +121,34 @@ abbrev x0 : Term sig (Nat.succ n) := ABT.var Fin2.fz
 
 notation "◾vec" n => (Sig.depVec (len := n) (fun _ => ◾))
 
+def depVecNil : ABT sig n (ABTArg.Arg (Sig.depVec (len := 0) ss)) := by
+  apply termVec ; intros ; contradiction
+
+abbrev TermVec (sig : Op → List Sig) (n len : ℕ) := ABT sig n (ABTArg.Arg (◾vec len))
+
+def vecNil : TermVec sig n 0 := depVecNil
+
+def vecCons (h : Term sig n) : (ts : TermVec sig n len) → TermVec sig n (Nat.succ len)
+| termVec ts => termVec (Fin2.cases' (termArg h) ts)
+
 abbrev bindN : (i : Fin2 n) → Sig → Sig
 | Fin2.fz, s => s
 | Fin2.fs n, s => Sig.bind (bindN n s)
 notation "◾tele" n => (Sig.depVec (len := n) (fun i => bindN i ◾))
 
 
+def TermTele (sig : Op → List Sig) (n len : ℕ) := ABT sig n (ABTArg.Arg (◾tele len))
+
+def teleNil : TermTele sig n 0 := depVecNil
+
+def teleCons (h : Term sig n) (ts : TermTele sig (Nat.succ n) len)
+  :  TermTele sig n (Nat.succ len) :=
+  termVec (Fin2.cases' (termArg h) (fun i => ABT.bind (vecEquiv.toFun ts i)))
 
 
+notation "[[]]" => depVecNil
+notation "[[x∷ " T ",, " Ts "]]" => teleCons T Ts
+infixr:80 "∷v" => vecCons
 
 -- infixr:67 "∷" => argsCons
 -- notation:67 "∅" => argsNil

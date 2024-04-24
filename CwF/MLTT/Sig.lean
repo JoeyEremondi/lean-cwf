@@ -16,7 +16,7 @@ inductive Head where
   -- Not used for expressions, but to pass substitutions through pairs
   -- when defining e.g. preservation of substitution
   | RawSingle
-  | RawPair
+  | RawPair (x y : Head)
   | RawLevel
   | Nothing
   | RawTele (len : ℕ)
@@ -52,7 +52,7 @@ def sig : Head → List Sig
       , Sig.depVec (fun i => Sig.nClosed (Vector3.nth i vars) ◾)]
 
 | Head.RawSingle => [◾]
-| Head.RawPair => [◾, ◾]
+| Head.RawPair x y => sig x ++  sig y
 | Head.RawLevel => [Sig.numLit]
 | Head.RawTele len => [ ◾tele len ]
 | Head.RawVec len => [ ◾vec  len]
@@ -65,6 +65,7 @@ abbrev PatCtx :=
   (n : ℕ) × ABT sig 0 (ABTArg.Arg (preCtxSig n))
 
 -- set_option maxRecDepth 1000
+
 
 
 notation:50 "x∷" T ",," S =>
