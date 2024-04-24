@@ -10,7 +10,7 @@ import CwF.MLTT.Typing.Defs
 namespace MLTT
 open ABT
 
-
+variable [Coverage]
 
 section
   attribute [-simp] Subst.wkRenaming
@@ -83,6 +83,14 @@ section
         let eq := wf.changeCtx x
         simp [<- eq]
         constructor
+      | EnvCheckCons =>
+        unfold_rename
+        simp [Subst.renTeleCons]
+        skip
+        apply Derivation.EnvCheckCons
+        constructor <;> try assumption
+        simp
+      -- | _ => admit
 
       -- <;>
       --   ( intros m Δ ρ wf

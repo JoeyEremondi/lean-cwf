@@ -210,7 +210,49 @@ namespace Subst
   attribute [simp] substOfRenaming
   attribute [simp] ABT.map
 
+  @[simp]
+  theorem subVecNil : (depVecNil (ss := ss))⦇θ⦈ = depVecNil := by
+    simp [depVecNil]
+    funext
+    contradiction
+
+  @[simp]
+  theorem subVecCons : (ABT.vecCons h t)⦇θ⦈ = ABT.vecCons h⦇θ⦈ t⦇θ⦈ := by
+    simp [vecCons]
+    cases t
+    unfold_subst
+    funext i
+    simp [Fin2.cases']
+    cases i <;> simp
+
+  @[simp]
+  theorem subTeleCons : (ABT.teleCons h t)⦇θ⦈ = ABT.teleCons h⦇θ⦈ t⦇wk θ⦈ := by
+    simp [teleCons]
+    cases t
+    unfold_subst
+    funext i
+    simp [Fin2.cases']
+    cases i <;> simp
+    unfold_subst
+    rfl
+
+@[simp]
+  theorem renVecNil {θ : Renaming m n} : (depVecNil (sig := sig) (ss := ss))⦇θ⦈ᵣ = depVecNil := by
+    simp [depVecNil]
+    funext
+    contradiction
+
+  @[simp]
+  theorem renVecCons : (ABT.vecCons h t)⦇θ⦈ᵣ = ABT.vecCons h⦇θ⦈ᵣ t⦇θ⦈ᵣ := by
+    simp [substOfRenaming]
+
+  @[simp]
+  theorem renTeleCons : (ABT.teleCons h t)⦇θ⦈ᵣ = ABT.teleCons h⦇θ⦈ᵣ t⦇Renaming.wk θ⦈ᵣ := by
+    simp [substOfRenaming]
+
+
 end Subst
+
 
 -- def weaken (t : ABT sig n a) : ABT sig (n+1) a := by
 --   cases t <;> try (constructor <;> aesop) <;> try (apply Fin2.fs)

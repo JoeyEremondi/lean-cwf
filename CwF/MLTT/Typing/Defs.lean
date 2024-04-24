@@ -11,10 +11,12 @@ namespace MLTT
 open ABT
 
 -- We leave this completely unspecified. We'll refine what it means later
-class IsCover {numBranch} {numScrut}
+class Coverage : Type where
+  IsCover {numBranch} {numScrut}
   (Ts : TermTele sig 0 numScrut) (xs : ((i : Fin2 numBranch) → PatCtx ))
-  (lhss : (i : Fin2 numBranch) → (TermVec sig (xs i).fst numScrut)) where
+  (lhss : (i : Fin2 numBranch) → (TermVec sig (xs i).fst numScrut)) : Prop
 
+variable [Coverage]
 
 --A context over n variables is a list of n variables, where each can depend on the last
 inductive PreCtx : ℕ → Type where
@@ -101,7 +103,7 @@ section
   local notation Γ " ⊢ " "𝒰∋" T  => Derivation Γ (Mode.CheckType) (ABT.singleton T) ABT.argsNil
   local notation Γ " ⊢ " T "∈𝒰" ℓ  => Derivation Γ (Mode.SynthLevel) (ABT.singleton T) (ABT.fromNat ℓ)
   local notation Γ " ⊢ " Ts "∋∷[" n "] " ts
-    => Derivation Γ (Mode.CheckTele n) (ABT.argsCons ts (ABT.argsCons Ts argsNothing)) ABT.argsNil
+    => Derivation Γ (Mode.CheckTele n) (ABT.argsCons ts (ABT.argsCons Ts ABT.argsNil)) ABT.argsNil
   local notation Γ " ⊢ " "𝒰∋[" n "]" T  => Derivation Γ (Mode.IsTele n) (ABT.argsCons T ABT.argsNil) ABT.argsNil
   class inductive Derivation :
     {n : ℕ}
@@ -216,7 +218,7 @@ section
     (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
 
   | MatchTy {Γ : PreCtx n} {Ts : TermTele sig 0 numScrut} :
-      [IsCover Ts xs lhss]
+      Coverage.IsCover Ts xs lhss
     → (Γ ⊢ (Renaming.fromClosed Ts) ∋∷[ numScrut ] ts)
     → (∀ i, (PreCtx.ofTele (xs i).snd) ⊢ T⦇Subst.syntacticEquiv.toFun (lhss i)⦈ ∋∷ (rhss i) )
     →-------------------------------
@@ -240,7 +242,7 @@ notation Γ " ⊢ "  t "∷[" h "]∈" Ts => Derivation Γ (Mode.CheckHead h) (A
 notation Γ " ⊢ " "𝒰∋" T  => Derivation Γ (Mode.CheckType) (ABT.singleton T) ABT.argsNil
 notation Γ " ⊢ " T "∈𝒰" ℓ  => Derivation Γ (Mode.SynthLevel) (ABT.singleton T) (ABT.numLit ℓ)
 notation Γ " ⊢ " Ts "∋∷[" n "] " ts
-  => Derivation Γ (Mode.CheckTele n) (ABT.argsCons ts (ABT.argsCons Ts ABT.argsNothing)) ABT.argsNil
+  => Derivation Γ (Mode.CheckTele n) (ABT.argsCons ts (ABT.argsCons Ts ABT.argsNil)) ABT.argsNil
 notation Γ " ⊢ " "𝒰∋[" n "]" T  => Derivation Γ (Mode.IsTele n) (ABT.argsCons T ABT.argsNil) ABT.argsNil
 
 -- notation Γ " ⊢ " i " ↪[" md "] " o  => Derivation Γ md i o
