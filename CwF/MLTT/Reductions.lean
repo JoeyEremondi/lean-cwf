@@ -1,6 +1,6 @@
 
 
-import CwF.ABT.Defs
+import CwF.ABT.ABT
 import CwF.ABT.Subst
 import CwF.ABT.SubstProperties
 import CwF.MLTT.Sig

@@ -1,5 +1,5 @@
 
-import CwF.ABT.Defs
+import CwF.ABT.ABT
 import CwF.ABT.Subst
 import CwF.ABT.Renaming
 import CwF.ABT.SubstProperties

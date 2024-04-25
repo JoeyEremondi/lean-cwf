@@ -5,7 +5,7 @@ import Mathlib.Logic.Unique
 import Mathlib.CategoryTheory.Category.Basic
 import Init.Tactics
 
-import CwF.ABT.Defs
+import CwF.ABT.ABT
 import CwF.Util
 
 
@@ -30,13 +30,17 @@ namespace Renaming
   def shift  (t : ABT sig m ty) : ABT sig (Nat.succ m) ty :=
     rename Fin2.fs t
 
-  def fromClosed (t : ABT sig 0 ty) : ABT sig n ty := by
-    induction n <;> (try apply shift) <;> assumption
+  -- 0 is the initial context, so we can rename things with 0 variables to anything
+  def fromClosed : Renaming m 0 := by
+    intros x ; contradiction
+
 end Renaming
 
 notation:max t "⦇" ρ "⦈ᵣ" => Renaming.rename ρ t
 
 namespace Renaming
+
+
   theorem id_def {n : ℕ} : (fun x => x) = id (n := n) := by
     unfold id
     rfl
@@ -74,6 +78,13 @@ namespace Renaming
   macro "unfold_rename" : tactic => `(tactic| (unfold Renaming.rename ; try simp [ren_rewrite]))
   macro "unfold_rename_at" hyp:Lean.Parser.Tactic.locationHyp : tactic => `(tactic| (unfold Renaming.rename at $hyp ; try simp [ren_rewrite] at $hyp))
   macro "unfold_rename_all"  : tactic => `(tactic| (unfold Renaming.rename at * ; try simp [ren_rewrite] at *))
+
+
+
+  --Renamings have no effect on closed terms, so they're all equivalent to "introduce unused vars"
+  @[simp]
+  theorem fromClosedRen {ρ0 : Renaming m 0} : ρ0 =  fromClosed := by
+    funext i ; contradiction
 
 
 end Renaming

@@ -4,7 +4,7 @@ import Mathlib.Logic.Unique
 import Mathlib.CategoryTheory.Category.Basic
 import Mathlib.Init.Data.Nat.Lemmas
 
-import CwF.ABT.Defs
+import CwF.ABT.ABT
 import CwF.ABT.Renaming
 import CwF.ABT.Subst
 
@@ -251,6 +251,13 @@ namespace Subst
   @[simp]
   theorem renTeleCons : (ABT.teleCons h t)⦇θ⦈ᵣ = ABT.teleCons h⦇θ⦈ᵣ t⦇Renaming.wk θ⦈ᵣ := by
     simp [substOfRenaming]
+
+
+  --Substitutions have no effect on closed terms, so they're all equivalent
+  --to "introduce unused variables"
+  @[simp]
+  theorem fromClosedSubst  {θ0 : Subst sig n 0} : θ0  = ofRenaming fromClosed := by
+    funext i ; contradiction
 
 
 end Subst

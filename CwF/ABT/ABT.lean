@@ -61,10 +61,6 @@ section
 
     -- Arg for ◾ is just a term
     | termArg : ABT n Term' → ABT n (Arg ◾)
-    -- Arg for lhsRhs is just two terms with the given signatures
-    -- Useful when we want to define binidings on two things in parallel.
-    -- e.g. for defining pattern matching
-    -- | argLhsRhs : ABT n (Arg lhs) → ABT n (Arg rhs) → ABT n (Arg (Sig.lhsRhs lhs rhs))
     -- Arg for list is zero or more terms
     | termListNil : ABT n (Arg (Sig.list s))
     | termListCons : ABT n (Arg s) → ABT n (Arg (Sig.list s)) → ABT n (Arg (Sig.list s))
@@ -73,13 +69,6 @@ section
     -- We allow the signature to depend on the index of the vector
     | termVec : ((i : Fin2 len) → ABT n (Arg (ss i)))
       → ABT n (Arg (Sig.depVec _ ss))
-    -- | termVecNil : ABT n (Arg (Sig.depVec Vector3.nil.toFun))
-    -- | termVecCons : ABT n (Arg s) → ABT n (Arg (Sig.depVec ss))
-    --   → ABT n (Arg (Sig.depVec  (Vector3.cons s ss).toFun))
-    -- Telescope is like a list, but we gain a binding for each element
-    -- | teleArgNil : ABT n (Arg (Sig.tele 0 s))
-    -- | teleArgCons : ABT n Term' → ABT n (Arg (Sig.bind (Sig.tele len s)) ) → ABT n (Arg (Sig.tele (Nat.succ len) s))
-    -- Arg for a binding is a term with one more free variable
     | bind : ABT (Nat.succ n) (Arg s) → ABT n (Arg (ν s))
     -- nClosed is a "top level" binding with n parameters. Substitutions do not
     -- propagate into nClosed. The only way to substitute in them is to
@@ -227,7 +216,7 @@ abbrev map {V : ℕ → Type u}
 -- Helpers for encoding, easier notation, etc
 abbrev pair (s t : ABT sig n ABTArg.Term') : ABT sig n (ABTArg.Args [◾, ◾]) :=
   argsCons (termArg s) (argsCons (termArg t) argsNil)
-abbrev singleton (s : ABT sig n ABTArg.Term') : ABT sig n (ABTArg.Args [◾]) :=
+notation "singleton" s =>
   argsCons (termArg s) argsNil
 abbrev fromNat (x : ℕ) : ABT sig n (ABTArg.Args [Sig.numLit]) :=
   argsCons (numLit x) argsNil

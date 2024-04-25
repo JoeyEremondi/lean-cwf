@@ -2,7 +2,7 @@
 import Mathlib.Data.Fin.Fin2
 import Mathlib.Logic.Unique
 import Mathlib.CategoryTheory.Category.Basic
-import CwF.ABT.Defs
+import CwF.ABT.ABT
 import CwF.ABT.Renaming
 
 universe u v'
@@ -95,8 +95,8 @@ def syntacticEquiv : TermVec sig m n ≃ Subst sig m n where
       simp
 
 -- Composition of syntactic substitutions is just applying one substitution to the other
-theorem syntaxSubComp {θ1 : Subst sig a b} {θ2 : TermVec sig b c}
-  : θ1 ⨟ (syntacticEquiv.toFun θ2) = syntacticEquiv.toFun (θ2⦇θ1⦈) := by
+theorem syntacticSubComp {θ1 : Subst sig a b} {θ2 : TermVec sig b c}
+  : θ1 ⨟ (syntacticEquiv θ2) = syntacticEquiv (θ2⦇θ1⦈) := by
   funext i
   let (ABT.termVec f) := θ2
   unfold_subst

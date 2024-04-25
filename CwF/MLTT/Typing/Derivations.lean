@@ -1,5 +1,5 @@
 
-import CwF.ABT.Defs
+import CwF.ABT.ABT
 import CwF.ABT.Subst
 import CwF.ABT.Renaming
 import CwF.ABT.SubstProperties
@@ -97,11 +97,11 @@ abbrev Outputs (n : ℕ) (md : Mode) : Type :=
 
 section
   set_option hygiene false
-  local notation Γ " ⊢ " t " ∷∈ " T => Derivation Γ Mode.Synth (ABT.singleton t) (ABT.singleton T)
+  local notation Γ " ⊢ " t " ∷∈ " T => Derivation Γ Mode.Synth (singleton t) (singleton T)
   local notation Γ " ⊢ " T  " ∋∷ " t => Derivation Γ Mode.Check (ABT.pair t T) ABT.argsNil
-  local notation Γ " ⊢ "  t "∷[" h "]∈" Ts => Derivation Γ (Mode.CheckHead h) (ABT.singleton t) Ts
-  local notation Γ " ⊢ " "𝒰∋" T  => Derivation Γ (Mode.CheckType) (ABT.singleton T) ABT.argsNil
-  local notation Γ " ⊢ " T "∈𝒰" ℓ  => Derivation Γ (Mode.SynthLevel) (ABT.singleton T) (ABT.fromNat ℓ)
+  local notation Γ " ⊢ "  t "∷[" h "]∈" Ts => Derivation Γ (Mode.CheckHead h) (singleton t) Ts
+  local notation Γ " ⊢ " "𝒰∋" T  => Derivation Γ (Mode.CheckType) (singleton T) ABT.argsNil
+  local notation Γ " ⊢ " T "∈𝒰" ℓ  => Derivation Γ (Mode.SynthLevel) (singleton T) (ABT.fromNat ℓ)
   local notation Γ " ⊢ " Ts "∋∷[" n "] " ts
     => Derivation Γ (Mode.CheckTele n) (ABT.argsCons ts (ABT.argsCons Ts ABT.argsNil)) ABT.argsNil
   local notation Γ " ⊢ " "𝒰∋[" n "]" T  => Derivation Γ (Mode.IsTele n) (ABT.argsCons T ABT.argsNil) ABT.argsNil
@@ -218,10 +218,12 @@ section
     →-----------------------------
     (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
 
-  | MatchTy {Γ : PreCtx n} {Ts : TermTele sig 0 numScrut} :
+  | MatchTy {Γ : PreCtx n} {numScrut} {numBranches : ℕ} {ts} {Ts : TermTele sig 0 numScrut}
+                {Tmotive} {xs} {lhss : (i : Fin2 numBranches) → _} {rhss} :
+
       Coverage.IsCover Ts xs lhss
-    → (Γ ⊢ (Renaming.fromClosed Ts) ∋∷[ numScrut ] ts)
-    → (∀ i, (PreCtx.ofTele (xs i).snd) ⊢ T⦇Subst.syntacticEquiv.toFun (lhss i)⦈ ∋∷ (rhss i) )
+    → (Γ ⊢ (Ts⦇Renaming.fromClosed⦈ᵣ) ∋∷[ numScrut ] ts)
+    → (∀ i, (PreCtx.ofTele (xs i).snd) ⊢ Tmotive⦇Subst.syntacticEquiv.toFun (lhss i)⦈ ∋∷ (rhss i) )
     →-------------------------------
     (Γ ⊢ casesplit ts ∷ Ts to Tmotive [[xs ,, lhss ↦ rhss  ]] ∷∈ Tmotive⦇Subst.syntacticEquiv.toFun ts⦈)
 
@@ -235,13 +237,15 @@ section
 end
 open Derivation
 
+#check MatchTy
+
 -- Hygenic version of the notation
 set_option hygiene true
-notation Γ " ⊢ " t " ∷∈ " T => Derivation Γ Mode.Synth (ABT.singleton t) (ABT.singleton T)
+notation3 Γ " ⊢ " t " ∷∈ " T => Derivation Γ Mode.Synth (singleton t) (singleton T)
 notation Γ " ⊢ " T  " ∋∷ " t => Derivation Γ Mode.Check (ABT.pair t T) ABT.argsNil
-notation Γ " ⊢ "  t "∷[" h "]∈" Ts => Derivation Γ (Mode.CheckHead h) (ABT.singleton t) Ts
-notation Γ " ⊢ " "𝒰∋" T  => Derivation Γ (Mode.CheckType) (ABT.singleton T) ABT.argsNil
-notation Γ " ⊢ " T "∈𝒰" ℓ  => Derivation Γ (Mode.SynthLevel) (ABT.singleton T) (ABT.numLit ℓ)
+notation Γ " ⊢ "  t "∷[" h "]∈" Ts => Derivation Γ (Mode.CheckHead h) (singleton t) Ts
+notation Γ " ⊢ " "𝒰∋" T  => Derivation Γ (Mode.CheckType) (singleton T) ABT.argsNil
+notation Γ " ⊢ " T "∈𝒰" ℓ  => Derivation Γ (Mode.SynthLevel) (singleton T) (ABT.numLit ℓ)
 notation Γ " ⊢ " Ts "∋∷[" n "] " ts
   => Derivation Γ (Mode.CheckTele n) (ABT.argsCons ts (ABT.argsCons Ts ABT.argsNil)) ABT.argsNil
 notation Γ " ⊢ " "𝒰∋[" n "]" T  => Derivation Γ (Mode.IsTele n) (ABT.argsCons T ABT.argsNil) ABT.argsNil

@@ -1,10 +1,10 @@
-import CwF.ABT.Defs
+import CwF.ABT.ABT
 import CwF.ABT.Subst
 import CwF.ABT.Renaming
 import CwF.ABT.SubstProperties
 import CwF.MLTT.Sig
 import CwF.MLTT.Reductions
-import CwF.MLTT.Typing.Defs
+import CwF.MLTT.Typing.Derivations
 
 
 namespace MLTT
@@ -86,10 +86,15 @@ section
         unfold_rename
         simp [<- eq]
         constructor
-      | MatchTy _ tsTy tyBranch IHts _ =>
+      -- We have to handle match specially because it does werid stuff with top-level expressions
+      -- Should be simpler if we get Justus's rules working
+      | @MatchTy _ Γ numScrut numBranch ts Ts Tmotive xs lhss rhss iscover ty tyBranch IHts _ =>
         unfold_rename
         unfold_rename_at IHts
-        apply Derivation.MatchTy _ _ tyBranch
+        simp [Subst.substOfRenaming]
+        rw [Subst.syntacticSubComp]
+        rw [<- Subst.substOfRenaming]
+        constructor <;> try aesop_cat
       -- | _ => admit
 
       -- <;>
