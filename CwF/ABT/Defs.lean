@@ -155,6 +155,16 @@ def teleCons (h : Term sig n) (ts : TermTele sig (Nat.succ n) len)
   termVec (Fin2.cases' (termArg h) (fun i => ABT.bind (vecEquiv.toFun ts i)))
 
 
+def nClosedEquiv : ABT sig n (ABTArg.Arg (Sig.nClosed m s)) ≃ ABT sig m (ABTArg.Arg s) where
+  toFun x := by
+    cases x
+    assumption
+  invFun := ABT.nClosed
+  left_inv x := by
+    cases x
+    rfl
+  right_inv x := by rfl
+
 notation "[[]]" => depVecNil
 notation "[[x∷ " T ",, " Ts "]]" => teleCons T Ts
 infixr:80 "∷v" => vecCons

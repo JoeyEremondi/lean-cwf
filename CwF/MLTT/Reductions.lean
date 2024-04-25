@@ -4,6 +4,7 @@ import CwF.ABT.Defs
 import CwF.ABT.Subst
 import CwF.ABT.SubstProperties
 import CwF.MLTT.Sig
+import CwF.MLTT.Cases
 import Mathlib.Data.Vector3
 
 namespace MLTT
@@ -29,17 +30,12 @@ attribute [instance] Reduces.Reducesβ Reduces.Reducesπ1 Reduces.Reducesπ2
 theorem substPreserveRed {s t : Term n}
   (red : Reduces s t) : ∀ (θ : Subst sig m n), Reduces s⦇θ⦈ t⦇θ⦈ := by
   intros θ
-  cases red with
+  cases red <;>
     (try  unfold_subst
-    <;> simp [Subst.wk_def]
+    <;> (try simp [Subst.wk_def])
     <;>  (try constructor ; done)
     <;> (try apply reduces_eq <;> aesop_cat)
     <;> done)
-  | @ReducesMatch numBranch xs numScrut lhss T rhss i θmatch  =>
-    simp [mkMatchSubst]
-    rw [mkMatchSubst]
-    simp
-    constructor
 
 
 
