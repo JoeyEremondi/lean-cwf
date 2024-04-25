@@ -86,6 +86,10 @@ section
         unfold_rename
         simp [<- eq]
         constructor
+      | MatchTy _ tsTy tyBranch IHts _ =>
+        unfold_rename
+        unfold_rename_at IHts
+        apply Derivation.MatchTy _ _ tyBranch
       -- | _ => admit
 
       -- <;>
