@@ -24,7 +24,7 @@ set_option maxHeartbeats 1000000
 
 theorem subPreserveType  {Γ : PreCtx n} {md : Mode} {i : Inputs n md} {o : Outputs n md}
   (D : Derivation Γ md i o)  :
-  ∀ {m : ℕ} {Δ : PreCtx m}  {θ : Subst sig m n } [θwf : SubstWf Δ Γ θ],
+  ∀ {m : ℕ} {Δ : PreCtx m}  {θ : Subst m n } [θwf : SubstWf Δ Γ θ],
   (Derivation Δ (subMode md) (subIn md i o)⦇θ⦈ (subOut md i o)⦇θ⦈ ) := by
   induction D with
     ( intros m Δ θ θwf

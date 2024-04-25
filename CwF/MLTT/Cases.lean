@@ -10,7 +10,7 @@ namespace MLTT
 open ABT
 
 
-abbrev unCases (t : ABT sig n (ABTArg.Args (sig (Head.CaseSplit (numBranch := numBranch) vars numScrut))))
+abbrev unCases (t : ABT n (ABTArg.Args (sig (Head.CaseSplit (numBranch := numBranch) vars numScrut))))
   : CaseSplit n:= by
     simp [sig] at t
     cases t with

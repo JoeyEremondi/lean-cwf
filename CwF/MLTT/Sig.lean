@@ -59,11 +59,14 @@ def sig : Head → List Sig
 | Head.RawVec len => [ ◾vec  len]
 | Head.Nothing => []
 
-abbrev Term (n : ℕ) :  Type :=
-  ABT sig n ABTArg.Term'
+
+instance : Signature.{0} where
+  Op := Head
+  sig := sig
+
 
 abbrev PatCtx :=
-  (n : ℕ) × ABT sig 0 (ABTArg.Arg (◾tele n))
+  (n : ℕ) × ABT 0 (ABTArg.Arg (◾tele n))
 
 -- set_option maxRecDepth 1000
 
@@ -115,18 +118,18 @@ notation:50 " 𝒰 " ℓ => ABT.op (Head.Tipe ℓ) ABT.argsNil
 
 -- def Branch (n : ℕ) (numVars : ℕ) : Type :=
 --   PatCtx numVars
---   × ABT sig n (ABTArg.Arg (Sig.nClosed numVars (Sig.tele ◾)))
---   × ABT sig n (ABTArg.Arg (Sig.nClosed numVars ◾))
+--   × ABT n (ABTArg.Arg (Sig.nClosed numVars (Sig.tele ◾)))
+--   × ABT n (ABTArg.Arg (Sig.nClosed numVars ◾))
 
 
 structure CaseSplit (n : ℕ) : Type where
   {numBranch : ℕ}
   {numScrut : ℕ}
-  ts : TermVec sig n numScrut
-  Ts : TermTele sig 0 numScrut
+  ts : TermVec n numScrut
+  Ts : TermTele 0 numScrut
   Tmotive : Term numScrut
   xs :  ((i : Fin2 numBranch) → PatCtx )
-  lhss : ((i : Fin2 numBranch) → (TermVec sig (xs i).fst numScrut))
+  lhss : ((i : Fin2 numBranch) → (TermVec (xs i).fst numScrut))
   rhss : ( (i : Fin2 numBranch) → Term (xs i).fst)
 
 

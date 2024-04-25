@@ -16,7 +16,7 @@ class inductive Reduces : (s : Term n) → (t : outParam (Term n)) → Prop wher
 | Reducesπ1 : Reduces (π₁ ⟨x↦ s ,, t ∷x,, T ⟩ ) s
 | Reducesπ2 : Reduces (π₂ ⟨x↦ s ,, t ∷x,, T ⟩ ) t
 | ReducesMatch
-  {θmatch : Subst sig n (xs i).fst}
+  {θmatch : Subst n (xs i).fst}
   : Reduces (casesplit (lhss i)⦇θmatch⦈ ∷ Ts to T [[xs ,, lhss ↦ rhss]]) (rhss i)⦇θmatch⦈
   deriving Decidable
 
@@ -28,7 +28,7 @@ attribute [instance] Reduces.Reducesβ Reduces.Reducesπ1 Reduces.Reducesπ2
 
 
 theorem substPreserveRed {s t : Term n}
-  (red : Reduces s t) : ∀ (θ : Subst sig m n), Reduces s⦇θ⦈ t⦇θ⦈ := by
+  (red : Reduces s t) : ∀ (θ : Subst m n), Reduces s⦇θ⦈ t⦇θ⦈ := by
   intros θ
   cases red <;>
     (try  unfold_subst
@@ -60,15 +60,15 @@ theorem substPreserveRed {s t : Term n}
 --     | Proj₂ => simp
 
 
-class inductive DefEq : ∀ {n : ℕ} {tag : ABTArg}, (s t : ABT.ABT sig n tag) → Prop where
+class inductive DefEq : ∀ {n : ℕ} {tag : ABTArg}, (s t : ABT.ABT n tag) → Prop where
 | ApplyRed  : {s t : Term n} → Reduces s t → DefEq s t
--- | InContext  : (s t : Term n) → (C : ABT sig (Nat.succ n) tag)
+-- | InContext  : (s t : Term n) → (C : ABT (Nat.succ n) tag)
 --   → DefEq s t →  DefEq (C/[s /x]) (C/[ t /x])
-| CongrHead : {ss ts : ABT.ABT sig n (ABTArg.Args (sig h))}
+| CongrHead : {ss ts : ABT.ABT n (ABTArg.Args (sig h))}
   → DefEq ss ts → DefEq (ABT.op h ss) (ABT.op h ts)
 | CongrCons : ∀ {n : ℕ} {tag : Sig} {as : List Sig},
-  {s t : ABT.ABT sig n (ABTArg.Arg tag)}
-  → {ss ts : ABT.ABT sig n (ABTArg.Args as)}
+  {s t : ABT.ABT n (ABTArg.Arg tag)}
+  → {ss ts : ABT.ABT n (ABTArg.Args as)}
   → DefEq (n := n) s t → DefEq (n := n) ss ts → DefEq (ABT.argsCons (h := tag) (t := as) s ss) (ABT.argsCons t ts)
 | CongrBind : DefEq s t →  DefEq (ABT.bind s) (ABT.bind t)
 | CongrTerm : DefEq s t →  DefEq (ABT.termArg s) (ABT.termArg t)
@@ -82,7 +82,7 @@ infix:10 " ≡ " => DefEq
 
 -- Instances to automate deducing definitional equality
 -- When terms have the same head, we try reducing the parts in parallel
-instance instCongrHead {ss ts : ABT.ABT sig n (ABTArg.Args (sig h))} [eq : ss ≡ ts]
+instance instCongrHead {ss ts : ABT.ABT n (ABTArg.Args (sig h))} [eq : ss ≡ ts]
   : (ABT.op h ss) ≡ (ABT.op h ts) := by
     apply DefEq.CongrHead <;> assumption
 instance  instContrCons [eq : DefEq s t ] [eqs : DefEq ss ts]
@@ -94,7 +94,7 @@ instance instCongrTerm [eq : DefEq s t] :  DefEq (ABT.termArg s) (ABT.termArg t)
   constructor ; assumption
 
 -- @[default_instance]
--- instance byEq {s t : ABT sig n tag} [eq : Fact (s = t)] : s ≡ t := by
+-- instance byEq {s t : ABT n tag} [eq : Fact (s = t)] : s ≡ t := by
 --   simp [eq.out]
 --   apply DefEq.Refl
 
@@ -123,8 +123,8 @@ instance stepRight {n : ℕ} {s t' t : Term n} [Reduces t t'] [DefEq s t'] : Def
 
 
 namespace DefEq
-theorem substPreserve {s t : ABT sig n tag}   (eq : DefEq s t)
-    : ∀  {m : ℕ} (θ : Subst sig m n), DefEq s⦇θ⦈ t⦇θ⦈ := by
+theorem substPreserve {s t : ABT n tag}   (eq : DefEq s t)
+    : ∀  {m : ℕ} (θ : Subst m n), DefEq s⦇θ⦈ t⦇θ⦈ := by
     induction eq with intros m θ
       <;> (try (unfold Subst.subst) <;> simp)
       <;> try (constructor <;> aesop_cat)

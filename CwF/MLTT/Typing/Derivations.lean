@@ -13,8 +13,8 @@ open ABT
 -- We leave this completely unspecified. We'll refine what it means later
 class Coverage : Type where
   IsCover {numBranch} {numScrut}
-  (Ts : TermTele sig 0 numScrut) (xs : ((i : Fin2 numBranch) → PatCtx ))
-  (lhss : (i : Fin2 numBranch) → (TermVec sig (xs i).fst numScrut)) : Prop
+  (Ts : TermTele 0 numScrut) (xs : ((i : Fin2 numBranch) → PatCtx ))
+  (lhss : (i : Fin2 numBranch) → (TermVec (xs i).fst numScrut)) : Prop
 
 variable [Coverage]
 
@@ -33,7 +33,7 @@ def lookup :  (Γ : PreCtx n) → Fin2 n → Term n
 |  (ctxCons Γ _), (Fin2.fs x) => Renaming.shift (lookup Γ x)
 
 -- A closed telescope can be reversed to make a context
-def snocTele {len : ℕ} : {m : ℕ} → (Γ : PreCtx m) →  (Ts : ABT sig m (ABTArg.Arg (◾tele len)))  → PreCtx (m+len) := by
+def snocTele {len : ℕ} : {m : ℕ} → (Γ : PreCtx m) →  (Ts : ABT m (ABTArg.Arg (◾tele len)))  → PreCtx (m+len) := by
   induction len with intros m Γ Ts
   | zero => apply Γ
   | succ len IH =>
@@ -48,7 +48,7 @@ def snocTele {len : ℕ} : {m : ℕ} → (Γ : PreCtx m) →  (Ts : ABT sig m (A
         cases ABT.abtVecLookup Ts (Fin2.fs i)
         assumption
 
-def ofTele {len : ℕ} (Ts : TermTele sig 0 len) : PreCtx len := by
+def ofTele {len : ℕ} (Ts : TermTele 0 len) : PreCtx len := by
   let ret := snocTele ⬝ Ts
   simp at ret
   apply ret
@@ -78,7 +78,7 @@ def inputs : Mode → Head
 
 @[inline, reducible]
 abbrev Inputs (n : ℕ) (md : Mode) : Type :=
-  ABT sig n (ABTArg.Args (sig (inputs md)))
+  ABT n (ABTArg.Args (sig (inputs md)))
 
 def outputs : Mode → Head
 | Mode.Synth => Head.RawSingle
@@ -90,7 +90,7 @@ def outputs : Mode → Head
 | Mode.IsTele _ => Head.Nothing
 
 abbrev Outputs (n : ℕ) (md : Mode) : Type :=
-  ABT sig n (ABTArg.Args (sig (outputs md)))
+  ABT n (ABTArg.Args (sig (outputs md)))
 
 
 
@@ -160,7 +160,7 @@ section
     (Γ ⊢ t ∋∷[ 0 ] Ts )
 
   --Vector extension typed like a dependent pair
-  | EnvCheckCons {n len : ℕ} {Γ : PreCtx n } {s : Term n} {ts : TermVec sig n len} {S : Term n} {Ts : TermTele sig (Nat.succ n) len} :
+  | EnvCheckCons {n len : ℕ} {Γ : PreCtx n } {s : Term n} {ts : TermVec n len} {S : Term n} {Ts : TermTele (Nat.succ n) len} :
       (Γ ⊢ S ∋∷ s)
     -- → ((Γ▸S) ⊢ 𝒰∋[len] Ts)
     → (Γ ⊢ Ts/[s /x] ∋∷[ len ] ts )
@@ -218,7 +218,7 @@ section
     →-----------------------------
     (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
 
-  | MatchTy {n : ℕ} {Γ : PreCtx n} {numScrut} {numBranches : ℕ} {ts} {Ts : TermTele sig 0 numScrut}
+  | MatchTy {n : ℕ} {Γ : PreCtx n} {numScrut} {numBranches : ℕ} {ts} {Ts : TermTele 0 numScrut}
                 {Tmotive} {xs} {lhss : (i : Fin2 numBranches) → _} {rhss} :
 
       Coverage.IsCover Ts xs lhss

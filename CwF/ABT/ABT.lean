@@ -26,6 +26,12 @@ inductive Sig : Type where
 -- | lhsRhs : Sig → Sig →Sig
 | numLit : Sig
 -- | empty : Sig
+--
+class Signature : Type (u + 1) where
+  Op : Type u
+  -- [dec : DecidableEq Op]
+  sig : Op → List Sig
+open Signature
 
 notation "◾" => Sig.plain
 notation "ν" x => Sig.bind x
@@ -39,10 +45,10 @@ inductive ABTArg : Type where
   -- | Vec : ℕ → ABTArg
   -- | List : ABTArg
 
+variable [Signature]
 
 section
     open ABTArg
-    variable {Op : Type u} [dec : DecidableEq Op] (sig : Op → List Sig)
 
     --TODO move this elsewhere
 
@@ -78,10 +84,10 @@ section
 
 
 
-  abbrev abtVecLookup {sig : Op → List Sig} {tags : Fin2 len → Sig} :
-    ABT sig n (Arg (Sig.depVec _ tags))
+  abbrev abtVecLookup {tags : Fin2 len → Sig} :
+    ABT n (Arg (Sig.depVec _ tags))
     → (i : Fin2 len)
-    → ABT sig n (Arg (tags i)) := by
+    → ABT n (Arg (tags i)) := by
     intros v i
     cases v
     aesop
@@ -91,8 +97,8 @@ end
 open ABT
 
 def vecEquiv {ss : Fin2 len → Sig} :
-  ABT sig n (ABTArg.Arg (Sig.depVec _ ss))
-  ≃ ((i : Fin2 len) → ABT sig n (ABTArg.Arg (ss i))) where
+  ABT n (ABTArg.Arg (Sig.depVec _ ss))
+  ≃ ((i : Fin2 len) → ABT n (ABTArg.Arg (ss i))) where
   toFun ts := by
     cases ts
     assumption
@@ -104,21 +110,21 @@ def vecEquiv {ss : Fin2 len → Sig} :
 
 
 
-abbrev Term (sig : Op → List Sig) (n : ℕ) := ABT sig n ABTArg.Term'
+abbrev Term (n : ℕ) := ABT n ABTArg.Term'
 
-abbrev x0 : Term sig (Nat.succ n) := ABT.var Fin2.fz
+abbrev x0 : Term (Nat.succ n) := ABT.var Fin2.fz
 
 notation "◾vec" n => (Sig.depVec (len := n) (fun _ => ◾))
 
-def depVecNil : ABT sig n (ABTArg.Arg (Sig.depVec (len := 0) ss)) := by
+def depVecNil : ABT n (ABTArg.Arg (Sig.depVec (len := 0) ss)) := by
   apply termVec ; intros ; contradiction
 
-abbrev TermVec (sig : Op → List Sig) (n len : ℕ) := ABT sig n (ABTArg.Arg (◾vec len))
+abbrev TermVec  (n len : ℕ) := ABT n (ABTArg.Arg (◾vec len))
 
-def vecNil : TermVec sig n 0 := depVecNil
+def vecNil : TermVec n 0 := depVecNil
 
 @[irreducible]
-def vecCons (h : Term sig n) : (ts : TermVec sig n len) → TermVec sig n (Nat.succ len)
+def vecCons (h : Term n) : (ts : TermVec n len) → TermVec n (Nat.succ len)
 | termVec ts => termVec (Fin2.cases' (termArg h) ts)
 
 abbrev nBinds : (i : ℕ) → Sig → Sig
@@ -126,7 +132,7 @@ abbrev nBinds : (i : ℕ) → Sig → Sig
 | Nat.succ n, s => Sig.bind (nBinds n s)
 notation "◾tele" n => (Sig.depVec (len := n) (fun i => nBinds (Fin2.toNat i) ◾))
 
-abbrev bindN : (i : ℕ) → ABT sig (n + i) (ABTArg.Arg s) → ABT sig n (ABTArg.Arg (nBinds i s))
+abbrev bindN : (i : ℕ) → ABT (n + i) (ABTArg.Arg s) → ABT n (ABTArg.Arg (nBinds i s))
 | Nat.zero, t => t
 | Nat.succ i, t => ABT.bind (bindN i (by
         rw [Nat.add_succ] at t
@@ -134,17 +140,17 @@ abbrev bindN : (i : ℕ) → ABT sig (n + i) (ABTArg.Arg s) → ABT sig n (ABTAr
         apply t
   ))
 
-def TermTele (sig : Op → List Sig) (n len : ℕ) := ABT sig n (ABTArg.Arg (◾tele len))
+def TermTele (n len : ℕ) := ABT n (ABTArg.Arg (◾tele len))
 
-def teleNil : TermTele sig n 0 := depVecNil
+def teleNil : TermTele n 0 := depVecNil
 
 @[irreducible]
-def teleCons (h : Term sig n) (ts : TermTele sig (Nat.succ n) len)
-  :  TermTele sig n (Nat.succ len) :=
+def teleCons (h : Term n) (ts : TermTele (Nat.succ n) len)
+  :  TermTele n (Nat.succ len) :=
   termVec (Fin2.cases' (termArg h) (fun i => ABT.bind (vecEquiv.toFun ts i)))
 
 
-def nClosedEquiv : ABT sig n (ABTArg.Arg (Sig.nClosed m s)) ≃ ABT sig m (ABTArg.Arg s) where
+def nClosedEquiv : ABT n (ABTArg.Arg (Sig.nClosed m s)) ≃ ABT m (ABTArg.Arg s) where
   toFun x := by
     cases x
     assumption
@@ -169,10 +175,10 @@ infixr:80 "∷v" => vecCons
 
 -- Generic traversal structure for substitution, renaming, etc.
 abbrev map {V : ℕ → Type u}
-  (quote : ∀ {a}, V a → Term sig a )
+  (quote : ∀ {a}, V a → Term a )
   (wk : ∀ {a} {b}, (Fin2 a → V b) → Fin2 (Nat.succ a) → V (Nat.succ b))
   (ρ : Fin2 n → V m) :
-  ( ABT sig n tag) → ABT sig m tag
+  ( ABT n tag) → ABT m tag
 | numLit x => numLit x
 | var x => (quote (ρ x))
 | op o args => op o (map quote wk ρ args)
@@ -188,15 +194,15 @@ abbrev map {V : ℕ → Type u}
 
 
 -- --nothing combined with list gives us a hacky way of encoding numbers
--- def emptyListToNat : ABT sig n (ABTArg.Arg (Sig.list Sig.empty)) → ℕ
+-- def emptyListToNat : ABT n (ABTArg.Arg (Sig.list Sig.empty)) → ℕ
 -- | termListNil => 0
 -- | termListCons _ t => Nat.succ (emptyListToNat t)
 
--- def emptyListFromNat : ℕ → ABT sig n (ABTArg.Arg (Sig.list Sig.empty))
+-- def emptyListFromNat : ℕ → ABT n (ABTArg.Arg (Sig.list Sig.empty))
 -- | Nat.zero => termListNil
 -- | (Nat.succ x) => termListCons nothing (emptyListFromNat x)
 
--- theorem toFromNat : ∀ (x : ABT sig n (ABTArg.Arg (Sig.list Sig.empty))),
+-- theorem toFromNat : ∀ (x : ABT n (ABTArg.Arg (Sig.list Sig.empty))),
 --   emptyListFromNat (emptyListToNat x) = x
 -- | termListNil => by simp [emptyListToNat, emptyListFromNat]
 -- | termListCons h t => by
@@ -206,7 +212,7 @@ abbrev map {V : ℕ → Type u}
 --   apply toFromNat
 
 
--- def emptyListEquiv : ABT sig n (ABTArg.Arg (Sig.list Sig.empty)) ≃ ℕ where
+-- def emptyListEquiv : ABT n (ABTArg.Arg (Sig.list Sig.empty)) ≃ ℕ where
 --   toFun := emptyListToNat
 --   invFun := emptyListFromNat
 --   right_inv x := by

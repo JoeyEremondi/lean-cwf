@@ -9,28 +9,30 @@ universe u v'
 
 namespace ABT
 
-abbrev Subst {Op : Type u} (sig : Op → List Sig) (m n : Nat) : Type u :=
-  Fin2 n → Term sig m
+variable [signature : Signature]
+
+abbrev Subst (m n : Nat) : Type u :=
+  Fin2 n → Term m
 
 
 namespace Subst
-  def id : Subst sig n n := fun x => ABT.var x
+  def id : Subst n n := fun x => ABT.var x
 
-  def ext (f : Subst sig m n) (t : Term sig m) : Subst sig m (Nat.succ n)
+  def ext (f : Subst m n) (t : Term m) : Subst m (Nat.succ n)
   | Fin2.fz => t
   | Fin2.fs x => f x
 
-  def ofRenaming (ρ : Renaming m n) : Subst sig m n := fun x =>
+  def ofRenaming (ρ : Renaming m n) : Subst m n := fun x =>
     ABT.var (ρ x)
 
-  abbrev proj : Subst sig (Nat.succ m) m  := ofRenaming Fin2.fs
+  abbrev proj : Subst (Nat.succ m) m  := ofRenaming Fin2.fs
 
-  def wk (θ : Subst sig m n)  : Subst sig (Nat.succ m) (Nat.succ n)
+  def wk (θ : Subst m n)  : Subst (Nat.succ m) (Nat.succ n)
   | Fin2.fz => ABT.var Fin2.fz
   | Fin2.fs x => Renaming.shift (θ x)
 
   -- Deleted this because Lean prints goals better if we have it purely as a notation
-  abbrev subst (θ : Subst sig m n) : ABT sig n a →  ABT sig m a :=
+  abbrev subst (θ : Subst m n) : ABT n a →  ABT m a :=
     ABT.map (fun x => x) wk θ
 end Subst
 
@@ -45,14 +47,14 @@ notation:max t "⦇" θ "⦈" => Subst.subst θ t
 
 
 namespace Subst
-  def comp (θ : Subst sig a b) (θ' : Subst sig b c) : Subst sig a c := fun x =>
+  def comp (θ : Subst a b) (θ' : Subst b c) : Subst a c := fun x =>
     (θ' x)⦇θ⦈
 
 
 --A substitution is just a length-n vector of terms with m variables
 --So we can internalize this into our ABT
 --TODO avoid duplicate names?
--- abbrev Syntactic (sig : Op → List Sig) (m n : ℕ) := TermVec sig m n
+-- abbrev Syntactic (sig : Op → List Sig) (m n : ℕ) := TermVec m n
 
 end Subst
 
@@ -65,7 +67,7 @@ notation:max  "⟪" θ " ● " t "⟫" => Subst.ext θ t
 
 
 -- Tactic for unrolling the recursion of subst one level
-theorem subst_rewrite {t : ABT sig n tag} {θ : Subst sig m n}
+theorem subst_rewrite {t : ABT n tag} {θ : Subst m n}
   : map (fun {a} x => x) (fun {a b} => Subst.wk) θ t = t⦇θ⦈ := by simp [Subst.subst]
 
 macro "unfold_subst" : tactic => `(tactic| (unfold Subst.subst ; try simp [subst_rewrite]))
@@ -76,7 +78,7 @@ macro "unfold_subst_all"  : tactic => `(tactic| (unfold Subst.subst at * ; try s
 
 namespace Subst
 -- Syntactic substitutions are equivalent to substitutions as functions
-def syntacticEquiv : TermVec sig m n ≃ Subst sig m n where
+def syntacticEquiv : TermVec m n ≃ Subst m n where
     toFun θ i :=
       match abtVecLookup θ i with
       | ABT.termArg t => t
@@ -96,7 +98,7 @@ def syntacticEquiv : TermVec sig m n ≃ Subst sig m n where
       simp
 
 -- Composition of syntactic substitutions is just applying one substitution to the other
-theorem syntacticSubComp {θ1 : Subst sig a b} {θ2 : TermVec sig b c}
+theorem syntacticSubComp {θ1 : Subst a b} {θ2 : TermVec b c}
   : θ1 ⨟ (syntacticEquiv θ2) = syntacticEquiv (θ2⦇θ1⦈) := by
   funext i
   let (ABT.termVec f) := θ2

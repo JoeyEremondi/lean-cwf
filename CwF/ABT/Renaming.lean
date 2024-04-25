@@ -12,6 +12,7 @@ import CwF.Util
 universe u v'
 
 namespace ABT
+variable [Signature]
 
 def Renaming (m n : Nat) : Type :=
   Fin2 n → Fin2 m
@@ -25,9 +26,9 @@ namespace Renaming
   | Fin2.fs x => Fin2.fs (θ x)
 
 
-  def rename (ρ : Renaming m n) : ABT sig n a →  ABT sig m a := ABT.map ABT.var wk ρ
+  def rename (ρ : Renaming m n) : ABT n a →  ABT m a := ABT.map ABT.var wk ρ
 
-  def shift  (t : ABT sig m ty) : ABT sig (Nat.succ m) ty :=
+  def shift  (t : ABT m ty) : ABT (Nat.succ m) ty :=
     rename Fin2.fs t
 
   -- 0 is the initial context, so we can rename things with 0 variables to anything
@@ -60,20 +61,20 @@ namespace Renaming
 
 
   @[simp]
-  theorem rename_id {t : ABT sig n a} : t⦇id⦈ᵣ = t := by
+  theorem rename_id {t : ABT n a} : t⦇id⦈ᵣ = t := by
     induction t <;> simp [rename, id] <;> try aesop_cat
 
   @[simp]
-  theorem rename_comp {t : ABT sig c tag} : ∀ {a} {b} {ρ1 : Renaming a b} {ρ2 : Renaming b c} ,  t⦇ρ2⦈ᵣ⦇ρ1⦈ᵣ = t⦇ρ1 ∘ ρ2⦈ᵣ := by
+  theorem rename_comp {t : ABT c tag} : ∀ {a} {b} {ρ1 : Renaming a b} {ρ2 : Renaming b c} ,  t⦇ρ2⦈ᵣ⦇ρ1⦈ᵣ = t⦇ρ1 ∘ ρ2⦈ᵣ := by
     induction t <;> intros a b ρ1 ρ2 <;> simp_all [rename, ABT.map, wk_comp]
 
 
   @[simp]
-  theorem weaken_wk {t : ABT sig n tag} : ∀ {ρ : Renaming m n }, (shift t)⦇Renaming.wk ρ⦈ᵣ = shift t⦇ρ⦈ᵣ := by
+  theorem weaken_wk {t : ABT n tag} : ∀ {ρ : Renaming m n }, (shift t)⦇Renaming.wk ρ⦈ᵣ = shift t⦇ρ⦈ᵣ := by
    induction t <;> intros ρ  <;> simp [shift] <;> aesop_cat
 
   -- Macro for unrolling the recursion one level
-  theorem ren_rewrite {m n : ℕ} {t : ABT sig n tag} {ρ : Renaming m n}
+  theorem ren_rewrite {m n : ℕ} {t : ABT n tag} {ρ : Renaming m n}
     : map (fun {a} x => ABT.var x) (fun {a b} => Renaming.wk) ρ t = t⦇ρ⦈ᵣ := by simp [Renaming.rename]
   macro "unfold_rename" : tactic => `(tactic| (unfold Renaming.rename ; try simp [ren_rewrite]))
   macro "unfold_rename_at" hyp:Lean.Parser.Tactic.locationHyp : tactic => `(tactic| (unfold Renaming.rename at $hyp ; try simp [ren_rewrite] at $hyp))

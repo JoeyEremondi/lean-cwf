@@ -45,7 +45,7 @@ structure Ctx : Type where
   [ wf : WfCtx pre ]
 
 structure CtxMorphism (Δ Γ : Ctx) : Type where
-  sub : Subst sig Δ.len Γ.len
+  sub : Subst Δ.len Γ.len
   [ wf : SubstWf Δ.pre Γ.pre sub]
 
 def ctxId : CtxMorphism Γ Γ where
@@ -64,7 +64,7 @@ instance Termoid {n : ℕ} : Setoid  (Term n) where
 def Value (n : ℕ) : Type := Quotient (Termoid (n := n))
 
 namespace Value
-  def subst (θ : Subst sig m n) : Value n → Value m :=
+  def subst (θ : Subst m n) : Value n → Value m :=
     Quotient.lift (fun (t : Term n) => Quotient.mk Termoid (Subst.subst θ t) )
     (by
        intros a b rel
