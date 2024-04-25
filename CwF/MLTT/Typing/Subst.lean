@@ -5,110 +5,20 @@ import CwF.ABT.Renaming
 import CwF.ABT.SubstProperties
 import CwF.MLTT.Sig
 import CwF.MLTT.Reductions
-import CwF.MLTT.Typing.Defs
+import CwF.MLTT.Typing.Derivations
 import CwF.MLTT.Typing.Renaming
+import CwF.MLTT.Typing.SubstHelper
 
 
 namespace MLTT
 open ABT
 
-set_option pp.notation true
--- attribute [simp] Subst.wk_def
+variable [Coverage]
 
 
-set_option maxHeartbeats 3000000
 
--- Helpful lemma for managning conversion and the checking/synthesis switch
-lemma allSynthSub {Γ : PreCtx m} {t : Term n} {S : Term m} {T : Term n} (θ : Subst sig m n)
-  (eq : (T⦇θ⦈ ≡ S) )
-  (checked : (Γ ⊢ T⦇θ⦈ ∋∷ t⦇θ⦈) := by assumption)
-  : ∃ S', (Γ ⊢ t⦇θ⦈ ∷∈ S') ∧ (S' ≡ S) := by
-  cases checked
-  (repeat constructor) <;> try assumption
-  apply DefEq.Trans <;> assumption
+set_option maxHeartbeats 1000000
 
-
-lemma checkConv {Γ : PreCtx n}  {S T t : Term n}
-  [eq : (S ≡ T) ]
-  (checked : Γ ⊢ T ∋∷ t)
-  : Γ ⊢ S ∋∷ t := by
-    cases checked
-    constructor <;> try assumption
-    apply DefEq.Trans (by assumption)
-    apply DefEq.Symm
-    assumption
-
-
-class SubstWf (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n) : Prop where
-  varTyped : ∀ {x : Fin2 n}, (Δ ⊢ Γ[x]⦇θ⦈ ∋∷ (θ x) )
-
-attribute [aesop safe] SubstWf.varTyped
-
-instance wfId  (Γ : PreCtx n)  : SubstWf Γ Γ Subst.id where
-  varTyped {x} := by
-    constructor
-    . constructor
-    . simp
-
-instance wfExt (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n)
-  [wf : SubstWf Δ Γ θ]
-  {t : Term m}
-  {T : Term n}
-  (D : Δ ⊢ T⦇θ⦈ ∋∷ t)
-  : SubstWf Δ (Γ▸T) (Subst.ext θ t) where
-  varTyped {x} := by
-    cases x <;> simp [getElem, PreCtx.lookup, Renaming.shift, Subst.sub_tail] <;> try aesop_cat
-    simp [Subst.ext]
-    apply wf.varTyped
-
-instance wfWk (Δ : PreCtx m) (Γ : PreCtx n) (θ : Subst sig m n)
-  [wf : SubstWf Δ Γ θ]
-  {S : Term m}
-  {T : Term n}
-  [eq : S ≡ T⦇θ⦈]
-  : SubstWf (Δ▸S) (Γ▸T) (Subst.wk θ) where
-  varTyped {x} := by
-    cases x with simp [Subst.wk, getElem, PreCtx.lookup, Renaming.shift, Subst.sub_tail]
-      <;> unfold_subst
-    | fz =>
-      constructor
-      . constructor
-      . let eqθ := DefEq.substPreserve eq Subst.proj
-        simp [getElem, PreCtx.lookup, Renaming.shift, Subst.wk_def]
-        simp at eqθ
-        assumption
-    | fs x =>
-      simp [Subst.wk_def]
-      simp [Subst.proj]
-      -- rw [<- Subst.sub_comp]
-      -- simp only [<- Subst.substOfRenaming]
-      let ty := wf.varTyped (x := x)
-      let helper := renamePreserveType ty (ρ := Fin2.fs) (wf := weakenWf (T := S))
-      unfold_rename_at helper
-      -- unfold_subst
-      -- simp [getElem] at helper
-      -- simp [pair]
-      apply helper
-
-
--- Substitution preserves checking but not synthesis
-def subMode : Mode → Mode
-| Mode.Synth => Mode.Check
-| x => x
--- Transform the synth in/out into checking in/out
-abbrev subIn (md : Mode) (i : Inputs n md) (o : Outputs n md)
-  : Inputs n (subMode md) := by
-  cases md <;> try assumption
-  let (ABT.argsCons (ABT.termArg i1) _) := i
-  let (ABT.argsCons (ABT.termArg i2) _) := o
-  simp [Inputs, inputs, subMode, sig]
-  apply (pair i1 i2)
-
-
-abbrev subOut (md : Mode) (i : Inputs n md) (o : Outputs n md)
-  : Outputs n (subMode md) := by
-  cases md <;> try assumption
-  repeat constructor
 
 -- set_option trace.Meta.synthInstance true
 
@@ -118,18 +28,19 @@ theorem subPreserveType  {Γ : PreCtx n} {md : Mode} {i : Inputs n md} {o : Outp
   (Derivation Δ (subMode md) (subIn md i o)⦇θ⦈ (subOut md i o)⦇θ⦈ ) := by
   induction D with
     ( intros m Δ θ θwf
-      unfold_subst
-      (first
-          |  ( constructor
-                <;> (try simp)
-                <;> aesop_cat
-                <;> done )
+      <;> dsimp only [subMode, subIn, subOut]
+      <;> (try dsimp only [subMode, subIn, subOut] at *)
+      <;> unfold_subst
+      <;> (try unfold_subst_all)
+      <;> (try (first
+          |  ( constructor <;> aesop_cat <;> done )
           -- Tactic for solving all the conversion goals
           |(rename_i IH
             let subEq := DefEq.substPreserve (by assumption) θ
             unfold_subst_at subEq
             let ⟨S, ty, eq⟩ := allSynthSub (Γ := Δ) θ subEq (IH)
-            constructor <;> try assumption)
+            constructor <;> try assumption
+            done)
           -- Cases where we can just apply the IH to the subgoals
           -- We need to apply constructor twice because even if we had a synthesis judgment as input,
           -- we're producing a checking one as output, so there's an extra Conversion rule to apply
@@ -140,20 +51,21 @@ theorem subPreserveType  {Γ : PreCtx n} {md : Mode} {i : Inputs n md} {o : Outp
               <;> (try unfold_subst ; simp_all [Subst.wk_def, Subst.singleSubSub] )
               <;> (try trivial)
               <;> (try aesop_cat)
-              <;> done)
+              <;> done
+              )
           -- Cases where we need to prove a substitition equality before we can apply IH, the checkEq lemma helps us here
-          | apply checkEq
+          | (apply checkEq
               <;> (try simp)
               <;> (try constructor <;> aesop_cat)
-              <;> (try unfold_subst ; simp_all [Subst.wk_def, Subst.singleSubSub] ; (first | trivial | aesop_cat) )
-              <;> done
-          | skip))
+              <;> (try simp [Subst.wk_def, Subst.singleSubSub])
+              <;> (first | trivial | exact True.intro | aesop_cat)
+              <;> done)
+          ) <;> done ))
   | @VarSynth _ _ x =>
     let helper := θwf.varTyped (x := x)
     unfold_subst_at helper
     assumption
   | @PairIntro _ _ _ S T _ tys tyT tyt IHs IHT IHt =>
-    simp at IHs
     let ⟨S' , tyS' , eq⟩ := allSynthSub (Γ := Δ) θ DefEq.Refl (IHs)
     -- have eq' := DefEq.Symm eq
     let SigEq : (Σx∷ S' ,, T⦇Subst.wk θ⦈) ≡ (Σx∷ S⦇θ⦈ ,, T⦇Subst.wk θ⦈) := inferInstance
@@ -164,6 +76,9 @@ theorem subPreserveType  {Γ : PreCtx n} {md : Mode} {i : Inputs n md} {o : Outp
       simp [Subst.wk_def]
       let tytθ := IHt (Δ := Δ) (θ := θ)
       apply tytθ
+  | @EnvCheckCons n len Γ s t S Ts sty tty IHs IHt => simp
+
+
     -- (try unfold_subst ; simp_all [Subst.wk_def, Subst.singleSubSub] )
     -- let seq := DefEq.InContext (s := S⦇θ⦈) (t := S') (C := Σx∷ x0,, (Renaming.shift T⦇θ⦈)) (DefEq.Symm eq)
     -- apply Entails.TyConv _ seq

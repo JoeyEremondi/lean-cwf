@@ -214,11 +214,11 @@ abbrev map {V : ℕ → Type u}
 --   left_inv := toFromNat
 
 -- Helpers for encoding, easier notation, etc
-abbrev pair (s t : ABT sig n ABTArg.Term') : ABT sig n (ABTArg.Args [◾, ◾]) :=
+notation "ABTpair" s "," t =>
   argsCons (termArg s) (argsCons (termArg t) argsNil)
-notation "singleton" s =>
+notation "ABTsingleton" s =>
   argsCons (termArg s) argsNil
-abbrev fromNat (x : ℕ) : ABT sig n (ABTArg.Args [Sig.numLit]) :=
+notation "ABTfromNat" x =>
   argsCons (numLit x) argsNil
 
 end ABT

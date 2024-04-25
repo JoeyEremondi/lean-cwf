@@ -70,6 +70,7 @@ theorem subst_rewrite {t : ABT sig n tag} {θ : Subst sig m n}
 
 macro "unfold_subst" : tactic => `(tactic| (unfold Subst.subst ; try simp [subst_rewrite]))
 macro "unfold_subst_at" hyp:Lean.Parser.Tactic.locationHyp : tactic => `(tactic| (unfold Subst.subst at $hyp ; try simp [subst_rewrite] at $hyp))
+macro "unfold_subst_all"  : tactic => `(tactic| (unfold Subst.subst at * ; try simp [subst_rewrite] at *))
 
 
 
