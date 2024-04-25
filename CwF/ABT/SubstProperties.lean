@@ -255,8 +255,8 @@ namespace Subst
 
   --Substitutions have no effect on closed terms, so they're all equivalent
   --to "introduce unused variables"
-  -- @[simp]
-  theorem fromClosedSubst  {θ0 : Subst sig n 0} : θ0  = ofRenaming fromClosed := by
+  @[simp]
+  theorem fromClosedSubst  {θ : Subst sig n 0} : θ  = ofRenaming fromClosed := by
     funext i ; contradiction
 
 

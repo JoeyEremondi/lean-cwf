@@ -218,7 +218,7 @@ section
     →-----------------------------
     (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
 
-  | MatchTy {Γ : PreCtx n} {numScrut} {numBranches : ℕ} {ts} {Ts : TermTele sig 0 numScrut}
+  | MatchTy {n : ℕ} {Γ : PreCtx n} {numScrut} {numBranches : ℕ} {ts} {Ts : TermTele sig 0 numScrut}
                 {Tmotive} {xs} {lhss : (i : Fin2 numBranches) → _} {rhss} :
 
       Coverage.IsCover Ts xs lhss
@@ -241,7 +241,7 @@ open Derivation
 -- Hygenic version of the notation
 set_option hygiene true
 notation3 Γ " ⊢ " t " ∷∈ " T => Derivation Γ Mode.Synth (ABTsingleton t) (ABTsingleton T)
-notation3 Γ " ⊢ " T  " ∋∷ " t => Derivation Γ Mode.Check (ABTpair t,  T) ABT.argsNil
+notation Γ " ⊢ " T  " ∋∷ " t => Derivation Γ Mode.Check (ABT.argsCons (ABT.termArg t) (ABT.argsCons (ABT.termArg T) ABT.argsNil)) ABT.argsNil
 notation3 Γ " ⊢ "  t " ∷[" h "]∈ " Ts => Derivation Γ (Mode.CheckHead h) (ABTsingleton t) Ts
 notation3 Γ " ⊢ 𝒰∋ " T  => Derivation Γ (Mode.CheckType) (ABT.argsCons (ABT.termArg T) ABT.argsNil) ABT.argsNil
 notation3 Γ " ⊢ " T " ∈𝒰 " ℓ  => Derivation Γ (Mode.SynthLevel) (ABTsingleton T) (ABTfromNat ℓ)

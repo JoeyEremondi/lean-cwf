@@ -78,7 +78,7 @@ class inductive DefEq : ∀ {n : ℕ} {tag : ABTArg}, (s t : ABT.ABT sig n tag) 
 | Trans : {s t : Term n} → DefEq s t → DefEq t u → DefEq s u
 
 
-infix:10 "≡" => DefEq
+infix:10 " ≡ " => DefEq
 
 -- Instances to automate deducing definitional equality
 -- When terms have the same head, we try reducing the parts in parallel

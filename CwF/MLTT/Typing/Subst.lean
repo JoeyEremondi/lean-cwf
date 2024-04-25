@@ -33,7 +33,7 @@ theorem subPreserveType  {Γ : PreCtx n} {md : Mode} {i : Inputs n md} {o : Outp
       <;> unfold_subst
       <;> (try unfold_subst_all)
       <;> (try (first
-          |  ( constructor <;> aesop_cat <;> done )
+          |  ( constructor <;> (try aesop_cat) <;> (try simp [Subst.wk_def, Subst.singleSubSub]) <;> (try aesop_cat) <;> done )
           -- Tactic for solving all the conversion goals
           |(rename_i IH
             let subEq := DefEq.substPreserve (by assumption) θ
@@ -74,11 +74,18 @@ theorem subPreserveType  {Γ : PreCtx n} {md : Mode} {i : Inputs n md} {o : Outp
     . apply IHT
     . unfold_subst_at IHt
       simp [Subst.wk_def]
-      let tytθ := IHt (Δ := Δ) (θ := θ)
-      apply tytθ
-  | @EnvCheckCons n len Γ s t S Ts sty tty IHs IHt => simp
+      apply IHt (Δ := Δ) (θ := θ)
+  | @MatchTy n Γ numScrut numBranch ts Ts Tmotive xs lhss rhss iscover ty tyBranch IHts _ =>
+    apply checkEq _ (Eq.refl _)
+    rw [Subst.syntacticSubComp]
 
-
+    let ret := IHts (Δ := Δ) (θ := θ)
+    let eq : (θ ⨟ Subst.ofRenaming (Renaming.fromClosed (m := n))) = Subst.ofRenaming (Renaming.fromClosed (m := m)) :=
+      Subst.fromClosedSubst (θ := θ ⨟ Subst.ofRenaming (Renaming.fromClosed (m := n)))
+    simp [eq] at ret
+    constructor <;> try assumption
+    simp [Subst.substOfRenaming]
+    apply ret
     -- (try unfold_subst ; simp_all [Subst.wk_def, Subst.singleSubSub] )
     -- let seq := DefEq.InContext (s := S⦇θ⦈) (t := S') (C := Σx∷ x0,, (Renaming.shift T⦇θ⦈)) (DefEq.Symm eq)
     -- apply Entails.TyConv _ seq
