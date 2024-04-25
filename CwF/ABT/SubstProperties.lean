@@ -29,6 +29,8 @@ namespace Subst
       <;> intros m ρ
       <;> simp_all [ABT.map, Renaming.rename, Renaming.wk, wk, ofRenaming ]
 
+      
+
   -- Useful in contexts where we're focused on renaming
   theorem unOfRenaming {t : ABT sig n a} : {m : ℕ} →  {ρ : Renaming m n}
       → t⦇ofRenaming ρ⦈ = t⦇ρ⦈ᵣ := by simp [substOfRenaming]
@@ -218,7 +220,7 @@ namespace Subst
 
   @[simp]
   theorem subVecCons : (ABT.vecCons h t)⦇θ⦈ = ABT.vecCons h⦇θ⦈ t⦇θ⦈ := by
-    simp [vecCons]
+    unfold vecCons
     cases t
     unfold_subst
     funext i
@@ -227,7 +229,7 @@ namespace Subst
 
   @[simp]
   theorem subTeleCons : (ABT.teleCons h t)⦇θ⦈ = ABT.teleCons h⦇θ⦈ t⦇wk θ⦈ := by
-    simp [teleCons]
+    unfold teleCons
     cases t
     unfold_subst
     funext i

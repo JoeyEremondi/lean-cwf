@@ -50,13 +50,13 @@ section
     → (Derivation Δ md i⦇ρ⦈ᵣ o⦇ρ⦈ᵣ ) := by
       induction D with
       intros m Δ ρ wf
-      <;> unfold_rename
+      <;> (try unfold_rename
       <;> unfold_rename_all
       <;> (first
               |  ( constructor
                    <;> (try unfold_rename)
                    <;> (try aesop_cat)
-                   <;> (try simp [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming])
+                   <;> (try simp_all [Subst.wkRenaming, Subst.wk_def, Subst.substOfRenaming])
                    <;> done )
               -- Tactic for solving all the conversion goals
               |  (constructor <;> (try aesop_cat)
@@ -79,17 +79,13 @@ section
                   <;> (try unfold_rename ; simp_all [Subst.singleSubRename] ; (first | trivial | aesop_cat) )
                   <;> done
               | skip)
+              <;> done)
       | @VarSynth _ _ x =>
         let eq := wf.changeCtx x
+        unfold_rename_at eq
+        unfold_rename
         simp [<- eq]
         constructor
-      | EnvCheckCons =>
-        unfold_rename
-        simp [Subst.renTeleCons]
-        skip
-        apply Derivation.EnvCheckCons
-        constructor <;> try assumption
-        simp
       -- | _ => admit
 
       -- <;>

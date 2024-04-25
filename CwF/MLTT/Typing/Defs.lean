@@ -143,7 +143,7 @@ section
   -- The empty telescope is well typed
   | IsTeleNil {Γ : PreCtx n} :
   ---------------------
-    (Γ ⊢ 𝒰∋[0] [[]] )
+    (Γ ⊢ 𝒰∋[0] Ts )
 
   -- Well-formed types extend well-formed telescopes
   | IsTeleCons :
@@ -154,9 +154,10 @@ section
 
   -- Well formed environments (substitutions)
   -- Empty env has empty telescope type
+  -- All telescopes of length 0 are equal
   | EnvCheckNil {Γ : PreCtx n} :
   ---------------------
-    (Γ ⊢ [[]] ∋∷[ 0 ] [[]] )
+    (Γ ⊢ t ∋∷[ 0 ] Ts )
 
   --Vector extension typed like a dependent pair
   | EnvCheckCons {Γ : PreCtx n } :
@@ -253,8 +254,7 @@ notation Γ " ⊢ " "𝒰∋[" n "]" T  => Derivation Γ (Mode.IsTele n) (ABT.ar
 -- So in tactics, we can apply this to synthesize a type for any term
 -- @[aesop unsafe]
 lemma synthEq {Γ : PreCtx n} {t : Term n} {S T : Term n}
-  (synthed : (Γ ⊢ t ∷∈ S) := by constructor)
-  (eq : S = T := by aesop_cat)
+  (synthed : (Γ ⊢ t ∷∈ S) := by constructor) (eq : S = T := by aesop_cat)
   : Γ ⊢ t ∷∈ T := by aesop_cat
 
 -- @[aesop unsafe]

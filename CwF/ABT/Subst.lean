@@ -66,7 +66,7 @@ notation:max  "⟪" θ " ● " t "⟫" => Subst.ext θ t
 
 -- Tactic for unrolling the recursion of subst one level
 theorem subst_rewrite {t : ABT sig n tag} {θ : Subst sig m n}
-  : map (fun {a} x => x) (fun {a b} => Subst.wk) θ t = t⦇θ⦈ := by simp
+  : map (fun {a} x => x) (fun {a b} => Subst.wk) θ t = t⦇θ⦈ := by simp [Subst.subst]
 
 macro "unfold_subst" : tactic => `(tactic| (unfold Subst.subst ; try simp [subst_rewrite]))
 macro "unfold_subst_at" hyp:Lean.Parser.Tactic.locationHyp : tactic => `(tactic| (unfold Subst.subst at $hyp ; try simp [subst_rewrite] at $hyp))
@@ -101,9 +101,10 @@ theorem syntaxSubComp {θ1 : Subst sig a b} {θ2 : TermVec sig b c}
   let (ABT.termVec f) := θ2
   unfold_subst
   simp [syntacticEquiv, Subst.comp, abtVecLookup]
+  unfold_subst
   generalize eq : f i = fi
   cases fi
-  simp
+  unfold_subst
 end Subst
 
 end ABT

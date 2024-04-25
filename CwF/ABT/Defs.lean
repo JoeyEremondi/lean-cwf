@@ -128,6 +128,7 @@ abbrev TermVec (sig : Op → List Sig) (n len : ℕ) := ABT sig n (ABTArg.Arg (�
 
 def vecNil : TermVec sig n 0 := depVecNil
 
+@[irreducible]
 def vecCons (h : Term sig n) : (ts : TermVec sig n len) → TermVec sig n (Nat.succ len)
 | termVec ts => termVec (Fin2.cases' (termArg h) ts)
 
@@ -148,6 +149,7 @@ def TermTele (sig : Op → List Sig) (n len : ℕ) := ABT sig n (ABTArg.Arg (◾
 
 def teleNil : TermTele sig n 0 := depVecNil
 
+@[irreducible]
 def teleCons (h : Term sig n) (ts : TermTele sig (Nat.succ n) len)
   :  TermTele sig n (Nat.succ len) :=
   termVec (Fin2.cases' (termArg h) (fun i => ABT.bind (vecEquiv.toFun ts i)))
