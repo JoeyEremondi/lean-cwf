@@ -92,7 +92,15 @@ section
     cases v
     aesop
 
-end
+  abbrev abtVecExt {tags : Fin2 len → Sig}
+    (ts1 ts2 : ABT n (Arg (Sig.depVec _ tags)))
+    (eq : ∀ i, abtVecLookup ts1 i = abtVecLookup ts2 i)
+      : ts1 = ts2 := by
+    cases ts1
+    cases ts2
+    apply congrArg ABT.termVec
+    funext i
+    apply eq
 
 open ABT
 
@@ -148,6 +156,38 @@ def teleNil : TermTele n 0 := depVecNil
 def teleCons (h : Term n) (ts : TermTele (Nat.succ n) len)
   :  TermTele n (Nat.succ len) :=
   termVec (Fin2.cases' (termArg h) (fun i => ABT.bind (vecEquiv.toFun ts i)))
+
+def teleHead (ts : TermTele n (Nat.succ len)) : Term n := by
+  cases abtVecLookup ts Fin2.fz
+  assumption
+
+def teleTail (ts : TermTele n (Nat.succ len)) : TermTele (Nat.succ n) len := by
+  apply termVec
+  intros i
+  cases abtVecLookup ts (Fin2.fs i)
+  assumption
+
+@[simp]
+def teleConsHead : teleHead (teleCons h t) = h := by
+  unfold teleCons
+  simp [teleCons]
+  cases (abtVecLookup (teleCons h t) Fin2.fz)
+  rfl
+
+
+
+def teleConcat {len1 : ℕ} :
+  ∀ {n} (ts1 : TermTele n len1) (ts2 : TermTele (n + len1) len2), TermTele n (len1 + len2) := by
+  induction len1 with intros n ts1 ts2
+  | zero => simp ; apply ts2
+  | succ len1 IH =>
+    simp [Nat.succ_add]
+    apply teleCons (teleHead ts1)
+    apply IH (teleTail ts1)
+    simp [Nat.add_succ] at ts2
+    simp [Nat.succ_add]
+    apply ts2
+
 
 
 def nClosedEquiv : ABT n (ABTArg.Arg (Sig.nClosed m s)) ≃ ABT m (ABTArg.Arg s) where

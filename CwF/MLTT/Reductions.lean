@@ -12,9 +12,7 @@ open ABT
 variable  [Ind] [Arities]
 
 class inductive Reduces : (s : Term n) → (t : outParam (Term n)) → Prop where
-| Reducesβ : Reduces ((λx∷ T ,, t) $ s) t /[ s /x]
-| Reducesπ1 : Reduces (π₁ ⟨x↦ s ,, t ∷x,, T ⟩ ) s
-| Reducesπ2 : Reduces (π₂ ⟨x↦ s ,, t ∷x,, T ⟩ ) t
+| Reducesβ : Reduces ((λx∷ T ,, t) s) t /[ s /x]
 | ReducesMatch
   {θmatch : Subst n (xs i).fst}
   : Reduces (casesplit (lhss i)⦇θmatch⦈ ∷ Ts to T [[xs ,, lhss ↦ rhss]]) (rhss i)⦇θmatch⦈
@@ -24,7 +22,7 @@ class inductive Reduces : (s : Term n) → (t : outParam (Term n)) → Prop wher
 lemma reduces_eq {s t t' : Term n} [Reduces s t] (eq : t = t')
   : Reduces s t' := by simp [<- eq] ; assumption
 
-attribute [instance] Reduces.Reducesβ Reduces.Reducesπ1 Reduces.Reducesπ2
+attribute [instance] Reduces.Reducesβ
 
 
 theorem substPreserveRed {s t : Term n}

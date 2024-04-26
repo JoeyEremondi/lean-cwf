@@ -20,13 +20,10 @@ variable [Ind] [Arities]
 
 inductive Head where
   | Pi | Lam | App
-  | Sigma | Pair | Proj₁ | Proj₂
-  | True | tt
-  | False | exfalso
   | Tipe (ℓ : ℕ)
+  | TyCtor (c : Ind.TyCtor) (ℓ : ℕ)
+  | Ctor (d : Ind.Ctor c) (ℓ : ℕ)
   | CaseSplit {numBranch : ℕ} (vars : Vector3 ℕ numBranch) (numScrut : ℕ)
-  | TyCtor (c : Ind.TyCtor)
-  | Ctor (d : Ind.Ctor c)
   -- Not used for expressions, but to pass substitutions through pairs
   -- when defining e.g. preservation of substitution
   | RawSingle
@@ -41,17 +38,9 @@ def sig : Head → List Sig
 | Head.Pi => [◾, ν ◾ ]
 | Head.Lam => [◾, ν ◾ ]
 | Head.App => [◾, ◾]
-| Head.Sigma => [◾, ν ◾ ]
-| Head.Pair => [◾, ◾, ν ◾]
-| Head.Proj₁ => [◾]
-| Head.Proj₂ => [◾]
-| Head.True => []
-| Head.tt => []
-| Head.False => []
-| Head.exfalso => [◾, ◾]
 | Head.Tipe _ => []
-| Head.TyCtor ctor => [◾tele (Arities.numParams ctor)]
-| @Head.Ctor _ tyCtor ctor => [◾tele (Arities.numParams tyCtor + Arities.arity ctor)]
+| Head.TyCtor ctor _ => [◾vec (Arities.numParams ctor)]
+| @Head.Ctor _ tyCtor ctor _ => [◾vec (Arities.numParams tyCtor + Arities.arity ctor)]
 -- Pattern match contains numBranch branches. There's a scrutinee and a motive type.
 -- which is parameterized over the scrutinee type.
 -- Then each branch has a context of its free variables, which we represent
@@ -86,7 +75,6 @@ abbrev PatCtx :=
 -- set_option maxRecDepth 1000
 
 
-
 notation:50 "x∷" T ",," S =>
     ( ABT.argsCons (ABT.termArg T) (ABT.argsCons (ABT.bind (ABT.termArg S)) ABT.argsNil) )
 
@@ -98,46 +86,42 @@ notation "λx∷" T ",," t =>
   ABT.op Head.Lam
     ( ABT.argsCons (ABT.termArg T) (ABT.argsCons (ABT.bind (ABT.termArg t)) ABT.argsNil) )
 
-notation f "$" t =>
+notation f " " t =>
   ABT.op Head.App (ABT.argsCons (ABT.termArg f) (ABT.argsCons (ABT.termArg t) ABT.argsNil))
-
-notation "Σx∷" T ",," S =>
-  ABT.op Head.Sigma
-    ( ABT.argsCons (ABT.termArg T) (ABT.argsCons (ABT.bind (ABT.termArg S)) ABT.argsNil) )
-
-notation "⟨x↦" s ",," t "∷x,," T "⟩" =>
-  ABT.op Head.Pair (ABT.argsCons (ABT.termArg s)
-                   (ABT.argsCons (ABT.termArg t)
-                   (ABT.argsCons (ABT.bind (ABT.termArg T)) ABT.argsNil)))
-
-
-notation "π₁" s  =>
-  ABT.op Head.Proj₁ (ABT.argsCons (ABT.termArg s) ABT.argsNil)
-
-
-notation "π₂" s  =>
-  ABT.op Head.Proj₂ (ABT.argsCons (ABT.termArg s) ABT.argsNil)
-
-notation "⊤" => ABT.op Head.True ABT.argsNil
-
-notation "tt" => ABT.op Head.tt ABT.argsNil
-
-
-notation "⊥" => ABT.op Head.False ABT.argsNil
-
-notation "exfalso" T t => ABT.op Head.exfalso
- ((ABT.termArg T) (ABT.argsCons (ABT.termArg t) ABT.argsNil))
+--
 
 
 notation:50 " 𝒰 " ℓ => ABT.op (Head.Tipe ℓ) ABT.argsNil
 
+
+instance {n m : ℕ} : Coe (Term n) (Term (n + m))  where
+  coe := Renaming.rename (fun x => Fin2.add x m)
+
+instance {n m : ℕ} : Coe (TermTele n len) (TermTele (n + m) len)  where
+  coe := Renaming.rename (fun x => Fin2.add x m)
+
+instance {n m : ℕ} : Coe (TermVec n len) (TermVec (n + m) len)  where
+  coe := Renaming.rename (fun x => Fin2.add x m)
+
+-- Lets us write functions application directly
+instance {n : ℕ} : CoeFun (Term n) (fun _ => (Term n → Term n)) where
+  coe f := fun t =>
+  ABT.op Head.App (ABT.argsCons (ABT.termArg f) (ABT.argsCons (ABT.termArg t) ABT.argsNil))
+
+instance : CoeFun (Ind.TyCtor)
+  (fun (c : Ind.TyCtor) => ∀ (ℓn : ℕ × ℕ),  TermVec ℓn.snd (Arities.numParams c) → Term ℓn.snd) where
+  coe {c} ℓn ts := ABT.op (Head.TyCtor c ℓn.fst) (ABT.argsCons ts ABT.argsNil)
+
+instance : CoeFun (Ind.Ctor c)
+  (fun d => ∀ (ℓn : ℕ × ℕ),  TermVec ℓn.snd (Arities.numParams c + Arities.arity d) → Term ℓn.snd) where
+  coe {d} ℓn ts := ABT.op (Head.Ctor d ℓn.fst) (ABT.argsCons ts ABT.argsNil)
+
+notation "[ℓ:=" ℓ "]" => ⟨ℓ , _⟩
 -- def Branch (n : ℕ) (numVars : ℕ) : Type :=
 --   PatCtx numVars
 --   × ABT n (ABTArg.Arg (Sig.nClosed numVars (Sig.tele ◾)))
 --   × ABT n (ABTArg.Arg (Sig.nClosed numVars ◾))
 
-instance  : Coe (Term n) (Term n → Term n) where
-  coe f := fun t => f $ t
 
 
 structure CaseSplit (n : ℕ) : Type where

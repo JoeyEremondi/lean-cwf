@@ -13,8 +13,18 @@ open ABT
 variable [Ind] [Arities]
 
 class IndTypes where
-  paramTypes : ∀ c, TermTele 0 (Arities.numParams c)
-  fieldTypes : ∀ c, TermTele 0 (Arities.numParams c)
+  closedParamTypes : ∀ c (ℓ : ℕ), TermTele 0 (Arities.numParams c)
+  closedFieldTypes : ∀ {c} (d : Ind.Ctor c) (ℓ : ℕ) , TermTele 0 (Arities.numParams c + Arities.arity d)
+
+namespace IndTypes
+  variable [IndTypes]
+  def paramTypes (c : Ind.TyCtor) (ℓ : ℕ) :  TermTele n (Arities.numParams c) :=
+    (IndTypes.closedParamTypes c ℓ)⦇Renaming.fromClosed⦈ᵣ
+
+  def fieldTypes {c : Ind.TyCtor} (d : Ind.Ctor c) (ℓ : ℕ)
+    : TermTele n (Arities.numParams c + Arities.arity d) :=
+    (IndTypes.closedFieldTypes d ℓ)⦇Renaming.fromClosed⦈ᵣ
+end IndTypes
 
 -- We leave this completely unspecified. We'll refine what it means later
 class Coverage : Type where
@@ -22,7 +32,7 @@ class Coverage : Type where
   (Ts : TermTele 0 numScrut) (xs : ((i : Fin2 numBranch) → PatCtx ))
   (lhss : (i : Fin2 numBranch) → (TermVec (xs i).fst numScrut)) : Prop
 
-variable [Coverage]
+variable [Coverage] [IndTypes]
 
 --A context over n variables is a list of n variables, where each can depend on the last
 inductive PreCtx : ℕ → Type where
@@ -197,32 +207,23 @@ section
       (Γ ⊢ t ∷[Head.Pi]∈ (x∷ S ,, T))
     → (Γ ⊢ S ∋∷ s)
     → ---------------------------
-      (Γ ⊢ (t $ s) ∷∈ T/[s /x])
-
-  -- Pairs: standard
-  | PairType {n : ℕ} {Γ : PreCtx n} {S : Term n} {T : Term (Nat.succ n)} :
-      (Γ ⊢ S ∈𝒰 ℓ₁)
-    → ((Γ▸S) ⊢ T ∈𝒰 ℓ₂)
-    → ---------------------------
-      (Γ ⊢ (Σx∷ S ,, T) ∷∈ (𝒰 (max ℓ₁ ℓ₂)))
-
-  | PairIntro :
-      (Γ ⊢ s ∷∈ S)
-    → ((Γ▸S) ⊢ 𝒰∋ T)
-    → (Γ ⊢ T/[s /x] ∋∷ t)
-    →-----------------------------
-    (Γ ⊢ ⟨x↦ s,,t ∷x,,T⟩ ∷∈ (Σx∷S ,, T) )
-
-  | PairElim1 :
-    (Γ ⊢ t ∷[ Head.Sigma ]∈ (x∷ S ,, T))
-    →-----------------------------
-    (Γ ⊢ (π₁ t) ∷∈ S )
+      (Γ ⊢ (t s) ∷∈ T/[s /x])
 
 
-  | PairElim2 :
-    (Γ ⊢ t ∷[ Head.Sigma ]∈ (x∷ S ,, T))
-    →-----------------------------
-    (Γ ⊢ (π₂ t) ∷∈ T/[ π₁ t /x] )
+  | TyCtorType {Γ : PreCtx n} {c : Ind.TyCtor} {ts : TermVec n (Arities.numParams c)} :
+    --
+    (Γ ⊢ IndTypes.paramTypes c ℓ  ∋∷[ Arities.numParams c ] ts)
+    →----------------------------------
+     Γ ⊢ (c [ℓ:= ℓ] ts) ∷∈ 𝒰 ℓ
+
+
+  | CtorType {Γ : PreCtx n} {d : Ind.Ctor c}
+    {ts : TermVec n (Arities.numParams c + Arities.arity d)} :
+    --
+    (Γ ⊢ IndTypes.fieldTypes d ℓ  ∋∷[ _ ] ts)
+    →----------------------------------
+     Γ ⊢ (d [ℓ:= ℓ] ts) ∷∈ 𝒰 ℓ
+
 
   | MatchTy {n : ℕ} {Γ : PreCtx n} {numScrut} {numBranches : ℕ} {ts} {Ts : TermTele 0 numScrut}
                 {Tmotive} {xs} {lhss : (i : Fin2 numBranches) → _} {rhss} :
