@@ -7,6 +7,17 @@ import Mathlib.Data.Vector3
 namespace MLTT
 open ABT
 
+class Ind : Type 1 where
+  TyCtor : Type
+  Ctor : TyCtor → Type
+
+class Arities [Ind] : Type 1 where
+  numParams : Ind.TyCtor → ℕ
+  arity : Ind.Ctor c → ℕ
+
+
+variable [Ind] [Arities]
+
 inductive Head where
   | Pi | Lam | App
   | Sigma | Pair | Proj₁ | Proj₂
@@ -14,6 +25,8 @@ inductive Head where
   | False | exfalso
   | Tipe (ℓ : ℕ)
   | CaseSplit {numBranch : ℕ} (vars : Vector3 ℕ numBranch) (numScrut : ℕ)
+  | TyCtor (c : Ind.TyCtor)
+  | Ctor (d : Ind.Ctor c)
   -- Not used for expressions, but to pass substitutions through pairs
   -- when defining e.g. preservation of substitution
   | RawSingle
@@ -37,6 +50,8 @@ def sig : Head → List Sig
 | Head.False => []
 | Head.exfalso => [◾, ◾]
 | Head.Tipe _ => []
+| Head.TyCtor ctor => [◾tele (Arities.numParams ctor)]
+| @Head.Ctor _ tyCtor ctor => [◾tele (Arities.numParams tyCtor + Arities.arity ctor)]
 -- Pattern match contains numBranch branches. There's a scrutinee and a motive type.
 -- which is parameterized over the scrutinee type.
 -- Then each branch has a context of its free variables, which we represent
@@ -120,6 +135,9 @@ notation:50 " 𝒰 " ℓ => ABT.op (Head.Tipe ℓ) ABT.argsNil
 --   PatCtx numVars
 --   × ABT n (ABTArg.Arg (Sig.nClosed numVars (Sig.tele ◾)))
 --   × ABT n (ABTArg.Arg (Sig.nClosed numVars ◾))
+
+instance  : Coe (Term n) (Term n → Term n) where
+  coe f := fun t => f $ t
 
 
 structure CaseSplit (n : ℕ) : Type where

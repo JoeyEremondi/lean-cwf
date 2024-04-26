@@ -4,12 +4,12 @@ import CwF.ABT.ABT
 import CwF.ABT.Subst
 import CwF.ABT.SubstProperties
 import CwF.MLTT.Sig
-import CwF.MLTT.Cases
 import Mathlib.Data.Vector3
 
 namespace MLTT
 open ABT
 
+variable  [Ind] [Arities]
 
 class inductive Reduces : (s : Term n) → (t : outParam (Term n)) → Prop where
 | Reducesβ : Reduces ((λx∷ T ,, t) $ s) t /[ s /x]

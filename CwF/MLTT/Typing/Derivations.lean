@@ -10,6 +10,12 @@ import CwF.MLTT.Reductions
 namespace MLTT
 open ABT
 
+variable [Ind] [Arities]
+
+class IndTypes where
+  paramTypes : ∀ c, TermTele 0 (Arities.numParams c)
+  fieldTypes : ∀ c, TermTele 0 (Arities.numParams c)
+
 -- We leave this completely unspecified. We'll refine what it means later
 class Coverage : Type where
   IsCover {numBranch} {numScrut}
