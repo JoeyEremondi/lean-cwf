@@ -135,6 +135,13 @@ def vecNil : TermVec n 0 := depVecNil
 def vecCons (h : Term n) : (ts : TermVec n len) → TermVec n (Nat.succ len)
 | termVec ts => termVec (Fin2.cases' (termArg h) ts)
 
+def vecConcat  (v1 : TermVec n a) (v2 : TermVec n b) : TermVec n (a + b) := by
+  let f1 := vecEquiv.toFun v1
+  let f2 := vecEquiv.toFun v2
+  rw [Nat.add_comm]
+  apply vecEquiv.invFun (Vector3.append (Vector3.ofFn f1) (Vector3.ofFn f2))
+
+
 abbrev nBinds : (i : ℕ) → Sig → Sig
 | Nat.zero, s => s
 | Nat.succ n, s => Sig.bind (nBinds n s)
@@ -157,6 +164,7 @@ def teleCons (h : Term n) (ts : TermTele (Nat.succ n) len)
   :  TermTele n (Nat.succ len) :=
   termVec (Fin2.cases' (termArg h) (fun i => ABT.bind (vecEquiv.toFun ts i)))
 
+
 def teleHead (ts : TermTele n (Nat.succ len)) : Term n := by
   cases abtVecLookup ts Fin2.fz
   assumption
@@ -166,6 +174,15 @@ def teleTail (ts : TermTele n (Nat.succ len)) : TermTele (Nat.succ n) len := by
   intros i
   cases abtVecLookup ts (Fin2.fs i)
   assumption
+
+def teleSnoc (ts : TermTele n len) (t : Term (n + len)) : TermTele n (Nat.succ len) :=
+  match len with
+  | Nat.zero => teleCons t teleNil
+  | Nat.succ len => by
+    apply teleCons (teleHead ts) (teleSnoc (teleTail ts) _)
+    simp [Nat.succ_add]
+    simp [Nat.add_succ] at t
+    apply t
 
 @[simp]
 def teleConsHead : teleHead (teleCons h t) = h := by
@@ -267,4 +284,3 @@ notation "ABTsingleton" s =>
 notation "ABTfromNat" x =>
   argsCons (numLit x) argsNil
 
-end ABT

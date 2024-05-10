@@ -3,6 +3,8 @@ import CwF.ABT.ABT
 import CwF.ABT.Subst
 import CwF.ABT.SubstProperties
 import Mathlib.Data.Vector3
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Data.Fintype.Card
 
 namespace MLTT
 open ABT
@@ -10,6 +12,13 @@ open ABT
 class Ind : Type 1 where
   TyCtor : Type
   Ctor : TyCtor → Type
+  [isFinite : ∀ {c}, Fintype (Ctor c)]
+
+namespace Ind
+  variable [Ind]
+  def numCtors (c : TyCtor) : ℕ := (isFinite (c := c)).card
+end Ind
+
 
 class Arities [Ind] : Type 1 where
   numParams : Ind.TyCtor → ℕ
@@ -40,7 +49,7 @@ def sig : Head → List Sig
 | Head.App => [◾, ◾]
 | Head.Tipe _ => []
 | Head.TyCtor ctor _ => [◾vec (Arities.numParams ctor)]
-| @Head.Ctor _ tyCtor ctor _ => [◾vec (Arities.numParams tyCtor + Arities.arity ctor)]
+| @Head.Ctor _ tyCtor ctor _ => [◾vec (Arities.numParams tyCtor), ◾vec (Arities.arity ctor)]
 -- Pattern match contains numBranch branches. There's a scrutinee and a motive type.
 -- which is parameterized over the scrutinee type.
 -- Then each branch has a context of its free variables, which we represent
@@ -113,8 +122,14 @@ instance : CoeFun (Ind.TyCtor)
   coe {c} ℓn ts := ABT.op (Head.TyCtor c ℓn.fst) (ABT.argsCons ts ABT.argsNil)
 
 instance : CoeFun (Ind.Ctor c)
-  (fun d => ∀ (ℓn : ℕ × ℕ),  TermVec ℓn.snd (Arities.numParams c + Arities.arity d) → Term ℓn.snd) where
-  coe {d} ℓn ts := ABT.op (Head.Ctor d ℓn.fst) (ABT.argsCons ts ABT.argsNil)
+  (fun d =>
+    ∀ (ℓn : ℕ × ℕ),
+    TermVec ℓn.snd (Arities.numParams c)
+    → TermVec (ℓn.snd) (Arities.arity d)
+    → Term ℓn.snd) where
+  coe {d} ℓn pars ts :=
+    ABT.op (Head.Ctor d ℓn.fst)
+           (ABT.argsCons pars (ABT.argsCons ts ABT.argsNil))
 
 notation "[ℓ:=" ℓ "]" => ⟨ℓ , _⟩
 -- def Branch (n : ℕ) (numVars : ℕ) : Type :=

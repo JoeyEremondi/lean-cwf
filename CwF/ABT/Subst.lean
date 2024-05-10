@@ -27,9 +27,16 @@ namespace Subst
 
   abbrev proj : Subst (Nat.succ m) m  := ofRenaming Fin2.fs
 
+
+
   def wk (θ : Subst m n)  : Subst (Nat.succ m) (Nat.succ n)
   | Fin2.fz => ABT.var Fin2.fz
   | Fin2.fs x => Renaming.shift (θ x)
+
+  def wkN (offset : ℕ) (θ : Subst m n) : Subst (m + offset) (n + offset) :=
+    match offset with
+    | Nat.zero => θ
+    | Nat.succ offset => wk (wkN offset θ)
 
   -- Deleted this because Lean prints goals better if we have it purely as a notation
   abbrev subst (θ : Subst m n) : ABT n a →  ABT m a :=
@@ -77,6 +84,13 @@ macro "unfold_subst_all"  : tactic => `(tactic| (unfold Subst.subst at * ; try s
 
 
 namespace Subst
+
+
+abbrev projN (offset : ℕ) : Subst (m + offset) m :=
+  match offset with
+  | Nat.zero => Subst.id
+  | Nat.succ offset => proj ⨟ projN offset
+
 -- Syntactic substitutions are equivalent to substitutions as functions
 def syntacticEquiv : TermVec m n ≃ Subst m n where
     toFun θ i :=

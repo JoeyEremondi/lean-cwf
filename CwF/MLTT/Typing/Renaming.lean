@@ -10,7 +10,7 @@ import CwF.MLTT.Typing.Derivations
 namespace MLTT
 open ABT
 
-variable [Coverage]
+variable  [Ind] [Arities] [IndTypes] [Coverage]
 
 section
   attribute [-simp] Subst.wkRenaming
@@ -39,7 +39,7 @@ section
     changeCtx x := by
       cases x <;> simp [PreCtx.lookup, getElem, Renaming.shift]
 
-  -- set_option maxHeartbeats 20000
+  set_option maxHeartbeats 1000000
   set_option pp.notation true
 
   @[aesop safe]

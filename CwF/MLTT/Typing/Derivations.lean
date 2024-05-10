@@ -14,26 +14,62 @@ variable [Ind] [Arities]
 
 class IndTypes where
   closedParamTypes : ∀ c (ℓ : ℕ), TermTele 0 (Arities.numParams c)
-  closedFieldTypes : ∀ {c} (d : Ind.Ctor c) (ℓ : ℕ) , TermTele 0 (Arities.numParams c + Arities.arity d)
+  closedFieldTypes : ∀ {c} (d : Ind.Ctor c) (ℓ : ℕ) , TermTele (Arities.numParams c) (Arities.arity d)
+
 
 namespace IndTypes
   variable [IndTypes]
   def paramTypes (c : Ind.TyCtor) (ℓ : ℕ) :  TermTele n (Arities.numParams c) :=
     (IndTypes.closedParamTypes c ℓ)⦇Renaming.fromClosed⦈ᵣ
 
+  @[simp]
+  theorem paramSubst {c : Ind.TyCtor} {ℓ : ℕ} {θ : Subst m n} :
+    (paramTypes (n := n) c ℓ)⦇θ⦈ = paramTypes (n := m) c ℓ := by
+      simp only [paramTypes, Renaming.fromClosed]
+      unfold_subst
+
+  @[simp]
+  theorem paramRen {c : Ind.TyCtor} {ℓ : ℕ} {ρ : Renaming m n} :
+    (paramTypes (n := n) c ℓ)⦇ρ⦈ᵣ = paramTypes (n := m) c ℓ := by
+      simp only [paramTypes, Renaming.fromClosed]
+      unfold_rename
+
   def fieldTypes {c : Ind.TyCtor} (d : Ind.Ctor c) (ℓ : ℕ)
-    : TermTele n (Arities.numParams c + Arities.arity d) :=
-    (IndTypes.closedFieldTypes d ℓ)⦇Renaming.fromClosed⦈ᵣ
+    (params : TermVec n (Arities.numParams c))
+    : TermTele n (Arities.arity d) :=
+    (IndTypes.closedFieldTypes d ℓ)⦇Subst.syntacticEquiv.toFun params⦈
+
+  @[simp]
+  theorem fieldSubst : (fieldTypes d ℓ params)⦇θ⦈ = fieldTypes d ℓ params⦇θ⦈ := by
+      simp only [fieldTypes, Renaming.fromClosed]
+      unfold_subst
+      simp [ Subst.syntacticSubComp]
+
+  @[simp]
+  theorem fieldRen : (fieldTypes d ℓ params)⦇ρ⦈ᵣ = fieldTypes d ℓ params⦇ρ⦈ᵣ := by
+      simp only [fieldTypes, Renaming.fromClosed]
+      unfold_rename
+      simp [ Subst.syntacticSubComp]
+
 end IndTypes
 
+variable [IndTypes]
 -- We leave this completely unspecified. We'll refine what it means later
 class Coverage : Type where
-  IsCover {numBranch} {numScrut}
-  (Ts : TermTele 0 numScrut) (xs : ((i : Fin2 numBranch) → PatCtx ))
-  (lhss : (i : Fin2 numBranch) → (TermVec (xs i).fst numScrut)) : Prop
+  IsCover
+    {numBranch} {numScrut}
+    (Ts : TermTele 0 numScrut) (xs : ((i : Fin2 numBranch) → PatCtx ))
+    (lhss : (i : Fin2 numBranch) → (TermVec (xs i).fst numScrut)) : Prop
+  -- The identity should always be a cover
+  idCover : IsCover (numBranch := 1) Ts (fun _ => ⟨_ , Ts⟩) (fun _ => Subst.syntacticEquiv.invFun Subst.id)
+  -- -- The constructors should cover an inductive type
+  -- ctorCover (c : Ind.TyCtor) (ℓ : ℕ) (ctx : TermTele 0 n) (params : TermVec n (Arities.numParams c))
+  --   : IsCover (numBranch := Ind.numCtors c)
+  --       (teleSnoc ctx (by simp ; apply c [ℓ:= ℓ] params) )
+  --       (fun di => by simp)
+  --       (by simp)
 
 variable [Coverage] [IndTypes]
-
 --A context over n variables is a list of n variables, where each can depend on the last
 inductive PreCtx : ℕ → Type where
   | ctxNil : PreCtx 0
@@ -210,19 +246,21 @@ section
       (Γ ⊢ (t s) ∷∈ T/[s /x])
 
 
-  | TyCtorType {Γ : PreCtx n} {c : Ind.TyCtor} {ts : TermVec n (Arities.numParams c)} :
+  | TyCtorTy {Γ : PreCtx n} {c : Ind.TyCtor} {ts : TermVec n (Arities.numParams c)} :
     --
     (Γ ⊢ IndTypes.paramTypes c ℓ  ∋∷[ Arities.numParams c ] ts)
     →----------------------------------
      Γ ⊢ (c [ℓ:= ℓ] ts) ∷∈ 𝒰 ℓ
 
 
-  | CtorType {Γ : PreCtx n} {d : Ind.Ctor c}
-    {ts : TermVec n (Arities.numParams c + Arities.arity d)} :
+  | CtorTy {Γ : PreCtx n} {d : Ind.Ctor c}
+    {pars : TermVec n (Arities.numParams c)}
+    {ts : TermVec n (Arities.arity d)} :
     --
-    (Γ ⊢ IndTypes.fieldTypes d ℓ  ∋∷[ _ ] ts)
+      (Γ ⊢ IndTypes.paramTypes c ℓ  ∋∷[ Arities.numParams c ] pars)
+    → (Γ ⊢ (IndTypes.fieldTypes d ℓ pars) ∋∷[ Arities.arity d ] ts)
     →----------------------------------
-     Γ ⊢ (d [ℓ:= ℓ] ts) ∷∈ 𝒰 ℓ
+     Γ ⊢ (d [ℓ:= ℓ] pars ts) ∷∈ (c [ℓ:= ℓ] pars)
 
 
   | MatchTy {n : ℕ} {Γ : PreCtx n} {numScrut} {numBranches : ℕ} {ts} {Ts : TermTele 0 numScrut}

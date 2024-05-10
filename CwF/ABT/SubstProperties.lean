@@ -228,6 +228,7 @@ namespace Subst
     simp [Fin2.cases']
     cases i <;> simp
 
+
   @[simp]
   theorem subTeleCons : (ABT.teleCons h t)⦇θ⦈ = ABT.teleCons h⦇θ⦈ t⦇wk θ⦈ := by
     unfold teleCons
@@ -257,8 +258,10 @@ namespace Subst
   --Substitutions have no effect on closed terms, so they're all equivalent
   --to "introduce unused variables"
   @[simp]
-  theorem fromClosedSubst  {θ : Subst n 0} : θ  = ofRenaming fromClosed := by
+  theorem fromClosedSubst  {θ : Subst n 0} : θ  = ofRenaming Renaming.fromClosed := by
     funext i ; contradiction
+
+
 
 
 end Subst

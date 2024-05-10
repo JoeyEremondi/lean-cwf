@@ -13,7 +13,7 @@ import CwF.MLTT.Typing.SubstHelper
 namespace MLTT
 open ABT
 
-variable [Coverage]
+variable  [Ind] [Arities] [IndTypes] [Coverage]
 
 
 
@@ -65,16 +65,6 @@ theorem subPreserveType  {Γ : PreCtx n} {md : Mode} {i : Inputs n md} {o : Outp
     let helper := θwf.varTyped (x := x)
     unfold_subst_at helper
     assumption
-  | @PairIntro _ _ _ S T _ tys tyT tyt IHs IHT IHt =>
-    let ⟨S' , tyS' , eq⟩ := allSynthSub (Γ := Δ) θ DefEq.Refl (IHs)
-    -- have eq' := DefEq.Symm eq
-    let SigEq : (Σx∷ S' ,, T⦇Subst.wk θ⦈) ≡ (Σx∷ S⦇θ⦈ ,, T⦇Subst.wk θ⦈) := inferInstance
-    constructor <;> try aesop_cat
-    constructor <;> try assumption
-    . apply IHT
-    . unfold_subst_at IHt
-      simp [Subst.wk_def]
-      apply IHt (Δ := Δ) (θ := θ)
   | @MatchTy n Γ numScrut numBranch ts Ts Tmotive xs lhss rhss iscover ty tyBranch IHts _ =>
     apply checkEq _ (Eq.refl _)
     rw [Subst.syntacticSubComp]

@@ -84,7 +84,7 @@ namespace Renaming
 
   --Renamings have no effect on closed terms, so they're all equivalent to "introduce unused vars"
   @[simp]
-  theorem fromClosedRen {ρ0 : Renaming m 0} : ρ0 =  fromClosed := by
+  theorem fromClosedRen {ρ0 : Renaming m 0} : ρ0 =  Renaming.fromClosed := by
     funext i ; contradiction
 
 
