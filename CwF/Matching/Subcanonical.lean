@@ -171,14 +171,19 @@ def baseFamily {U V W : C} {f : V ⟶ U} {g : W ⟶ U}
        apply Over.OverMorphism.ext
        simp
        apply Eq.trans lem
+       congr!
        have leftEq {x1} {x2} {p1} {p2}
          : (hₖs (CommaMorphism.mk θ rt x1) p1).left = (hₖs (CommaMorphism.mk θ rt x2) p2).left :=
          by aesop
        simp [Presieve.FamilyOfElements] at hₖs
-       have eqrt {x : _} :  x = rt := by aesop_cat
-       have eqinR {x : _} :  x = inR := by aesop_cat
-       simp [eqrt, eqinR]
-       admit
+       -- have eqrt {x : _} :  x = rt := by aesop_cat
+       -- have eqinR {x : _} :  x = inR := by aesop_cat
+       -- simp [eqrt, eqinR]
+       congr!
+       cases Y
+       simp [Over.mk, CostructuredArrow.mk]
+       simp at eq
+       apply eq
 
 
 def subcanonicalSlice {J : GrothendieckTopology C}
