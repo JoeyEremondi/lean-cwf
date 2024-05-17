@@ -156,7 +156,7 @@ def baseFamily {U V W : C} {f : V ⟶ U} {g : W ⟶ U}
     : (hₖs θ1 in1).left = (hₖs θ2 in2).left := by aesop
 
 
-   def overPreserveAmalg {U V W : C}  {g : W ⟶ U} {h : V ⟶ W}
+   def overPreserveAmalgSame {U V W : C}  {g : W ⟶ U} {h : V ⟶ W}
     (R : Sieve (Over.mk (h ≫ g)))
     {hₖs : Presieve.FamilyOfElements (yoneda.obj (Over.mk g)) R.arrows}
      (isAmalg : Presieve.FamilyOfElements.IsAmalgamation (baseFamily R hₖs) h )
@@ -172,84 +172,84 @@ def baseFamily {U V W : C} {f : V ⟶ U} {g : W ⟶ U}
        simp
        apply Eq.trans lem
        congr!
-       have leftEq {x1} {x2} {p1} {p2}
-         : (hₖs (CommaMorphism.mk θ rt x1) p1).left = (hₖs (CommaMorphism.mk θ rt x2) p2).left :=
-         by aesop
-       simp [Presieve.FamilyOfElements] at hₖs
-       -- have eqrt {x : _} :  x = rt := by aesop_cat
-       -- have eqinR {x : _} :  x = inR := by aesop_cat
-       -- simp [eqrt, eqinR]
-       congr!
        cases Y
        simp [Over.mk, CostructuredArrow.mk]
        simp at eq
        apply eq
 
 
+   def overPreserveAmalg {U V W : C} {f : V ⟶ U}  {g : W ⟶ U} {h : V ⟶ W}
+    (R : Sieve (Over.mk f))
+    {hₖs : Presieve.FamilyOfElements (yoneda.obj (Over.mk g)) R.arrows}
+     (isAmalg : Presieve.FamilyOfElements.IsAmalgamation (baseFamily R hₖs) h )
+     (eq : f = h ≫ g)
+     : Presieve.FamilyOfElements.IsAmalgamation hₖs (Over.homMk h) := by
+       cases eq
+       apply overPreserveAmalgSame R isAmalg
+
+   def basePreserveAmalg {U V W : C} {f : V ⟶ U}  {g : W ⟶ U} {h : V ⟶ W}
+    (R : Sieve (Over.mk f))
+    {hₖs : Presieve.FamilyOfElements (yoneda.obj (Over.mk g)) R.arrows}
+     (eq : h ≫ g = f)
+     (isAmalg : Presieve.FamilyOfElements.IsAmalgamation hₖs (Over.homMk h))
+     : Presieve.FamilyOfElements.IsAmalgamation (baseFamily R hₖs) h  := by
+       cases eq
+       intros X θ inR
+       simp at θ
+       simp [baseFamily]
+       let lem := @isAmalg (Over.mk (θ ≫ h ≫ g)) (Over.homMk θ) ((baseArrowsIff R _).mpr inR)
+       simp at lem
+       apply congrArg (fun x => x.left) lem
+
 def subcanonicalSlice {J : GrothendieckTopology C}
   (issub : Sheaf.Subcanonical J )
   : Sheaf.Subcanonical (GrothendieckTopology.over J U) := by
   apply Sheaf.Subcanonical.of_yoneda_isSheaf
   let allBaseReprSheaf := Sheaf.Subcanonical.isSheaf_of_representable issub
-  intros X
-  let ⟨W, _, g⟩ := X
-  simp at g
-  simp [Presieve.IsSheaf]
-  intros Y R Rcover
-  let ⟨V, _, f⟩ := Y
-  simp at f
-  -- let lem := GrothendieckTopology.mem_over_iff J (X := U) (Y := Y)
-  intros hₖs compat
-  simp [Presieve.FamilyOfElements, Presieve.FamilyOfElements.Compatible] at hₖs compat
-  -- Construct a family of elements in the base category for yoneda X
-  let xs' := baseFamily R hₖs
-    -- This family is compatible
-  have compat' : Presieve.FamilyOfElements.Compatible xs' :=
-    baseFamilyCompat R compat
-  -- Base site is subcanonical, so we can amalgamate the family
-  have ⟨h, isAmalg, uniq⟩ : ∃! t, Presieve.FamilyOfElements.IsAmalgamation xs' t := by
-    apply allBaseReprSheaf
-    apply Iff.mp
-    apply GrothendieckTopology.mem_over_iff J (X := U) (Y := Over.mk f)
-    apply Rcover
-    apply compat'
-  simp at h isAmalg uniq
-  simp [Presieve.FamilyOfElements.IsAmalgamation] at isAmalg
-  let h' : Over.mk f ⟶ Over.mk g := Over.homMk h (by
-    simp
-    admit
-    )
-  exists h'
-  simp
-  fconstructor
-  . simp
-    simp [Presieve.FamilyOfElements.IsAmalgamation]
-    intros θ σ σinR
-    apply Over.OverMorphism.ext
-    simp
-    have rew : σ = Over.homMk σ.left (by let w := σ.w ; simp at w ; apply w) := by
-      cases σ
+  intros X Y R Rcover hₖs compat
+  let baseFam := baseFamily R hₖs
+  let baseCompat := baseFamilyCompat R compat
+  let Jbase := Sieve.overEquiv _ R
+  let JbaseCover := (GrothendieckTopology.mem_over_iff J R).mp Rcover
+  -- let sieveIn : (Sieve.overEquiv Y) R ∈ J.sieves Y.left := by
+  --   let lem := GrothendieckTopology.mem_over_iff J R
+  --   apply lem.mp Rcover
+  let ⟨h, hAmalg, hUniq⟩ :=
+    allBaseReprSheaf
+      (yoneda.obj X.left)
+      Jbase
+      JbaseCover
+      baseFam
+      baseCompat
+  simp at h hAmalg hUniq
+  let V := Y.left
+  let W := X.left
+  let f := Y.hom
+  let g := X.hom
+  let eqY : Y = Over.mk f := by aesop
+  let eqX : X = Over.mk g := by aesop
+  cases eqX
+  cases eqY
+  simp at f g V W hₖs compat baseFam baseCompat
+  have hgfeq : h ≫ g = f :=
+    overAmalgFactor R hAmalg (allBaseReprSheaf _ _ Rcover)
+  fconstructor <;> simp
+  . apply Over.homMk h hgfeq
+  . fconstructor
+    -- It's an amalgamation for the slice
+    . apply overPreserveAmalg _ hAmalg hgfeq.symm
+    -- The amalgamation is unique
+    . intros t isAmalg
+      let ⟨t , _ , eq⟩ := t
+      simp at eq
       simp [Over.homMk, CostructuredArrow.homMk]
       apply CommaMorphism.ext
       simp
-      rfl
-    rw [rew] at σinR
-    -- cases σ
-    let inR' := (Sieve.overEquiv_iff R σ.left).mpr
-    -- let ⟨arr , _ , pf⟩ := σ
-    simp  at inR'
-    let inR := inR' (by admit)
-    let baseAmalg := isAmalg σ.left (by admit)
-    apply Eq.trans baseAmalg
-    simp [baseFamily]
-    let foo := (hₖs σ σinR)
-    rfl
-  . simp
+      apply hUniq
+      fapply basePreserveAmalg _ eq isAmalg
+      simp
+      aesop
 
-
-  exists amalg
-
-  admit
 end GrothendieckTopology
 
 
