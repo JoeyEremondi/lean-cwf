@@ -75,36 +75,23 @@ def baseFamily {U V W : C} {f : V ⟶ U} {g : W ⟶ U}
     intros Ξ1 Ξ2 Δ g1 g2 f1 f2 inBase1 inBase2 eq
     simp
     simp at f1 f2
-    let foo :=  baseFamily R hₖs f1 inBase1
     let inR1 := (Sieve.overEquiv_iff R _).mp inBase1
     let inR2 := (Sieve.overEquiv_iff R _).mp inBase2
-    simp at foo
-    admit
-    -- simp [Presieve.FamilyOfElements.Compatible] at compat f1 f2
-    -- let eqf : (g1 ≫ f1 ≫ f) = (g2 ≫ f2 ≫ f) := by
-    --   let pf := congrArg (fun x => x ≫ f) eq
-    --   simp at pf
-    --   apply pf
-    -- let Δarr : Over U := Over.mk (Y := Δ) (g1 ≫ f1 ≫ f)
-    -- let Ξarr1 : Over U := Over.mk (Y := Ξ1) (f1 ≫ f)
-    -- let Ξarr2 : Over U := Over.mk (Y := Ξ2) (f2 ≫ f)
-    -- let g1' : Δarr ⟶ Ξarr1 := Over.homMk g1
-    -- let g2' : Δarr ⟶ Ξarr2 := by
-    --   simp
-    --   rw [eqf]
-    --   apply Over.homMk _ _ <;> simp
-    --   . apply g2
-    --   . simp
-    -- let foo := compat g1' g2' inR1 inR2 (by admit)
-      -- (by
-      --   simp
-      --   apply Over.OverMorphism.ext
-      --   apply Eq.trans eq
-      --   simp
-      --   apply congrArg (fun x => x ≫ f2)
-      --   admit
-      --   )
-      --
+    let Ξ1' := Over.mk (f1 ≫ f)
+    let Ξ2' := Over.mk (f2 ≫ f)
+    let Δ' := Over.mk (g1 ≫ f1 ≫ f)
+    have inSlice2 : g2 ≫ Ξ2'.hom = Δ'.hom := by
+      simp
+      rw [<- Category.assoc]
+      rw [<- eq]
+      simp
+    let lem :=
+      @compat Ξ1' Ξ2' Δ' (Over.homMk g1) (Over.homMk g2 inSlice2) _ _ inR1 inR2
+      (by apply Over.OverMorphism.ext ; simp ; apply eq)
+    simp at lem
+    let lemCongr := congrArg (fun x => x.left) lem
+    simp at lemCongr
+    apply lemCongr
 
 
    def overAmalgFactor
@@ -169,7 +156,6 @@ def baseFamily {U V W : C} {f : V ⟶ U} {g : W ⟶ U}
     : (hₖs θ1 in1).left = (hₖs θ2 in2).left := by aesop
 
 
-
    def overPreserveAmalg {U V W : C}  {g : W ⟶ U} {h : V ⟶ W}
     (R : Sieve (Over.mk (h ≫ g)))
     {hₖs : Presieve.FamilyOfElements (yoneda.obj (Over.mk g)) R.arrows}
@@ -178,24 +164,21 @@ def baseFamily {U V W : C} {f : V ⟶ U} {g : W ⟶ U}
        simp [Presieve.FamilyOfElements.IsAmalgamation, baseFamily] at isAmalg
        simp [Presieve.FamilyOfElements.IsAmalgamation, baseFamily]
        intros Y θ inR
-       let inRbase := (baseArrowsIff R θ).mp inR
-       let lem := isAmalg θ.left inRbase
+       simp_all [Over.homMk, CostructuredArrow.homMk]
+       let ⟨θ, rt, eq⟩ := θ
+       let inRbase := (baseArrowsIff R _).mp inR
+       let lem := isAmalg θ inRbase
        apply Over.OverMorphism.ext
        simp
        apply Eq.trans lem
-       have θeq : ∀ {pf}, Over.homMk θ.left pf = θ := by
-         let ⟨θ , rt, eq⟩ := θ
-         simp [Over.homMk, CostructuredArrow.homMk]
-         have eq {x : _} :  x = rt := by aesop_cat
-         simp [eq]
-       have arrEq {p1} {p2} : (hₖs (Over.homMk θ.left p1) p2) = (hₖs θ inR) := by
-         let ⟨θ , rt, eq⟩ := θ
-         have rteq {x : _} :  x = rt := by aesop_cat
-         simp [Over.homMk, CostructuredArrow.homMk]
-         rfl
-       apply @famLeft _ _ U V W (h ≫ g) g R hₖs Y _ _ _ inR  arrEq
-       reduce
-       rw [arrEq]
+       have leftEq {x1} {x2} {p1} {p2}
+         : (hₖs (CommaMorphism.mk θ rt x1) p1).left = (hₖs (CommaMorphism.mk θ rt x2) p2).left :=
+         by aesop
+       simp [Presieve.FamilyOfElements] at hₖs
+       have eqrt {x : _} :  x = rt := by aesop_cat
+       have eqinR {x : _} :  x = inR := by aesop_cat
+       simp [eqrt, eqinR]
+       admit
 
 
 def subcanonicalSlice {J : GrothendieckTopology C}
