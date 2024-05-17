@@ -106,33 +106,51 @@ def baseFamily {U V W : C} {f : V ⟶ U} {g : W ⟶ U}
       --   )
       --
 
+
    def overAmalgFactor
    {U V W : C} {f : V ⟶ U}  {g : W ⟶ U} {h : V ⟶ W}
     (R : Sieve (Over.mk f))
     {hₖs : Presieve.FamilyOfElements (yoneda.obj (Over.mk g)) R.arrows}
      (isAmalg : Presieve.FamilyOfElements.IsAmalgamation (baseFamily R hₖs) h )
-     (compat : Presieve.FamilyOfElements.Compatible hₖs)
      (isSheaf : Presieve.IsSheafFor (yoneda.obj U) (Sieve.overEquiv (Over.mk f) R).arrows )
      : h ≫ g = f := by
        let fₖs
          : Presieve.FamilyOfElements (yoneda.obj U) (Sieve.overEquiv (Over.mk f) R).arrows :=
-           Presieve.FamilyOfElements.compPresheafMap (yoneda.map g) (baseFamily R hₖs)
-       let fCompat :=
-         Presieve.FamilyOfElements.Compatible.compPresheafMap (yoneda.map g) (baseFamilyCompat R compat)
-       have ⟨f', f'Amalg, uniq⟩ : ∃! t, Presieve.FamilyOfElements.IsAmalgamation fₖs t :=
+           fun _ θ _ => θ ≫ f
+       let fCompat : Presieve.FamilyOfElements.Compatible fₖs := by
+         intros _ _ _ g1 g2 _ _ inR1 inR2 eq
+         simp
+         rw [<- Category.assoc]
+         aesop_cat
+       let hgₖs
+         : Presieve.FamilyOfElements (yoneda.obj U) (Sieve.overEquiv (Over.mk f) R).arrows :=
+           fun _ θ _ => θ ≫ h ≫ g
+       have eq : fₖs  = hgₖs := by
+         funext X θ inR
+         simp at inR
+         simp
+         let hₖ := hₖs _ ((Sieve.overEquiv_iff R θ).mp inR)
+         let pf := hₖ.w
+         simp at pf
+         simp [<- pf]
+         rw [<- Category.assoc]
+         apply congrArg (fun x => x ≫ g)
+         symm
+         apply isAmalg _ inR
+       have ⟨f', _, uniq⟩ : ∃! t, Presieve.FamilyOfElements.IsAmalgamation fₖs t :=
          isSheaf fₖs fCompat
        have hgAmalg : Presieve.FamilyOfElements.IsAmalgamation fₖs (h ≫ g)  := by
+         rw [eq]
          intros X θ inR
          let hAmalg := isAmalg θ inR
          simp [baseFamily] at hAmalg
          simp [Presieve.FamilyOfElements.compPresheafMap, baseFamily]
-         rw [<- hAmalg]
-         simp
        have fAmalg : Presieve.FamilyOfElements.IsAmalgamation fₖs f  := by
-         intros X θ inR
-         let hAmalg := isAmalg θ inR
-         simp [Presieve.FamilyOfElements.compPresheafMap, baseFamily]
-       simp [Presieve.FamilyOfElements.IsAmalgamation, Sieve.overEquiv, Presieve.functorPushforward, baseFamily] at isAmalg
+         intros X θ _
+         simp
+       let feq := uniq _ fAmalg
+       let hgeq := uniq _ hgAmalg
+       simp [feq, hgeq]
 
 
 
