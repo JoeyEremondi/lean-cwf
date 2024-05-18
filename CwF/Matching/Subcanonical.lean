@@ -41,7 +41,7 @@ namespace CwF
 --The term model doesn't have all pullbacks without extensional equality, but it
 --also doesn't have proper coverages without extensional equality, so we don't use this to define its
 --pattern matching semantics anyways.
-variable {C : Type u} [cat : Category.{v'}  C] [cwf: CwF C] [Limits.HasPullbacks C]
+variable {C : Type u} [cat : Category.{v'}  C] [cwf: CwF C] -- [Limits.HasPullbacks C]
 
 
 namespace GrothendieckTopology
@@ -253,16 +253,6 @@ def subcanonicalSlice {J : GrothendieckTopology C}
 end GrothendieckTopology
 
 
--- A slice of the canonical topology is subcanonical
-def canonicalSlice (Γ : C) : Sheaf.Subcanonical (GrothendieckTopology.over (Sheaf.canonicalTopology C) Γ) := by
-  apply Sheaf.Subcanonical.of_yoneda_isSheaf
-  intros X
-  simp [Presieve.IsSheaf]
-  intros Y sieve isCover
-  let ysieve := ((Sieve.overEquiv Y).toFun sieve)
-  let lem := GrothendieckTopology.mem_over_iff (Sheaf.canonicalTopology C) (X := Γ) (Y := X)
-  admit
-
 -- Turn a presieve in the slice into one in the base category
 def forgetOverPresieve {Γ : C} {θ : Over Γ} (R : Presieve θ)
   : Presieve θ.left :=  @fun Δ =>
@@ -288,6 +278,8 @@ def forgetOverMem {Γ : C} {θ : Over Γ} (R : Presieve θ) (f : Over Γ) (g : f
 
 def canonicalCoverage := Coverage.ofGrothendieck C (Sheaf.canonicalTopology C)
 
+
+
 --Every representable is a sheaf for any cover in the canonical coverage
 def coverage_isSheaf_yondea_obj
   {Γ : C} {R : Presieve Γ} (mem : R ∈ canonicalCoverage.covering Γ) (Δ : C)
@@ -305,93 +297,104 @@ theorem canonicalCoverageGenerate {Γ : C} (R : Presieve Γ)
   : Sieve.generate R ∈ (Sheaf.canonicalTopology C).sieves Γ :=
     (Coverage.ofGrothendieck_iff (Sheaf.canonicalTopology C)).mp mem
 
-theorem generateToSlice  {Γ : C} (θ : Over Γ) (R : Presieve θ.left) {Δi : Over Γ} {f : Δi ⟶ θ}
-  : Sieve.generate (toSlicePresieve θ R) f ↔ toSlicePresieve θ (Sieve.generate R).arrows f :=
-  by
-    simp [toSlicePresieve, setOf]
-    fconstructor <;> intros H
-    . choose Y h g mem eq using H
-      cases eq
-      reduce
-      aesop_cat
-    . simp at H
-      choose Y h g mem eq using H
-      cases eq
-      reduce
-      apply H
-      aesop_cat
-      
-    aesop_cat
 
--- Helper lemma between sieves and covers
-def helperCompose
-  {R : Presieve Γ} (mem : R ∈ canonicalCoverage.covering Γ)
-
---We try to follow the notation/naming from Elephant C2.2.17, even though
---it doesn't quite match our usual stuff
-def slicePreserveSubcanonical {Γ : C} (f : Over Γ)
-  {R : Presieve f.left} (mem : R ∈ canonicalCoverage.covering f.left) {g : Over Γ}
-  : Presieve.IsSheafFor (yoneda.obj g) (toSlicePresieve f R) :=
-    by
-      intros Xᵢ compat
-      let Xsieve : Presieve.FamilyOfElements
-        (yoneda.toPrefunctor.obj g)
-        (Sieve.generate (toSlicePresieve f R)).arrows := by
-        intros θ fθ mem
-        rw [Sieve.generate_apply] at mem
-        -- Uses choice, since sieve stuff is not constructive
-        -- TODO document
-        choose Mid left right mem' eq using mem
-        let retPart := Xᵢ _ mem'
-        simp at retPart
-        simp
-        cases eq
-        apply (left ≫ retPart)
-      let baseFam :  Presieve.FamilyOfElements (yoneda.obj g.left) (Sieve.generate R).arrows :=
-        fun _ k mem =>
-          (Xsieve (Y := Over.mk (k ≫ f.hom)) (Over.homMk k) (by dsimp only)).left
-      let baseShf := Sheaf.isSheaf_yoneda_obj (Sheaf.canonicalTopology C)
-      -- coverage_isSheaf_yondea_obj mem
-      let baseCompat : Presieve.FamilyOfElements.Compatible baseFam :=
-        by admit
-      let ⟨h, hAmalg, hUnique⟩ := baseShf _ baseFam baseCompat
-      simp [Presieve.FamilyOfElements.IsAmalgamation] at h hAmalg hUnique
-      let foo := @hAmalg
-      simp at foo
-      let hOver : f ⟶ g := Over.homMk h (by
-        simp
-        )
+-- theorem generateToSlice  {Γ : C} (θ : Over Γ) (R : Presieve θ.left) {Δi : Over Γ} {f : Δi ⟶ θ}
+--   : Sieve.generate (toSlicePresieve θ R) f ↔ toSlicePresieve θ (Sieve.generate R).arrows f :=
+--   by
+--     simp [toSlicePresieve, setOf]
+--     fconstructor <;> intros H
+--     . choose Y h g mem eq using H
+--       cases eq
+--       reduce
+--       aesop_cat
+--     . simp at H
+--       choose Y h g mem eq using H
+--       admit
 
 
 
---If we can amalgamate along representables in the base category,
---we can in the slice category.
---Variable names try to match 2.2.17 from the Elephant
-def amalgInSlice {Γ : C}  {R : Presieve Γ}
-   (baseShf : ∀ {Δ}, Presieve.IsSheafFor (yoneda.obj Δ) R)
-    {θ : Over Γ}
-   : Presieve.IsSheafFor (yoneda.obj θ) (toSlicePresieve (Over.mk (𝟙 Γ)) R) := by
-   intros Xᵢ compat
-   simp [Presieve.IsSheafFor] at baseShf
-   let baseFam :  Presieve.FamilyOfElements (yoneda.obj θ.left) R := by
-      intros Δ f mem
-      let x := Xᵢ (Y := Over.mk f) (Over.homMk f) mem
-      let ret := x.left
-      simp at ret
-      exact ret
-   let baseCompat : Presieve.FamilyOfElements.Compatible baseFam  := by
-     admit
-   let ⟨h , isAmalg, isUnique⟩ := baseShf baseFam baseCompat
-   simp at  isAmalg isUnique
-   fconstructor
-   . fapply Over.homMk <;> simp
-     . apply h
-     . simp
+
+
+
 
 
 
 def coverSlicePresieve {Γ : C} (cov : PatCover Γ) : Presieve (Over.mk (𝟙 Γ)) :=
   toSlicePresieve (Over.mk (𝟙 Γ)) (toPresieve cov)
+
+theorem generateEquiv {Γ : C} {cov : PatCover Γ} :
+  Sieve.generate (coverSlicePresieve cov)  = (Sieve.overEquiv (Over.mk (𝟙 Γ))).symm (Sieve.generate (toPresieve cov )) := by
+    simp [coverSlicePresieve, toSlicePresieve, toPresieve]
+    ext
+    constructor <;> simp <;> try aesop_cat
+    . intros X f g isCover eq
+      cases eq
+      simp [toSlicePresieve, setOf] at isCover
+      let lem := Sieve.overEquiv_symm_iff (Y := Over.mk (𝟙 Γ)) (Sieve.generate (toPresieve cov)) (f ≫ g)
+      apply lem.mpr
+      apply Sieve.downward_closed
+      apply Sieve.le_generate
+      apply isCover
+    . intros inCov
+      simp [toSlicePresieve, setOf]
+      rename_i f
+      let lem := Sieve.overEquiv_symm_iff (Y := Over.mk (𝟙 Γ)) (Sieve.generate (toPresieve cov)) f
+      let lem' := lem.mp inCov
+      let ⟨Y' , h , g, gInCov, eq⟩ := lem'
+      let feq := f.w
+      simp at feq
+      exists (Over.mk g)
+      exists (Over.homMk h )
+      exists (Over.homMk g)
+      constructor <;> aesop_cat
+
+
+def isSubcanonicalPatCoverage (coverage : CwF.PatCoverage (C := C)) :=
+  ∀ {Γ} {cov : PatCover Γ} (isCover : cov ∈ coverage Γ ),
+    (canonicalCoverage (C := C)).covering Γ (toPresieve cov)
+
+def subcanonicalPatSliceCover {coverage : CwF.PatCoverage (C := C)}
+  (subcanonical : isSubcanonicalPatCoverage coverage)
+  {Γ : C} { cov : PatCover Γ } (isCover : cov ∈ coverage Γ)
+  : Sieve.generate (coverSlicePresieve cov)
+      ∈ ((Sheaf.canonicalTopology C).over Γ).sieves (Over.mk (𝟙 Γ))  := by
+    rw [GrothendieckTopology.mem_over_iff]
+    simp [generateEquiv]
+    have inCanonical : (Sieve.generate (toPresieve cov)) ∈ (Sheaf.canonicalTopology C).sieves Γ :=
+      by
+        apply canonicalCoverageGenerate
+        apply subcanonical isCover
+    apply cast _ inCanonical
+    congr!
+    have unEquiv
+      : (Sieve.overEquiv (Over.mk (𝟙 Γ))) ((Sieve.overEquiv (Over.mk (𝟙 Γ))).symm (Sieve.generate (toPresieve cov)))
+          = (Sieve.generate (toPresieve cov)) :=
+        (Sieve.overEquiv (Over.mk (𝟙 Γ))).right_inv (Sieve.generate (toPresieve cov))
+    apply Eq.trans unEquiv.symm
+    congr!
+
+def subcanonicalPatSliceSheaf {coverage : CwF.PatCoverage (C := C)}
+  (subcanonical : isSubcanonicalPatCoverage coverage)
+  {Γ : C} {Δᵢ} { cov : PatCover Γ } (isCover : cov ∈ coverage Γ)
+  : Presieve.IsSheafFor (yoneda.obj Δᵢ) (coverSlicePresieve cov)  := by
+    have inCanonical : Sieve.generate (toPresieve cov) ∈ (Sheaf.canonicalTopology C) Γ := by
+      rw [<- Coverage.ofGrothendieck_iff]
+      apply subcanonical isCover
+    have inCanonicalSlice :=
+      GrothendieckTopology.overEquiv_symm_mem_over (Sheaf.canonicalTopology C)
+        (Over.mk (𝟙 Γ)) _ inCanonical
+    simp at inCanonicalSlice
+    apply coverage_isSheaf_yondea_obj
+    simp [canonicalCoverage]
+    rw [Coverage.ofGrothendieck_iff]
+    have isSliceCover :
+      Sieve.generate (coverSlicePresieve cov) ∈
+        ((GrothendieckTopology.over (Sheaf.canonicalTopology C) Γ).sieves (Over.mk (𝟙 Γ))) := by
+      rw [GrothendieckTopology.mem_over_iff]
+      simp
+      apply subcanonical
+
+
 
 def branchesToFam {Γ : C} {cov : PatCover Γ} {T : Ty Γ}
   (branches : MatchOn cov T)
@@ -413,14 +416,17 @@ def branchesToFam {Γ : C} {cov : PatCover Γ} {T : Ty Γ}
 
 -- Relies on Axiom of choice. Alternately we can add an extra constraint that
 -- the sheaf is constructive.
-instance (coverage : CwF.PatCoverage (C := C))   : MatchWithCoverage coverage where
+instance (coverage : CwF.PatCoverage (C := C))
+  (subcanonical : isSubcanonicalPatCoverage coverage)
+  : MatchWithCoverage coverage where
   -- Scratch work, just admit a bunch of stuff to find out what we need
   mkMatch {Γ} {T} cov inCov branches := by
     simp [MatchOn] at branches
     apply termSliceEquivId.invFun
     let isSheaf : Presieve.IsSheafFor (yoneda.obj (tyToSlice T)) (coverSlicePresieve cov) := by
       dsimp [coverSlicePresieve]
-      apply amalgInSlice
+      let lem :=  Sheaf.Subcanonical.isSheaf_of_representable
+      simp
     let compat : Presieve.FamilyOfElements.Compatible (branchesToFam branches) :=
       by admit
     let amalg := isSheaf (branchesToFam branches) compat
