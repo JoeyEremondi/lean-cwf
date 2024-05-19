@@ -281,16 +281,16 @@ def canonicalCoverage := Coverage.ofGrothendieck C (Sheaf.canonicalTopology C)
 
 
 --Every representable is a sheaf for any cover in the canonical coverage
-def coverage_isSheaf_yondea_obj
-  {Γ : C} {R : Presieve Γ} (mem : R ∈ canonicalCoverage.covering Γ) (Δ : C)
-  : Presieve.IsSheafFor (yoneda.obj Δ) R := by
-    let gi_eq := GaloisInsertion.l_u_eq (Coverage.gi C) (Sheaf.canonicalTopology C)
-    let ⟨toLem , _⟩ := (Presieve.isSheaf_coverage canonicalCoverage (yoneda.obj Δ))
-    apply toLem
-    dsimp only [canonicalCoverage]
-    rw [gi_eq]
-    apply Sheaf.isSheaf_yoneda_obj
-    assumption
+-- def coverage_isSheaf_yondea_obj
+--   {Γ : C} {R : Presieve Γ} (mem : R ∈ canonicalCoverage.covering Γ) (Δ : C)
+--   : Presieve.IsSheafFor (yoneda.obj Δ) R := by
+--     let gi_eq := GaloisInsertion.l_u_eq (Coverage.gi C) (Sheaf.canonicalTopology C)
+--     let ⟨toLem , _⟩ := (Presieve.isSheaf_coverage canonicalCoverage (yoneda.obj Δ))
+--     apply toLem
+--     dsimp only [canonicalCoverage]
+--     rw [gi_eq]
+--     apply Sheaf.isSheaf_yoneda_obj
+--     assumption
 
 theorem canonicalCoverageGenerate {Γ : C} (R : Presieve Γ)
   (mem : R ∈ canonicalCoverage.covering Γ)
@@ -377,23 +377,11 @@ def subcanonicalPatSliceSheaf {coverage : CwF.PatCoverage (C := C)}
   (subcanonical : isSubcanonicalPatCoverage coverage)
   {Γ : C} {Δᵢ} { cov : PatCover Γ } (isCover : cov ∈ coverage Γ)
   : Presieve.IsSheafFor (yoneda.obj Δᵢ) (coverSlicePresieve cov)  := by
-    have inCanonical : Sieve.generate (toPresieve cov) ∈ (Sheaf.canonicalTopology C) Γ := by
-      rw [<- Coverage.ofGrothendieck_iff]
-      apply subcanonical isCover
-    have inCanonicalSlice :=
-      GrothendieckTopology.overEquiv_symm_mem_over (Sheaf.canonicalTopology C)
-        (Over.mk (𝟙 Γ)) _ inCanonical
-    simp at inCanonicalSlice
-    apply coverage_isSheaf_yondea_obj
-    simp [canonicalCoverage]
-    rw [Coverage.ofGrothendieck_iff]
-    have isSliceCover :
-      Sieve.generate (coverSlicePresieve cov) ∈
-        ((GrothendieckTopology.over (Sheaf.canonicalTopology C) Γ).sieves (Over.mk (𝟙 Γ))) := by
-      rw [GrothendieckTopology.mem_over_iff]
-      simp
-      apply subcanonical
-
+    apply Presieve.IsSheaf.isSheafFor (J := (Sheaf.canonicalTopology C).over Γ)
+    . apply Sheaf.Subcanonical.isSheaf_of_representable
+      apply GrothendieckTopology.subcanonicalSlice
+      simp [Sheaf.Subcanonical]
+    . apply subcanonicalPatSliceCover subcanonical isCover
 
 
 def branchesToFam {Γ : C} {cov : PatCover Γ} {T : Ty Γ}
