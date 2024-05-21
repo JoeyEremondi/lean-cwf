@@ -488,6 +488,33 @@ def termSliceEquiv {Γ Δ : C} {T : Ty Δ}
   left_inv := termFromToSlice f
   right_inv := termToFromSlice f
 
+--TODO add to mathlib?
+def overExt {Γ : C} {f g : Over Γ}
+  (domEq : f.left = g.left) (eq : f.hom = cast (by simp [domEq]) g.hom)
+  : f = g := by
+    cases f
+    cases g
+    cases domEq
+    cases eq
+    aesop_cat
+
+def termSliceSub {Γ Δ Ξ : C} (f : Δ ⟶ Γ) (g : Ξ ⟶ Δ)
+  : Over.mk (g ≫ f) ⟶ Over.mk f := by
+    apply Over.homMk _ _ <;> simp
+    . apply g
+    . rfl
+
+def termSliceEquivSymmSub  {Γ Δ Ξ : C} (f : Δ ⟶ Γ) (g : Ξ ⟶ Δ) (T : Ty Γ) (θ : ((Over.mk f) ⟶ tyToSlice T))
+  : ((termSliceEquiv (f := f)).symm θ)⦃g⦄ =ₜ termSliceEquiv.symm ((termSliceSub f g) ≫ θ) := by
+  simp [termSliceEquiv]
+  dsimp [termFromSlice]
+  dsimp only [extHead]
+  repeat rw [castCast] <;> aesop_cat
+  rw [castSub]
+  simp
+  aesop_cat
+
+
 
 def termSliceEquiv' {Δ : C} {T : Ty Δ}
   {f : Over Δ}
@@ -508,6 +535,20 @@ def termSliceEquivId {Γ : C} {T : Ty Γ}
     let eq : Tm T⦃𝟙 Γ⦄ ≃ ((Over.mk (𝟙 Γ)) ⟶ tyToSlice T) := termSliceEquiv (f := 𝟙 Γ)
     simp at eq
     assumption
+
+
+def termSliceEquivIdSymmSub  {Γ Ξ : C}  (g : Ξ ⟶ Γ) (T : Ty Γ)
+  (θ : ((Over.mk (𝟙 Γ)) ⟶ tyToSlice T))
+  : (termSliceEquivId.symm θ)⦃g⦄ =ₜ
+      (termSliceEquiv.symm (termSliceSub (𝟙 Γ) g ≫ θ)) := by
+    let foo := (termSliceEquivSymmSub (𝟙 Γ) g T θ)
+    apply cast _ foo
+    congr! <;> try aesop_cat
+    apply heq_of_cast_eq
+    symm
+    simp [termSliceEquivId]
+    aesop_cat
+
 
 -- theorem termSliceIso {Γ Δ : C} {T : Ty Δ} (f : Γ ⟶ Δ)
 --   : Iso (Tm T⦃f⦄) ( (Over.mk f) ⟶ tyToSlice T)  where

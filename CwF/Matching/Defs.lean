@@ -60,7 +60,7 @@ abbrev SimpleMatchOn {Γ : C} (cov : PatCover Γ) (T : Ty (cwf.empty)) :=
 --a right-hand-side, which is an element of T with the Γ variables
 --replaced by Δ-variables according to the pattern θ
 abbrev MatchOn {Γ : C} (cov : PatCover Γ) (T : Ty Γ) : Type _ :=
-  ∀ {Δθ}, Δθ ∈ cov → Tm (T⦃Δθ.hom⦄)
+  ∀ Δθ, Δθ ∈ cov → Tm (T⦃Δθ.hom⦄)
 
 
 
@@ -77,4 +77,4 @@ class MatchWithCoverage (coverage : PatCoverage (cat := cat)) : Type _ where
     {Δθ}
     (pos : Δθ ∈ cov)
     (branches : MatchOn cov T)
-    : (mkMatch isCover branches)⦃Δθ.hom⦄ = branches pos
+    : (mkMatch isCover branches)⦃Δθ.hom⦄ = branches _ pos

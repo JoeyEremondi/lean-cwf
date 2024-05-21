@@ -43,7 +43,6 @@ namespace CwF
 --pattern matching semantics anyways.
 variable {C : Type u} [cat : Category.{v'}  C] [cwf: CwF C] -- [Limits.HasPullbacks C]
 
-
 namespace GrothendieckTopology
 
 def baseFamily {U V W : C} {f : V ⟶ U} {g : W ⟶ U}
@@ -349,12 +348,21 @@ theorem generateEquiv {Γ : C} {cov : PatCover Γ} :
       constructor <;> aesop_cat
 
 
-def isSubcanonicalPatCoverage (coverage : CwF.PatCoverage (C := C)) :=
-  ∀ {Γ} {cov : PatCover Γ} (isCover : cov ∈ coverage Γ ),
-    (canonicalCoverage (C := C)).covering Γ (toPresieve cov)
+class IsSubcanonicalPatCoverage (coverage : CwF.PatCoverage (C := C)) where
+  inCanonical {Γ : C} {cov : PatCover Γ} (isCover : cov ∈ coverage Γ )
+    : (canonicalCoverage (C := C)).covering Γ (toPresieve cov)
+  disjoint {Γ : C} {cov : PatCover Γ} (isCover : cov ∈ coverage Γ)
+    {pat1 : Over Γ} (pos1 : pat1 ∈ cov)
+    {pat2 : Over Γ} (pos2 : pat2 ∈ cov)
+        : ∀ {X} {g1 : X ⟶ pat1.left } {g2 : X ⟶ pat2.left},
+        g1 ≫ pat1.hom = g2 ≫ pat2.hom → pat1 = pat2 ∧ HEq pos1 pos2
+  nonOverlapping {Γ : C} {cov : PatCover Γ} (isCover : cov ∈ coverage Γ)
+    {pat : Over Γ} (pos : pat ∈ cov)
+    : Mono (pat.hom)
 
-def subcanonicalPatSliceCover {coverage : CwF.PatCoverage (C := C)}
-  (subcanonical : isSubcanonicalPatCoverage coverage)
+
+def subcanonicalPatSliceCover
+  [subcanonical : IsSubcanonicalPatCoverage coverage]
   {Γ : C} { cov : PatCover Γ } (isCover : cov ∈ coverage Γ)
   : Sieve.generate (coverSlicePresieve cov)
       ∈ ((Sheaf.canonicalTopology C).over Γ).sieves (Over.mk (𝟙 Γ))  := by
@@ -363,7 +371,7 @@ def subcanonicalPatSliceCover {coverage : CwF.PatCoverage (C := C)}
     have inCanonical : (Sieve.generate (toPresieve cov)) ∈ (Sheaf.canonicalTopology C).sieves Γ :=
       by
         apply canonicalCoverageGenerate
-        apply subcanonical isCover
+        apply subcanonical.inCanonical isCover
     apply cast _ inCanonical
     congr!
     have unEquiv
@@ -373,15 +381,15 @@ def subcanonicalPatSliceCover {coverage : CwF.PatCoverage (C := C)}
     apply Eq.trans unEquiv.symm
     congr!
 
-def subcanonicalPatSliceSheaf {coverage : CwF.PatCoverage (C := C)}
-  (subcanonical : isSubcanonicalPatCoverage coverage)
+def subcanonicalPatSliceSheaf
+  [subcanonical : IsSubcanonicalPatCoverage coverage]
   {Γ : C} {Δᵢ} { cov : PatCover Γ } (isCover : cov ∈ coverage Γ)
   : Presieve.IsSheafFor (yoneda.obj Δᵢ) (coverSlicePresieve cov)  := by
     apply Presieve.IsSheaf.isSheafFor (J := (Sheaf.canonicalTopology C).over Γ)
     . apply Sheaf.Subcanonical.isSheaf_of_representable
       apply GrothendieckTopology.subcanonicalSlice
       simp [Sheaf.Subcanonical]
-    . apply subcanonicalPatSliceCover subcanonical isCover
+    . apply subcanonicalPatSliceCover isCover
 
 
 def branchesToFam {Γ : C} {cov : PatCover Γ} {T : Ty Γ}
@@ -400,22 +408,86 @@ def branchesToFam {Γ : C} {cov : PatCover Γ} {T : Ty Γ}
     rw [<- toPresieveEquiv'] at mem
     apply mem
 
+
+def subcanonicalCompat
+  [subcanonical : IsSubcanonicalPatCoverage coverage]
+  {Γ : C} {T : Ty Γ} {cov} (isCover : cov ∈ (coverage Γ))
+  (branches : MatchOn cov T)
+  : Presieve.FamilyOfElements.Compatible (branchesToFam branches) := by
+      intros X Y Z g1 g2 f1 f2 R1 R2 eq
+      simp
+      simp [coverSlicePresieve, toSlicePresieve, setOf, toPresieve, Membership.mem, Set.Mem] at R1 R2
+      -- let ⟨X , rtx , xarr⟩ := X
+      -- let ⟨Y , rty , yarr⟩ := Y
+      cases X
+      cases Y
+      let ⟨f1 , _ , eq1⟩ := f1
+      let ⟨f2 , _ , eq2⟩ := f2
+      let eq' := congrArg (fun (x : Z ⟶ Over.mk (𝟙 Γ)) => x.left) eq
+      simp at eq'
+      let ⟨feq , posEq⟩ := subcanonical.disjoint isCover R1 R2 eq'
+      simp [Over.mk, CostructuredArrow.mk] at feq
+      cases feq
+      cases posEq
+      let mono := (subcanonical.nonOverlapping isCover R1).right_cancellation g1.left g2.left eq'
+      apply Over.OverMorphism.ext
+      simp [mono]
+      congr!
+      simp at eq1 eq2
+      aesop
+
+theorem matchSliceArrowAmalg
+  [subcanonical : IsSubcanonicalPatCoverage coverage]
+  {Γ : C} {T : Ty Γ} {cov} (isCover : cov ∈ (coverage Γ))
+  (branches : MatchOn cov T)
+ :  {x : Over.mk (𝟙 Γ) ⟶ tyToSlice T //
+      Presieve.FamilyOfElements.IsAmalgamation (branchesToFam branches) x } := by
+    simp [MatchOn] at branches
+    let amalg :=
+      (subcanonicalPatSliceSheaf isCover)
+        (branchesToFam branches)
+        (subcanonicalCompat isCover branches)
+    let ⟨x, pf , _⟩ :=  Classical.indefiniteDescription _ amalg
+    aesop
+
+
+
 -- class IsSubcanonical (coverage : Coverage (cat := cat)) : Type _ where
+
 
 -- Relies on Axiom of choice. Alternately we can add an extra constraint that
 -- the sheaf is constructive.
-instance (coverage : CwF.PatCoverage (C := C))
-  (subcanonical : isSubcanonicalPatCoverage coverage)
+instance {coverage : CwF.PatCoverage (C := C)}
+  [subcanonical : IsSubcanonicalPatCoverage coverage]
   : MatchWithCoverage coverage where
   -- Scratch work, just admit a bunch of stuff to find out what we need
-  mkMatch {Γ} {T} cov inCov branches := by
-    simp [MatchOn] at branches
-    apply termSliceEquivId.invFun
-    let isSheaf : Presieve.IsSheafFor (yoneda.obj (tyToSlice T)) (coverSlicePresieve cov) := by
-      dsimp [coverSlicePresieve]
-      let lem :=  Sheaf.Subcanonical.isSheaf_of_representable
+  mkMatch isCover branches :=
+    termSliceEquivId.symm
+      (matchSliceArrowAmalg isCover branches).val
+  matchesBranch {Γ} {T} {cov} isCover pos patInCover branches := by
+    dsimp only []
+    rw [termSliceEquivIdSymmSub]
+    symm
+    rw [castSymm]
+    simp [Equiv.apply_eq_iff_eq_symm_apply, castTm]
+    norm_cast
+    let prop :=
+      (matchSliceArrowAmalg isCover branches).prop
+    simp [Presieve.FamilyOfElements.IsAmalgamation, branchesToFam, termSliceEquiv'] at prop
+    apply Eq.trans
+    . apply prop <;> aesop_cat
+    . congr! <;> try aesop_cat
       simp
-    let compat : Presieve.FamilyOfElements.Compatible (branchesToFam branches) :=
-      by admit
-    let amalg := isSheaf (branchesToFam branches) compat
-    apply Classical.choose amalg
+      let lem  (pos1 pos2 : Over Γ) (isCov : pos2 ∈ cov) (eq : pos1 = pos2)
+        : branches pos1 (cast (by aesop) isCov) = cast (by aesop) (branches pos2 isCov) := by
+        cases eq
+        rfl
+      apply lem
+      aesop
+
+    -- let t := (termSliceEquivId.symm.toFun
+    -- simp
+    -- rw [Equiv.symm_apply_eq]
+    -- apply Function.LeftInverse.injective termSliceEquivId.left_inv
+    -- apply Eq.trans _ (by simp ; rfl)
+    -- rw [termSliceEquivId.left_inv]
