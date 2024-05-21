@@ -64,7 +64,6 @@ abbrev MatchOn {Γ : C} (cov : PatCover Γ) (T : Ty Γ) : Type _ :=
 
 
 
-
 class MatchWithCoverage (coverage : PatCoverage (cat := cat)) : Type _ where
  -- There is a term corresponding to each match on a cover in a coverage
   mkMatch : ∀ {Γ : C} {T : Ty Γ}, ∀ {cov}, (cov ∈ (coverage Γ)) →

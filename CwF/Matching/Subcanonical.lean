@@ -254,7 +254,7 @@ end GrothendieckTopology
 
 -- Turn a presieve in the slice into one in the base category
 def forgetOverPresieve {Γ : C} {θ : Over Γ} (R : Presieve θ)
-  : Presieve θ.left :=  @fun Δ =>
+  : Presieve θ.left :=  @fun _ =>
         ⨆ f, Set.image CommaMorphism.left (@R (Over.mk f))
 
 def toSlicePresieve {Γ : C} (θ : Over Γ) (R : Presieve θ.left)
@@ -457,7 +457,7 @@ theorem matchSliceArrowAmalg
 
 -- Relies on Axiom of choice. Alternately we can add an extra constraint that
 -- the sheaf is constructive.
-instance {coverage : CwF.PatCoverage (C := C)}
+noncomputable instance {coverage : CwF.PatCoverage (C := C)}
   [subcanonical : IsSubcanonicalPatCoverage coverage]
   : MatchWithCoverage coverage where
   -- Scratch work, just admit a bunch of stuff to find out what we need
@@ -475,7 +475,8 @@ instance {coverage : CwF.PatCoverage (C := C)}
       (matchSliceArrowAmalg isCover branches).prop
     simp [Presieve.FamilyOfElements.IsAmalgamation, branchesToFam, termSliceEquiv'] at prop
     apply Eq.trans
-    . apply prop <;> aesop_cat
+    . apply prop
+      aesop_cat
     . congr! <;> try aesop_cat
       simp
       let lem  (pos1 pos2 : Over Γ) (isCov : pos2 ∈ cov) (eq : pos1 = pos2)
@@ -484,6 +485,7 @@ instance {coverage : CwF.PatCoverage (C := C)}
         rfl
       apply lem
       aesop
+    . simp
 
     -- let t := (termSliceEquivId.symm.toFun
     -- simp
