@@ -1,2 +1,1 @@
-# lean-cwf
-A basic Categories with Families library for Lean
+Migrated to https://github.com/JoeyEremondi/lean-cwf
